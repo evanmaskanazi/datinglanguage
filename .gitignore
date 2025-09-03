@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+logs/
+*.log
+uploads/
+temp/
+*.db
+*.sqlite
+instance/
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Deployment
+*.pem
+*.key
+.dockerignore
