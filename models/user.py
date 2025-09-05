@@ -19,7 +19,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     
-    # Relationships
+    # Relationships - use string names to avoid circular imports
     profile = db.relationship('UserProfile', backref='user', uselist=False, cascade='all, delete-orphan')
     preferences = db.relationship('UserPreferences', backref='user', uselist=False, cascade='all, delete-orphan')
     matches_initiated = db.relationship('Match', foreign_keys='Match.user1_id', backref='initiator')
