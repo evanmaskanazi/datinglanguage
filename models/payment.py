@@ -1,39 +1,34 @@
 from datetime import datetime
 from dating_backend import db
+from enum import Enum
 
-class DateFeedback(db.Model):
-    __tablename__ = 'date_feedback'
+class PaymentStatus(Enum):
+    PENDING = 'pending'
+    PROCESSING = 'processing'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+    REFUNDED = 'refunded'
+
+class Payment(db.Model):
+    __tablename__ = 'payments'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'), nullable=False)
-    match_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    rating = db.Column(db.Integer)  # 1-5
-    showed_up = db.Column(db.Boolean)
-    would_meet_again = db.Column(db.Boolean)
-    chemistry_level = db.Column(db.Integer)  # 1-5
-    conversation_quality = db.Column(db.Integer)  # 1-5
-    overall_experience = db.Column(db.Integer)  # 1-5
-    comments = db.Column(db.Text)
+    reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'))
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING)
+    stripe_payment_id = db.Column(db.String(255))
+    stripe_charge_id = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Create unique constraint
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'reservation_id'),
-    )
-    
-    # Relationship to match_user
-    match_user = db.relationship('User', foreign_keys=[match_user_id])
+    completed_at = db.Column(db.DateTime)
     
     def to_dict(self):
         return {
             'id': self.id,
-            'reservation_id': self.reservation_id,
-            'rating': self.rating,
-            'showed_up': self.showed_up,
-            'would_meet_again': self.would_meet_again,
-            'chemistry_level': self.chemistry_level,
-            'conversation_quality': self.conversation_quality,
-            'overall_experience': self.overall_experience,
-            'comments': self.comments
+            'amount': self.amount,
+            'currency': self.currency,
+            'status': self.status.value if self.status else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
