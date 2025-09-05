@@ -206,17 +206,19 @@ def validate_inputs():
 
 @app.after_request
 def after_request(response):
-    duration = (datetime.utcnow() - g.request_start_time).total_seconds()
+    # Check if request_start_time exists before using it
+    if hasattr(g, 'request_start_time'):
+        duration = (datetime.utcnow() - g.request_start_time).total_seconds()
+        
+        logger.info('request_completed', extra={
+            'request_id': getattr(g, 'request_id', 'unknown'),
+            'method': request.method,
+            'path': request.path,
+            'status_code': response.status_code,
+            'duration_ms': round(duration * 1000, 2)
+        })
     
-    logger.info('request_completed', extra={
-        'request_id': g.request_id,
-        'method': request.method,
-        'path': request.path,
-        'status_code': response.status_code,
-        'duration_ms': round(duration * 1000, 2)
-    })
-    
-    response.headers['X-Request-ID'] = g.request_id
+    response.headers['X-Request-ID'] = getattr(g, 'request_id', 'unknown')
     return response
 
 # === API ENDPOINTS ===
