@@ -15,6 +15,7 @@ class Reservation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, db.ForeignKey('matches.id'))
     table_id = db.Column(db.Integer, db.ForeignKey('restaurant_tables.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # ADDED THIS LINE
     date_time = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default=ReservationStatus.PENDING)
     confirmation_code = db.Column(db.String(20), unique=True)
@@ -70,6 +71,7 @@ class Reservation(db.Model):
             'id': self.id,
             'match_id': self.match_id,
             'table_id': self.table_id,
+            'user_id': self.user_id,  # ADDED THIS LINE
             'date_time': self.date_time.isoformat(),
             'status': self.status,
             'confirmation_code': self.confirmation_code,
