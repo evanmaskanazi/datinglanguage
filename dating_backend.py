@@ -206,7 +206,6 @@ def validate_inputs():
 
 @app.after_request
 def after_request(response):
-    # Check if request_start_time exists before using it
     if hasattr(g, 'request_start_time'):
         duration = (datetime.utcnow() - g.request_start_time).total_seconds()
         
@@ -230,6 +229,12 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.utcnow().isoformat()
     })
+
+# CSRF token endpoint
+@app.route('/api/csrf-token', methods=['GET'])
+def get_csrf_token():
+    """Get CSRF token for API requests"""
+    return jsonify({'csrf_token': generate_csrf()})
 
 # Authentication endpoints
 @app.route('/api/auth/register', methods=['POST'])
@@ -255,6 +260,17 @@ def login():
     except Exception as e:
         logger.error(f"Login error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+@require_auth()
+def logout():
+    """User logout"""
+    try:
+        session.clear()
+        return jsonify({'message': 'Logged out successfully'})
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Logout failed'}), 500
 
 # Profile endpoints
 @app.route('/api/profile', methods=['GET'])
@@ -293,6 +309,17 @@ def get_restaurants():
         logger.error(f"Get restaurants error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get restaurants'}), 500
 
+@app.route('/api/restaurants/<int:restaurant_id>', methods=['GET'])
+def get_restaurant(restaurant_id):
+    """Get restaurant details"""
+    try:
+        from services.restaurant_service import RestaurantService
+        restaurant_service = RestaurantService(db, cache, logger)
+        return restaurant_service.get_restaurant(restaurant_id)
+    except Exception as e:
+        logger.error(f"Get restaurant error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get restaurant'}), 500
+
 @app.route('/api/restaurants/<int:restaurant_id>/tables', methods=['GET'])
 def get_restaurant_tables(restaurant_id):
     """Get available tables for a restaurant"""
@@ -304,7 +331,42 @@ def get_restaurant_tables(restaurant_id):
         logger.error(f"Get tables error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get tables'}), 500
 
+@app.route('/api/restaurants/<int:restaurant_id>/slots', methods=['GET'])
+def get_restaurant_slots(restaurant_id):
+    """Get available time slots for a restaurant"""
+    try:
+        from services.restaurant_service import RestaurantService
+        restaurant_service = RestaurantService(db, cache, logger)
+        return restaurant_service.get_available_slots(restaurant_id, request.args)
+    except Exception as e:
+        logger.error(f"Get slots error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get time slots'}), 500
+
 # Matching endpoints
+@app.route('/api/matches', methods=['GET'])
+@require_auth()
+def get_matches():
+    """Get user's matches"""
+    try:
+        from services.matching_service import MatchingService
+        matching_service = MatchingService(db, cache, logger)
+        return matching_service.get_user_matches(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get matches error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get matches'}), 500
+
+@app.route('/api/matches/suggestions', methods=['POST'])
+@require_auth()
+def get_match_suggestions():
+    """Get suggested matches for a time slot"""
+    try:
+        from services.matching_service import MatchingService
+        matching_service = MatchingService(db, cache, logger)
+        return matching_service.get_suggestions(request.current_user.id, request.json)
+    except Exception as e:
+        logger.error(f"Get suggestions error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get suggestions'}), 500
+
 @app.route('/api/matches/browse', methods=['GET'])
 @require_auth()
 def browse_matches():
@@ -330,17 +392,104 @@ def request_match():
         logger.error(f"Request match error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to request match'}), 500
 
-@app.route('/api/matches/<int:match_id>/respond', methods=['POST'])
+@app.route('/api/matches/<int:match_id>/accept', methods=['POST'])
 @require_auth()
-def respond_to_match(match_id):
-    """Accept or decline a match request"""
+def accept_match(match_id):
+    """Accept a match request"""
     try:
         from services.matching_service import MatchingService
         matching_service = MatchingService(db, cache, logger)
-        return matching_service.respond_to_match(request.current_user.id, match_id, request.json)
+        return matching_service.respond_to_match(request.current_user.id, match_id, {'accept': True})
     except Exception as e:
-        logger.error(f"Respond to match error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to respond to match'}), 500
+        logger.error(f"Accept match error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to accept match'}), 500
+
+@app.route('/api/matches/<int:match_id>/decline', methods=['POST'])
+@require_auth()
+def decline_match(match_id):
+    """Decline a match request"""
+    try:
+        from services.matching_service import MatchingService
+        matching_service = MatchingService(db, cache, logger)
+        return matching_service.respond_to_match(request.current_user.id, match_id, {'accept': False})
+    except Exception as e:
+        logger.error(f"Decline match error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to decline match'}), 500
+
+# Date endpoints
+@app.route('/api/dates/upcoming', methods=['GET'])
+@require_auth()
+def get_upcoming_dates():
+    """Get upcoming dates"""
+    try:
+        from services.date_service import DateService
+        date_service = DateService(db, logger)
+        return date_service.get_upcoming_dates(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get upcoming dates error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get upcoming dates'}), 500
+
+@app.route('/api/dates/history', methods=['GET'])
+@require_auth()
+def get_date_history():
+    """Get date history"""
+    try:
+        from services.date_service import DateService
+        date_service = DateService(db, logger)
+        return date_service.get_date_history(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get date history error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get date history'}), 500
+
+@app.route('/api/dates/<int:date_id>', methods=['GET'])
+@require_auth()
+def get_date_details(date_id):
+    """Get date details"""
+    try:
+        from services.date_service import DateService
+        date_service = DateService(db, logger)
+        return date_service.get_date_details(request.current_user.id, date_id)
+    except Exception as e:
+        logger.error(f"Get date details error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get date details'}), 500
+
+@app.route('/api/dates/<int:date_id>/rate', methods=['POST'])
+@require_auth()
+def rate_date(date_id):
+    """Rate a date"""
+    try:
+        from services.feedback_service import FeedbackService
+        feedback_service = FeedbackService(db, logger)
+        return feedback_service.rate_date(request.current_user.id, date_id, request.json)
+    except Exception as e:
+        logger.error(f"Rate date error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to rate date'}), 500
+
+# User stats
+@app.route('/api/user/stats', methods=['GET'])
+@require_auth()
+def get_user_stats():
+    """Get user statistics"""
+    try:
+        from services.stats_service import StatsService
+        stats_service = StatsService(db, cache, logger)
+        return stats_service.get_user_stats(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get stats error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get statistics'}), 500
+
+# Settings
+@app.route('/api/settings', methods=['PUT'])
+@require_auth()
+def update_settings():
+    """Update user settings"""
+    try:
+        from services.settings_service import SettingsService
+        settings_service = SettingsService(db, logger)
+        return settings_service.update_settings(request.current_user.id, request.json)
+    except Exception as e:
+        logger.error(f"Update settings error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to update settings'}), 500
 
 # Reservation endpoints
 @app.route('/api/reservations', methods=['POST'])
@@ -456,6 +605,120 @@ def delete_account():
         logger.error(f"Delete account error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to delete account'}), 500
 
+# === STATIC FILES ===
+@app.route('/')
+def index():
+    """Serve the main landing page"""
+    return send_file('static/index.html')
+
+@app.route('/login.html')
+def login_page():
+    """Serve the login page"""
+    return send_file('static/login.html')
+
+@app.route('/dashboard.html')
+def dashboard():
+    """Serve the dashboard"""
+    return send_file('static/dashboard.html')
+
+@app.route('/signup.html')
+def signup_page():
+    """Serve the signup page - you'll need to create this"""
+    # For now, redirect to login
+    return redirect('/login.html')
+
+# === DYNAMIC IMAGE GENERATION ===
+@app.route('/static/images/default-avatar.jpg')
+def default_avatar():
+    """Generate a default avatar image"""
+    from PIL import Image, ImageDraw, ImageFont
+    import io
+    
+    # Create a simple avatar
+    img = Image.new('RGB', (200, 200), color='#e74c3c')
+    draw = ImageDraw.Draw(img)
+    
+    # Draw initials (using built-in font since we can't specify font_size directly)
+    try:
+        draw.text((100, 100), "?", fill='white', anchor="mm")
+    except:
+        # Fallback for older Pillow versions
+        draw.text((90, 80), "?", fill='white')
+    
+    # Save to bytes
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/static/images/restaurant-placeholder.jpg')
+def restaurant_placeholder():
+    """Generate a placeholder restaurant image"""
+    from PIL import Image, ImageDraw
+    import io
+    
+    # Create a simple restaurant placeholder
+    img = Image.new('RGB', (400, 300), color='#f0f0f0')
+    draw = ImageDraw.Draw(img)
+    
+    # Draw a simple restaurant representation
+    draw.rectangle([150, 100, 250, 200], fill='#e74c3c')
+    draw.text((200, 220), "Restaurant", fill='#666', anchor="mm")
+    
+    # Save to bytes
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/static/images/couple-dinner.jpg')
+def couple_dinner():
+    """Generate a couple dinner placeholder image"""
+    from PIL import Image, ImageDraw
+    import io
+    
+    # Create a simple couple dinner placeholder
+    img = Image.new('RGB', (600, 400), color='#fff5f5')
+    draw = ImageDraw.Draw(img)
+    
+    # Draw simple shapes to represent couple dining
+    # Table
+    draw.ellipse([200, 200, 400, 280], fill='#8B4513')
+    # Two circles for people
+    draw.ellipse([180, 150, 220, 190], fill='#e74c3c')
+    draw.ellipse([380, 150, 420, 190], fill='#e74c3c')
+    
+    # Save to bytes
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/favicon.ico')
+def favicon():
+    """Generate a simple favicon"""
+    from PIL import Image, ImageDraw
+    import io
+    
+    # Create a simple favicon
+    img = Image.new('RGBA', (32, 32), color=(0,0,0,0))
+    draw = ImageDraw.Draw(img)
+    
+    # Draw a heart shape
+    draw.ellipse([4, 4, 16, 16], fill='#e74c3c')
+    draw.ellipse([16, 4, 28, 16], fill='#e74c3c')
+    draw.polygon([(16, 24), (4, 12), (28, 12)], fill='#e74c3c')
+    
+    # Save to bytes
+    img_io = io.BytesIO()
+    img.save(img_io, 'ICO')
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/x-icon')
+
 # === ERROR HANDLERS ===
 @app.errorhandler(404)
 def not_found(error):
@@ -484,17 +747,6 @@ def internal_error(error):
         'request_id': getattr(g, 'request_id', 'unknown')
     }), 500
 
-# === STATIC FILES ===
-@app.route('/')
-def index():
-    """Serve the main app"""
-    return send_file('static/index.html')
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_file('static/favicon.ico', mimetype='image/x-icon')
-
-# === INITIALIZATION ===
 # === INITIALIZATION ===
 def initialize_database():
     """Initialize database with default data"""
