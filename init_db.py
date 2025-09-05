@@ -27,24 +27,33 @@ def init_database():
         print("Creating database tables...")
         db.create_all()
         
-        # Create admin user if not exists
+        # IMPORTANT: Only query AFTER all models are imported and tables created
+        print("Checking for admin user...")
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@tablefortwo.com')
-        admin = User.query.filter_by(email=admin_email).first()
         
-        if not admin:
-            print("Creating admin user...")
-            admin = User(
-                email=admin_email,
-                password_hash=bcrypt.generate_password_hash(
-                    os.environ.get('ADMIN_PASSWORD', 'Admin123!')
-                ).decode('utf-8'),
-                role='admin',
-                is_active=True,
-                is_verified=True
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print(f"Admin user created: {admin_email}")
+        try:
+            admin = User.query.filter_by(email=admin_email).first()
+            
+            if not admin:
+                print("Creating admin user...")
+                admin = User(
+                    email=admin_email,
+                    password_hash=bcrypt.generate_password_hash(
+                        os.environ.get('ADMIN_PASSWORD', 'Admin123!')
+                    ).decode('utf-8'),
+                    role='admin',
+                    is_active=True,
+                    is_verified=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print(f"Admin user created: {admin_email}")
+            else:
+                print(f"Admin user already exists: {admin_email}")
+                
+        except Exception as e:
+            print(f"Error during admin user creation: {e}")
+            db.session.rollback()
         
         # Add test restaurants in development
         if not os.environ.get('PRODUCTION'):
@@ -84,25 +93,29 @@ def add_test_restaurants():
         }
     ]
     
-    for rest_data in test_restaurants:
-        restaurant = Restaurant.query.filter_by(name=rest_data['name']).first()
-        if not restaurant:
-            tables_data = rest_data.pop('tables')
-            restaurant = Restaurant(**rest_data, is_active=True)
-            db.session.add(restaurant)
-            db.session.flush()
-            
-            # Add tables
-            for table_data in tables_data:
-                table = RestaurantTable(
-                    restaurant_id=restaurant.id,
-                    **table_data,
-                    is_available=True
-                )
-                db.session.add(table)
-    
-    db.session.commit()
-    print("Test restaurants added successfully!")
+    try:
+        for rest_data in test_restaurants:
+            restaurant = Restaurant.query.filter_by(name=rest_data['name']).first()
+            if not restaurant:
+                tables_data = rest_data.pop('tables')
+                restaurant = Restaurant(**rest_data, is_active=True)
+                db.session.add(restaurant)
+                db.session.flush()
+                
+                # Add tables
+                for table_data in tables_data:
+                    table = RestaurantTable(
+                        restaurant_id=restaurant.id,
+                        **table_data,
+                        is_available=True
+                    )
+                    db.session.add(table)
+        
+        db.session.commit()
+        print("Test restaurants added successfully!")
+    except Exception as e:
+        print(f"Error adding test restaurants: {e}")
+        db.session.rollback()
 
 if __name__ == '__main__':
     init_database()
