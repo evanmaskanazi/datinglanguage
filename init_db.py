@@ -2,32 +2,25 @@
 import os
 import sys
 from datetime import datetime
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Import app and models
+# Import app and database
 from dating_backend import app, db, bcrypt
 
 def init_database():
     """Initialize database with tables and default data"""
     with app.app_context():
-        # Import ALL models inside app context to ensure proper registration
-        from models.user import User
-        from models.profile import UserProfile, UserPreferences
-        from models.restaurant import Restaurant, RestaurantTable
-        from models.match import Match
-        from models.reservation import Reservation
-        from models.feedback import DateFeedback
-        from models.payment import Payment
+        # Import ALL models to ensure they're registered with SQLAlchemy
+        import models  # This will import everything from __init__.py
         
         print("Creating database tables...")
         db.create_all()
         
-        # IMPORTANT: Only query AFTER all models are imported and tables created
+        # Now we can safely use the models
+        from models import User, Restaurant, RestaurantTable
+        
         print("Checking for admin user...")
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@tablefortwo.com')
         
@@ -64,8 +57,7 @@ def init_database():
 
 def add_test_restaurants():
     """Add test restaurants for development"""
-    # Import models here too
-    from models.restaurant import Restaurant, RestaurantTable
+    from models import Restaurant, RestaurantTable
     
     test_restaurants = [
         {
@@ -82,7 +74,7 @@ def add_test_restaurants():
         },
         {
             'name': 'Sunset Bistro',
-            'cuisine_type': 'Mediterranean',
+            'cuisine_type': 'Mediterranean', 
             'address': '456 Beach Road, Tel Aviv',
             'price_range': 2,
             'ambiance': 'casual',
