@@ -1,9 +1,5 @@
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.hybrid import hybrid_property
-from models.profile import UserProfile, UserPreferences
-
-db = SQLAlchemy()
+from dating_backend import db
 
 class User(db.Model):
     __tablename__ = 'users'
