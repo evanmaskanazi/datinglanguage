@@ -1,7 +1,5 @@
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from dating_backend import db
 
 class DateFeedback(db.Model):
     __tablename__ = 'date_feedback'
@@ -23,6 +21,9 @@ class DateFeedback(db.Model):
     __table_args__ = (
         db.UniqueConstraint('user_id', 'reservation_id'),
     )
+    
+    # Relationship to match_user
+    match_user = db.relationship('User', foreign_keys=[match_user_id])
     
     def to_dict(self):
         return {
