@@ -1,5 +1,6 @@
 from datetime import datetime
 from dating_backend import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -21,5 +22,5 @@ class User(db.Model):
     matches_initiated = db.relationship('Match', foreign_keys='Match.user1_id', backref='initiator')
     matches_received = db.relationship('Match', foreign_keys='Match.user2_id', backref='receiver')
     reservations = db.relationship('Reservation', backref='user', lazy='dynamic')
-    feedbacks = db.relationship('DateFeedback', backref='user', lazy='dynamic')
+    feedbacks = db.relationship('DateFeedback', foreign_keys='DateFeedback.user_id', backref='user', lazy='dynamic')
     payments = db.relationship('Payment', backref='user', lazy='dynamic')
