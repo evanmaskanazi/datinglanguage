@@ -25,7 +25,7 @@ if [ ! -z "$DATABASE_URL" ]; then
     
     # Run migrations
     echo "Running database migrations..."
-    flask db upgrade
+#    flask db upgrade
 else
     echo ""
     echo "WARNING: DATABASE_URL not set, skipping database initialization"
