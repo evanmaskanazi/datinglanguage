@@ -495,26 +495,40 @@ def favicon():
     return send_file('static/favicon.ico', mimetype='image/x-icon')
 
 # === INITIALIZATION ===
+# === INITIALIZATION ===
 def initialize_database():
     """Initialize database with default data"""
     with app.app_context():
+        # Import all models to ensure they're registered with SQLAlchemy
+        from models.user import User
+        from models.restaurant import Restaurant, RestaurantTable
+        from models.match import Match, MatchStatus
+        from models.reservation import Reservation, ReservationStatus
+        from models.profile import UserProfile, UserPreferences
+        from models.feedback import DateFeedback
+        from models.payment import Payment, PaymentStatus
+        
+        # Create all tables
         db.create_all()
+        logger.info("Database tables created")
         
-        # Import initialization functions
-        from utils.db_init import (
-            create_default_categories,
-            create_admin_user,
-            create_test_restaurants
-        )
-        
-        # Run initialization
-        create_default_categories(db)
-        create_admin_user(db, bcrypt)
-        
-        if not os.environ.get('PRODUCTION'):
-            create_test_restaurants(db)
-        
-        logger.info("Database initialized successfully")
+        # Only run initialization functions when running directly (not via gunicorn)
+        if __name__ == '__main__':
+            # Import initialization functions
+            from utils.db_init import (
+                create_default_categories,
+                create_admin_user,
+                create_test_restaurants
+            )
+            
+            # Run initialization
+            create_default_categories(db)
+            create_admin_user(db, bcrypt)
+            
+            if not os.environ.get('PRODUCTION'):
+                create_test_restaurants(db)
+            
+            logger.info("Database initialized successfully")
 
 # === MAIN ENTRY POINT ===
 if __name__ == '__main__':
