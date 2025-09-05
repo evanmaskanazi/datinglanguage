@@ -1,5 +1,4 @@
 """Initialize database for Table for Two dating app"""
-"""Initialize database for Table for Two dating app"""
 import os
 import sys
 from datetime import datetime
@@ -13,18 +12,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import app and models
 from dating_backend import app, db, bcrypt
 
-# IMPORTANT: Import ALL models to register them with SQLAlchemy
-from models.user import User
-from models.profile import UserProfile, UserPreferences
-from models.restaurant import Restaurant, RestaurantTable
-from models.match import Match
-from models.reservation import Reservation
-from models.feedback import DateFeedback
-from models.payment import Payment
-
 def init_database():
     """Initialize database with tables and default data"""
     with app.app_context():
+        # Import ALL models inside app context to ensure proper registration
+        from models.user import User
+        from models.profile import UserProfile, UserPreferences
+        from models.restaurant import Restaurant, RestaurantTable
+        from models.match import Match
+        from models.reservation import Reservation
+        from models.feedback import DateFeedback
+        from models.payment import Payment
+        
         print("Creating database tables...")
         db.create_all()
         
@@ -56,6 +55,9 @@ def init_database():
 
 def add_test_restaurants():
     """Add test restaurants for development"""
+    # Import models here too
+    from models.restaurant import Restaurant, RestaurantTable
+    
     test_restaurants = [
         {
             'name': 'The Romantic Garden',
