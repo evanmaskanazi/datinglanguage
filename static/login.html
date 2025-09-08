@@ -432,9 +432,7 @@
 
                if (response.ok) {
     // Store the JWT token and user data
-    localStorage.setItem('authToken', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
+   if (response.ok) {
     showAlert('Login successful!', 'success');
     setTimeout(() => {
         window.location.href = '/dashboard.html';
