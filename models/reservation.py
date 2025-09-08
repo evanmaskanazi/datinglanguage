@@ -3,19 +3,19 @@ import secrets
 from dating_backend import db
 
 class ReservationStatus:
-    PENDING = 'pending'
-    CONFIRMED = 'confirmed'
-    CANCELLED = 'cancelled'
-    COMPLETED = 'completed'
-    NO_SHOW = 'no_show'
+    PENDING = 'PENDING'
+    CONFIRMED = 'CONFIRMED'
+    CANCELLED = 'CANCELLED'
+    COMPLETED = 'COMPLETED'
+    NO_SHOW = 'NO_SHOW'
 
 class Reservation(db.Model):
     __tablename__ = 'reservations'
     
     id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, db.ForeignKey('matches.id'))
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey('restaurant_tables.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # ADDED THIS LINE
     date_time = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default=ReservationStatus.PENDING)
     confirmation_code = db.Column(db.String(20), unique=True)
@@ -23,6 +23,8 @@ class Reservation(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
+    match = db.relationship('Match', backref='reservation')
+    restaurant = db.relationship('Restaurant', backref='reservations')
     table = db.relationship('RestaurantTable', backref='reservations')
     feedbacks = db.relationship('DateFeedback', backref='reservation')
     payments = db.relationship('Payment', backref='reservation')
@@ -70,14 +72,14 @@ class Reservation(db.Model):
         return {
             'id': self.id,
             'match_id': self.match_id,
+            'restaurant_id': self.restaurant_id,
             'table_id': self.table_id,
-            'user_id': self.user_id,  # ADDED THIS LINE
             'date_time': self.date_time.isoformat(),
             'status': self.status,
             'confirmation_code': self.confirmation_code,
             'special_requests': self.special_requests,
             'created_at': self.created_at.isoformat(),
-            'restaurant': self.table.restaurant.name if self.table else None
+            'restaurant': self.restaurant.name if self.restaurant else None
         }
     
     def __repr__(self):
