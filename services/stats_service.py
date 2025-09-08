@@ -1,7 +1,7 @@
 from flask import jsonify
 from models.user import User
 from models.match import Match, MatchStatus
-from models.reservation import Reservation
+from models.reservation import Reservation, ReservationStatus
 from models.feedback import DateFeedback
 from sqlalchemy import func
 
@@ -16,7 +16,7 @@ class StatsService:
             # Get total dates (completed reservations)
             total_dates = Reservation.query.join(Match).filter(
                 (Match.user1_id == user_id) | (Match.user2_id == user_id),
-                Reservation.status == 'COMPLETED'
+                Reservation.status == ReservationStatus.COMPLETED
             ).count()
             
             # Get active matches
