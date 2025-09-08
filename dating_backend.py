@@ -42,7 +42,8 @@ from markupsafe import escape
 # Database imports
 from sqlalchemy import text, and_, or_, func
 from sqlalchemy.ext.hybrid import hybrid_property
-
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+import secrets
 
 
 # Email imports
@@ -790,6 +791,94 @@ def internal_error(error):
         'error': 'Internal server error',
         'request_id': getattr(g, 'request_id', 'unknown')
     }), 500
+
+
+# Password reset endpoints
+@app.route('/api/auth/forgot-password', methods=['POST'])
+@limiter.limit("5 per hour")
+def forgot_password():
+    """Send password reset email"""
+    try:
+        email = request.json.get('email', '').lower().strip()
+
+        if not email or not validate_email(email):
+            return jsonify({'error': 'Invalid email address'}), 400
+
+        user = User.query.filter_by(email=email).first()
+
+        # Always return success to prevent email enumeration
+        if user:
+            # Generate reset token
+            serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+            reset_token = serializer.dumps(user.email, salt='password-reset-salt')
+
+            # Store token in user record (you'll need to add reset_token field to User model)
+            user.reset_token = reset_token
+            user.reset_token_created = datetime.utcnow()
+            db.session.commit()
+
+            # Send email (simplified version)
+            reset_url = f"{request.host_url}reset-password.html?token={reset_token}"
+
+            # TODO: Implement actual email sending
+            logger.info(f"Password reset link for {email}: {reset_url}")
+
+            # In production, you'd use email_manager to send the email
+            # email_manager.send_password_reset_email(user.email, reset_url)
+
+        return jsonify({
+            'success': True,
+            'message': 'If an account exists with that email, you will receive password reset instructions.'
+        })
+
+    except Exception as e:
+        logger.error(f"Forgot password error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to process request'}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+@limiter.limit("5 per hour")
+def reset_password():
+    """Reset password with token"""
+    try:
+        token = request.json.get('token')
+        new_password = request.json.get('password')
+
+        if not token or not new_password:
+            return jsonify({'error': 'Token and password required'}), 400
+
+        if len(new_password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+        # Verify token
+        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        try:
+            email = serializer.loads(token, salt='password-reset-salt', max_age=3600)  # 1 hour expiry
+        except SignatureExpired:
+            return jsonify({'error': 'Reset link has expired'}), 400
+        except:
+            return jsonify({'error': 'Invalid reset link'}), 400
+
+        # Find user and update password
+        user = User.query.filter_by(email=email, reset_token=token).first()
+        if not user:
+            return jsonify({'error': 'Invalid reset link'}), 400
+
+        # Update password
+        user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        user.reset_token = None
+        user.reset_token_created = None
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Password updated successfully'
+        })
+
+    except Exception as e:
+        logger.error(f"Reset password error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to reset password'}), 500
+
 
 
 # === INITIALIZATION ===
