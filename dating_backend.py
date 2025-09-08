@@ -141,7 +141,7 @@ app.template_folder = BASE_DIR / 'templates'
 # === FLASK CONFIGURATION ===
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config.update(
-    SESSION_COOKIE_SECURE=False,  # Change to False for development
+    SESSION_COOKIE_SECURE=not app.debug,  # Change to False for development
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
@@ -213,8 +213,7 @@ from models.feedback import DateFeedback
 from models.payment import Payment, PaymentStatus
 
 # === AUTHENTICATION ===
-from auth.decorators import require_auth
-from auth.jwt_handler import generate_token, verify_token
+
 
 # === REQUEST HANDLERS ===
 @app.before_request
