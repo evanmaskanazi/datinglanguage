@@ -57,6 +57,7 @@ JWT_EXPIRATION_HOURS = 24
 
 ALLOWED_ORIGINS = [
     'https://tablefortwo.com',
+  'https://datinglanguage.onrender.com',  
     'http://localhost:5000',
     'http://127.0.0.1:5000'
 ]
