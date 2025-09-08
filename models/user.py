@@ -13,6 +13,8 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
     verification_token = db.Column(db.String(255))
+    reset_token = db.Column(db.String(255))  # ADDED
+    reset_token_created = db.Column(db.DateTime)  # ADDED
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     
@@ -21,7 +23,6 @@ class User(db.Model):
     preferences = db.relationship('UserPreferences', backref='user', uselist=False, cascade='all, delete-orphan')
     matches_initiated = db.relationship('Match', foreign_keys='Match.user1_id', backref='initiator')
     matches_received = db.relationship('Match', foreign_keys='Match.user2_id', backref='receiver')
-    # REMOVED: reservations = db.relationship('Reservation', backref='user', lazy='dynamic')
     feedbacks = db.relationship('DateFeedback', foreign_keys='DateFeedback.user_id', backref='user', lazy='dynamic')
     payments = db.relationship('Payment', backref='user', lazy='dynamic')
     
