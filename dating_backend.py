@@ -55,6 +55,43 @@ from cryptography.fernet import Fernet
 
 # === LOGGING CONFIGURATION ===
 from utils.logging_config import setup_logger, log_audit
+
+# Add this right after your imports
+from functools import wraps
+
+
+def require_auth(roles=None):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Check session for user_id
+            if 'user_id' not in session:
+                return jsonify({'error': 'Authentication required'}), 401
+
+            # Get user from database
+            user = User.query.get(session['user_id'])
+            if not user:
+                session.clear()
+                return jsonify({'error': 'Invalid session'}), 401
+
+            # Check if user is active
+            if not user.is_active:
+                return jsonify({'error': 'Account deactivated'}), 401
+
+            # Check roles if specified
+            if roles and user.role not in roles:
+                return jsonify({'error': 'Insufficient permissions'}), 403
+
+            # Attach user to request
+            request.current_user = user
+
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
+
+
 logger = setup_logger('table_for_two')
 
 # === CONSTANTS ===
@@ -104,13 +141,12 @@ app.template_folder = BASE_DIR / 'templates'
 # === FLASK CONFIGURATION ===
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config.update(
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=False,  # Change to False for development
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
-    SESSION_COOKIE_NAME='__Host-session'
+    SESSION_COOKIE_NAME='session'  # Remove __Host- prefix for development
 )
-
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL',
