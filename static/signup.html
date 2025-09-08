@@ -279,6 +279,21 @@
 
         <form id="signupForm" novalidate>
             <div class="form-group">
+                <label for="displayName" class="form-label">Display Name</label>
+                <input 
+                    type="text" 
+                    id="displayName" 
+                    name="displayName" 
+                    class="form-input" 
+                    required 
+                    autocomplete="name"
+                    aria-describedby="displayNameError"
+                    placeholder="Enter your display name"
+                >
+                <div id="displayNameError" class="error-message" role="alert"></div>
+            </div>
+
+            <div class="form-group">
                 <label for="email" class="form-label">Email</label>
                 <input 
                     type="email" 
@@ -288,6 +303,7 @@
                     required 
                     autocomplete="email"
                     aria-describedby="emailError"
+                    placeholder="your@email.com"
                 >
                 <div id="emailError" class="error-message" role="alert"></div>
             </div>
@@ -409,22 +425,39 @@
 
         function validateForm() {
             let isValid = true;
+            const displayName = document.getElementById('displayName');
             const email = document.getElementById('email');
             const password = document.getElementById('password');
             const confirmPassword = document.getElementById('confirmPassword');
             const terms = document.getElementById('terms');
             
+            const displayNameError = document.getElementById('displayNameError');
             const emailError = document.getElementById('emailError');
             const passwordError = document.getElementById('passwordError');
             const confirmPasswordError = document.getElementById('confirmPasswordError');
 
             // Reset errors
+            displayName.classList.remove('error');
             email.classList.remove('error');
             password.classList.remove('error');
             confirmPassword.classList.remove('error');
+            displayNameError.style.display = 'none';
             emailError.style.display = 'none';
             passwordError.style.display = 'none';
             confirmPasswordError.style.display = 'none';
+
+            // Validate display name
+            if (!displayName.value.trim()) {
+                displayNameError.textContent = 'Display name is required';
+                displayNameError.style.display = 'block';
+                displayName.classList.add('error');
+                isValid = false;
+            } else if (displayName.value.trim().length < 2) {
+                displayNameError.textContent = 'Display name must be at least 2 characters';
+                displayNameError.style.display = 'block';
+                displayName.classList.add('error');
+                isValid = false;
+            }
 
             // Validate email
             if (!email.value.trim()) {
@@ -480,6 +513,9 @@
             alertDiv.className = `alert ${type}`;
             alertDiv.style.display = 'block';
 
+            // Log for debugging
+            console.log(`Alert: ${type} - ${message}`);
+
             setTimeout(() => {
                 alertDiv.style.display = 'none';
             }, 5000);
@@ -519,6 +555,8 @@
                     password: document.getElementById('password').value
                 };
 
+                console.log('Sending registration request:', { ...formData, password: '[hidden]' });
+
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: {
@@ -530,6 +568,7 @@
                 });
 
                 const data = await response.json();
+                console.log('Registration response:', response.status, data);
 
                 if (response.ok) {
                     showAlert('Account created successfully! Redirecting to login...', 'success');
@@ -540,7 +579,8 @@
                     showAlert(data.error || 'Registration failed. Please try again.');
                 }
             } catch (error) {
-                showAlert('Network error. Please check your connection.');
+                console.error('Registration error:', error);
+                showAlert('Network error. Please check your connection and try again.');
             } finally {
                 setLoading(false);
             }
@@ -561,6 +601,9 @@
             document.getElementById('password').value = '';
             document.getElementById('confirmPassword').value = '';
         });
+
+        // Add console logging for debugging
+        console.log('Signup page loaded');
     </script>
 </body>
 </html>
