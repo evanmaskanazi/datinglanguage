@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Login - Table for Two</title>
-    
+
     <style>
         * {
             margin: 0;
@@ -252,12 +252,12 @@
         <form id="loginForm" novalidate>
             <div class="form-group">
                 <label for="email" class="form-label">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    class="form-input" 
-                    required 
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="form-input"
+                    required
                     autocomplete="email"
                     aria-describedby="emailError"
                 >
@@ -266,12 +266,12 @@
 
             <div class="form-group">
                 <label for="password" class="form-label">Password</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    class="form-input" 
-                    required 
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-input"
+                    required
                     autocomplete="current-password"
                     aria-describedby="passwordError"
                 >
@@ -430,14 +430,18 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    showAlert('Login successful!', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 1000);
-                } else {
-                    showAlert(data.error || 'Login failed. Please try again.');
-                }
+               if (response.ok) {
+    // Store the JWT token and user data
+    localStorage.setItem('authToken', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    showAlert('Login successful!', 'success');
+    setTimeout(() => {
+        window.location.href = '/dashboard.html';
+    }, 1000);
+} else {
+    showAlert(data.error || 'Login failed. Please try again.');
+}
             } catch (error) {
                 showAlert('Network error. Please check your connection.');
             } finally {

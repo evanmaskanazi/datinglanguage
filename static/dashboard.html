@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
     <title>Dashboard - Table for Two</title>
-    
+
     <style>
         * {
             margin: 0;
@@ -728,9 +728,12 @@
                 <a href="#" class="nav-link" onclick="showTab('matches')">My Matches</a>
                 <a href="#" class="nav-link" onclick="showTab('dates')">Upcoming Dates</a>
                 <div class="user-menu">
-                    <div class="user-avatar" id="userAvatar">JD</div>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                </div>
+    <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">JD</div>
+    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+    <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; padding: 0.5rem;">
+        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem 1rem; color: var(--dark-gray); text-decoration: none;">Logout</a>
+    </div>
+</div>
             </nav>
         </div>
     </header>
@@ -776,7 +779,7 @@
             <!-- Overview Tab -->
             <div id="overview" class="tab-content active">
                 <h1 class="page-title">Welcome back, <span id="userName">User</span>!</h1>
-                
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon dates">📅</div>
@@ -813,7 +816,7 @@
             <!-- Browse Tables Tab -->
             <div id="browse" class="tab-content">
                 <h1 class="page-title">Browse Available Tables</h1>
-                
+
                 <div class="date-filter">
                     <input type="date" id="dateFilter" class="date-input">
                     <select id="timeFilter" class="date-input">
@@ -877,10 +880,10 @@
                         <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
                     </div>
                 </div>
-                
+
                 <h3>About Me</h3>
                 <p id="profileBio">Loading...</p>
-                
+
                 <h3 style="margin-top: 2rem;">Dating Preferences</h3>
                 <div id="profilePreferences">
                     <!-- Preferences will be loaded here -->
@@ -900,13 +903,13 @@
                         <input type="checkbox" id="smsNotifications">
                         SMS reminders for upcoming dates
                     </label>
-                    
+
                     <h3 style="margin-top: 2rem;">Privacy Settings</h3>
                     <label style="display: block; margin: 1rem 0;">
                         <input type="checkbox" id="profileVisibility" checked>
                         Show my profile to potential matches
                     </label>
-                    
+
                     <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
                 </div>
             </div>
@@ -920,23 +923,23 @@
                 <h2 class="modal-title">Select Time & Match</h2>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            
+
             <div id="modalRestaurantInfo">
                 <!-- Restaurant info will be populated here -->
             </div>
-            
+
             <h3>Available Times</h3>
             <div id="timeSlots" class="time-slots">
                 <!-- Time slots will be populated here -->
             </div>
-            
+
             <div class="matches-section">
                 <h3>Suggested Matches</h3>
                 <div id="suggestedMatches" class="matches-grid">
                     <!-- Matches will be populated here -->
                 </div>
             </div>
-            
+
             <div style="margin-top: 2rem; text-align: right;">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="confirmMatch()">Request Match</button>
@@ -948,6 +951,30 @@
     <div id="toastContainer"></div>
 
     <script>
+        // Check for auth token on page load
+const authToken = localStorage.getItem('authToken');
+if (!authToken) {
+    window.location.href = '/login.html';
+}
+
+// Function to make authenticated API calls
+async function authenticatedFetch(url, options = {}) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    return fetch(url, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        credentials: 'include'
+    });
+}
         // Global variables
         let currentUser = null;
         let selectedRestaurant = null;
@@ -977,7 +1004,7 @@
             try {
                 // Load user profile
                 await loadUserProfile();
-                
+
                 // Load initial data
                 await Promise.all([
                     loadStats(),
@@ -985,13 +1012,13 @@
                     loadMatches(),
                     loadUpcomingDates()
                 ]);
-                
+
                 // Set up real-time updates
                 setupWebSocket();
-                
+
                 // Set today's date as default filter
                 document.getElementById('dateFilter').valueAsDate = new Date();
-                
+
             } catch (error) {
                 console.error('Failed to initialize dashboard:', error);
                 showToast('Error loading dashboard', 'error');
@@ -1001,16 +1028,14 @@
         // Load user profile
         async function loadUserProfile() {
             try {
-                const response = await fetch('/api/profile', {
-                    credentials: 'include'
-                });
-                
+               const response = await authenticatedFetch('/api/profile');
+
                 if (!response.ok) {
                     throw new Error('Failed to load profile');
                 }
-                
+
                 currentUser = await response.json();
-                
+
                 // Update UI with user data
                 document.getElementById('userName').textContent = currentUser.name;
                 document.getElementById('userAvatar').textContent = getInitials(currentUser.name);
@@ -1018,7 +1043,7 @@
                 document.getElementById('profileEmail').textContent = currentUser.email;
                 document.getElementById('profileLocation').textContent = currentUser.location || 'Not set';
                 document.getElementById('profileBio').textContent = currentUser.bio || 'No bio yet';
-                
+
                 // Load preferences
                 if (currentUser.preferences) {
                     const prefsHtml = `
@@ -1028,7 +1053,7 @@
                     `;
                     document.getElementById('profilePreferences').innerHTML = prefsHtml;
                 }
-                
+
             } catch (error) {
                 console.error('Error loading profile:', error);
                 window.location.href = '/login.html';
@@ -1038,16 +1063,14 @@
         // Load dashboard stats
         async function loadStats() {
             try {
-                const response = await fetch('/api/user/stats', {
-                    credentials: 'include'
-                });
-                
+               const response = await authenticatedFetch('/api/user/stats');
+
                 if (response.ok) {
                     const stats = await response.json();
                     document.getElementById('totalDates').textContent = stats.total_dates || 0;
                     document.getElementById('activeMatches').textContent = stats.active_matches || 0;
                     document.getElementById('successRate').textContent = `${stats.success_rate || 0}%`;
-                    
+
                     // Update notification badge
                     if (stats.pending_matches > 0) {
                         document.getElementById('notificationBadge').textContent = stats.pending_matches;
@@ -1062,25 +1085,23 @@
         // Load recommended restaurants
         async function loadRecommendedRestaurants() {
             const container = document.getElementById('recommendedRestaurants');
-            
+
             try {
-                const response = await fetch('/api/restaurants?recommended=true&limit=3', {
-                    credentials: 'include'
-                });
-                
+               const response = await authenticatedFetch('/api/restaurants?recommended=true&limit=3');
+
                 if (!response.ok) {
                     throw new Error('Failed to load restaurants');
                 }
-                
+
                 const restaurants = await response.json();
-                
+
                 if (restaurants.length === 0) {
                     container.innerHTML = '<p>No recommendations available at the moment.</p>';
                     return;
                 }
-                
+
                 container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
-                
+
             } catch (error) {
                 console.error('Error loading restaurants:', error);
                 container.innerHTML = '<p>Error loading recommendations. Please try again later.</p>';
@@ -1091,28 +1112,26 @@
         async function loadAllRestaurants() {
             const container = document.getElementById('restaurantsList');
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading restaurants...</p></div>';
-            
+
             try {
                 const filters = getActiveFilters();
                 const queryParams = new URLSearchParams(filters);
-                
-                const response = await fetch(`/api/restaurants?${queryParams}`, {
-                    credentials: 'include'
-                });
-                
+
+               const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
+
                 if (!response.ok) {
                     throw new Error('Failed to load restaurants');
                 }
-                
+
                 const restaurants = await response.json();
-                
+
                 if (restaurants.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><h3>No restaurants found</h3><p>Try adjusting your filters</p></div>';
                     return;
                 }
-                
+
                 container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
-                
+
             } catch (error) {
                 console.error('Error loading restaurants:', error);
                 container.innerHTML = '<p>Error loading restaurants. Please try again later.</p>';
@@ -1122,16 +1141,16 @@
         // Get active filters
         function getActiveFilters() {
             const filters = {};
-            
+
             const date = document.getElementById('dateFilter').value;
             if (date) filters.date = date;
-            
+
             const time = document.getElementById('timeFilter').value;
             if (time) filters.time = time;
-            
+
             const cuisine = document.getElementById('cuisineFilter').value;
             if (cuisine) filters.cuisine = cuisine;
-            
+
             return filters;
         }
 
@@ -1143,25 +1162,23 @@
         // Load matches
         async function loadMatches() {
             const container = document.getElementById('matchesList');
-            
+
             try {
-                const response = await fetch('/api/matches', {
-                    credentials: 'include'
-                });
-                
+                const response = await authenticatedFetch('/api/matches');
+
                 if (!response.ok) {
                     throw new Error('Failed to load matches');
                 }
-                
+
                 const matches = await response.json();
-                
+
                 if (matches.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💕</div><h3>No matches yet</h3><p>Start browsing tables to find your perfect dinner companion!</p></div>';
                     return;
                 }
-                
+
                 container.innerHTML = matches.map(match => createMatchCard(match)).join('');
-                
+
             } catch (error) {
                 console.error('Error loading matches:', error);
                 container.innerHTML = '<p>Error loading matches. Please try again later.</p>';
@@ -1171,25 +1188,23 @@
         // Load upcoming dates
         async function loadUpcomingDates() {
             const container = document.getElementById('upcomingDatesList');
-            
+
             try {
-                const response = await fetch('/api/dates/upcoming', {
-                    credentials: 'include'
-                });
-                
+            const response = await authenticatedFetch('/api/dates/upcoming');
+
                 if (!response.ok) {
                     throw new Error('Failed to load dates');
                 }
-                
+
                 const dates = await response.json();
-                
+
                 if (dates.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No upcoming dates</h3><p>Browse available tables to find your next dinner date!</p><button class="btn btn-primary" onclick="showTab(\'browse\')">Browse Tables</button></div>';
                     return;
                 }
-                
+
                 container.innerHTML = dates.map(date => createDateCard(date)).join('');
-                
+
             } catch (error) {
                 console.error('Error loading dates:', error);
             }
@@ -1260,19 +1275,19 @@
         async function openMatchModal(restaurantId) {
             selectedRestaurant = restaurantId;
             const modal = document.getElementById('matchModal');
-            
+
             try {
                 // Load restaurant details
                 const response = await fetch(`/api/restaurants/${restaurantId}`, {
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to load restaurant');
                 }
-                
+
                 const restaurant = await response.json();
-                
+
                 // Update modal with restaurant info
                 document.getElementById('modalRestaurantInfo').innerHTML = `
                     <div style="margin-bottom: 1.5rem;">
@@ -1281,13 +1296,13 @@
                         <p>${escapeHtml(restaurant.address)}</p>
                     </div>
                 `;
-                
+
                 // Load available time slots
                 await loadTimeSlots(restaurantId);
-                
+
                 // Show modal
                 modal.classList.add('active');
-                
+
             } catch (error) {
                 console.error('Error opening modal:', error);
                 showToast('Error loading restaurant details', 'error');
@@ -1298,26 +1313,26 @@
         async function loadTimeSlots(restaurantId) {
             const container = document.getElementById('timeSlots');
             container.innerHTML = '<p>Loading available times...</p>';
-            
+
             try {
                 const date = document.getElementById('dateFilter').value || new Date().toISOString().split('T')[0];
                 const response = await fetch(`/api/restaurants/${restaurantId}/slots?date=${date}`, {
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to load time slots');
                 }
-                
+
                 const slots = await response.json();
-                
+
                 container.innerHTML = slots.map(slot => `
-                    <div class="time-slot ${slot.available ? '' : 'unavailable'}" 
+                    <div class="time-slot ${slot.available ? '' : 'unavailable'}"
                          onclick="${slot.available ? 'selectTimeSlot(\'' + slot.time + '\')' : ''}">
                         ${slot.time}
                     </div>
                 `).join('');
-                
+
             } catch (error) {
                 console.error('Error loading time slots:', error);
                 container.innerHTML = '<p>Error loading times. Please try again.</p>';
@@ -1327,7 +1342,7 @@
         // Select time slot
         async function selectTimeSlot(time) {
             selectedTime = time;
-            
+
             // Update UI
             document.querySelectorAll('.time-slot').forEach(slot => {
                 slot.classList.remove('selected');
@@ -1335,7 +1350,7 @@
                     slot.classList.add('selected');
                 }
             });
-            
+
             // Load suggested matches
             await loadSuggestedMatches();
         }
@@ -1344,7 +1359,7 @@
         async function loadSuggestedMatches() {
             const container = document.getElementById('suggestedMatches');
             container.innerHTML = '<p>Finding compatible matches...</p>';
-            
+
             try {
                 const response = await fetch('/api/matches/suggestions', {
                     credentials: 'include',
@@ -1359,18 +1374,18 @@
                         date: document.getElementById('dateFilter').value
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to load matches');
                 }
-                
+
                 const matches = await response.json();
-                
+
                 if (matches.length === 0) {
                     container.innerHTML = '<p>No matches available for this time slot.</p>';
                     return;
                 }
-                
+
                 container.innerHTML = matches.map(match => `
                     <div class="match-card" onclick="selectMatch(${match.id})">
                         <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-avatar">
@@ -1378,7 +1393,7 @@
                         <div class="match-compatibility">${match.compatibility}% match</div>
                     </div>
                 `).join('');
-                
+
             } catch (error) {
                 console.error('Error loading matches:', error);
                 container.innerHTML = '<p>Error finding matches. Please try again.</p>';
@@ -1388,7 +1403,7 @@
         // Select match
         function selectMatch(matchId) {
             selectedMatch = matchId;
-            
+
             // Update UI
             document.querySelectorAll('.match-card').forEach(card => {
                 card.classList.remove('selected');
@@ -1404,7 +1419,7 @@
                 showToast('Please select a time and a match', 'error');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/matches/request', {
                     method: 'POST',
@@ -1419,18 +1434,18 @@
                         datetime: `${document.getElementById('dateFilter').value} ${selectedTime}`
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to request match');
                 }
-                
+
                 showToast('Match request sent successfully!', 'success');
                 closeModal();
-                
+
                 // Reload matches
                 loadMatches();
                 loadStats();
-                
+
             } catch (error) {
                 console.error('Error requesting match:', error);
                 showToast('Failed to send match request', 'error');
@@ -1447,16 +1462,16 @@
                         'X-CSRF-Token': await getCSRFToken()
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to accept match');
                 }
-                
+
                 showToast('Match accepted!', 'success');
                 loadMatches();
                 loadUpcomingDates();
                 loadStats();
-                
+
             } catch (error) {
                 console.error('Error accepting match:', error);
                 showToast('Failed to accept match', 'error');
@@ -1473,7 +1488,7 @@
         function closeModal() {
             const modal = document.getElementById('matchModal');
             modal.classList.remove('active');
-            
+
             // Reset selections
             selectedRestaurant = null;
             selectedTime = null;
@@ -1489,13 +1504,13 @@
                     link.classList.add('active');
                 }
             });
-            
+
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
             document.getElementById(tabName).classList.add('active');
-            
+
             // Load data for specific tabs
             if (tabName === 'browse') {
                 loadAllRestaurants();
@@ -1512,25 +1527,25 @@
         async function loadDateHistory() {
             const container = document.getElementById('dateHistoryList');
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading history...</p></div>';
-            
+
             try {
                 const response = await fetch('/api/dates/history', {
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to load history');
                 }
-                
+
                 const dates = await response.json();
-                
+
                 if (dates.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><h3>No past dates</h3><p>Your date history will appear here</p></div>';
                     return;
                 }
-                
+
                 container.innerHTML = dates.map(date => createDateCard(date)).join('');
-                
+
             } catch (error) {
                 console.error('Error loading history:', error);
                 container.innerHTML = '<p>Error loading history. Please try again later.</p>';
@@ -1550,7 +1565,7 @@
                 sms_notifications: document.getElementById('smsNotifications').checked,
                 profile_visibility: document.getElementById('profileVisibility').checked
             };
-            
+
             try {
                 const response = await fetch('/api/settings', {
                     method: 'PUT',
@@ -1561,13 +1576,13 @@
                     },
                     body: JSON.stringify(settings)
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to save settings');
                 }
-                
+
                 showToast('Settings saved successfully!', 'success');
-                
+
             } catch (error) {
                 console.error('Error saving settings:', error);
                 showToast('Failed to save settings', 'error');
@@ -1578,22 +1593,22 @@
         function setupWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws`;
-            
+
             websocket = new WebSocket(wsUrl);
-            
+
             websocket.onopen = () => {
                 console.log('WebSocket connected');
             };
-            
+
             websocket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 handleWebSocketMessage(data);
             };
-            
+
             websocket.onerror = (error) => {
                 console.error('WebSocket error:', error);
             };
-            
+
             websocket.onclose = () => {
                 console.log('WebSocket disconnected');
                 // Reconnect after 5 seconds
@@ -1637,9 +1652,9 @@
 
         function formatDate(dateString) {
             const date = new Date(dateString);
-            return date.toLocaleDateString('default', { 
-                weekday: 'short', 
-                month: 'short', 
+            return date.toLocaleDateString('default', {
+                weekday: 'short',
+                month: 'short',
                 day: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit'
@@ -1653,18 +1668,29 @@
                 <span>${message}</span>
                 <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; margin-left: 1rem;">✕</button>
             `;
-            
+
             document.body.appendChild(toast);
-            
+
             // Trigger animation
             setTimeout(() => toast.classList.add('show'), 100);
-            
+
             // Auto remove after 5 seconds
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, 5000);
         }
+    function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+       function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    window.location.href = '/login.html';
+}
+
+
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', initDashboard);
@@ -1677,6 +1703,8 @@
                 setupWebSocket();
             }
         });
+
+
     </script>
 </body>
 </html>
