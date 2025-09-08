@@ -39,6 +39,9 @@ from markupsafe import escape
 from sqlalchemy import text, and_, or_, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
+from services.stats_service import StatsService
+from services.date_service import DateService
+
 # Email imports
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
