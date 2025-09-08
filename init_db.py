@@ -15,6 +15,9 @@ def init_database():
         # Import ALL models to ensure they're registered with SQLAlchemy
         import models  # This will import everything from __init__.py
         
+        print("Dropping existing tables...")
+        db.drop_all()  # THIS IS THE KEY ADDITION
+        
         print("Creating database tables...")
         db.create_all()
         
