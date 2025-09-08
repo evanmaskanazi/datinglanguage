@@ -359,15 +359,15 @@ def get_profile():
         profile_data = {
             'id': user.id,
             'email': user.email,
-            'name': user.profile.name if user.profile else user.email.split('@')[0],
-            'location': user.profile.location if user.profile else None,
-            'bio': user.profile.bio if user.profile else None,
+            'name': user.email.split('@')[0],  # Use email prefix as name since User model doesn't have name field
+            'location': user.profile.location if user.profile and hasattr(user.profile, 'location') else None,
+            'bio': user.profile.bio if user.profile and hasattr(user.profile, 'bio') else None,
             'preferences': {
-                'min_age': user.preferences.min_age if user.preferences else 18,
-                'max_age': user.preferences.max_age if user.preferences else 99,
-                'gender_preference': user.preferences.gender_preference if user.preferences else 'any',
-                'interests': user.preferences.interests.split(',') if user.preferences and user.preferences.interests else []
-            } if user.preferences else {}
+                'min_age': user.preferences.min_age if user.preferences and hasattr(user.preferences, 'min_age') else 18,
+                'max_age': user.preferences.max_age if user.preferences and hasattr(user.preferences, 'max_age') else 99,
+                'gender_preference': user.preferences.gender_preference if user.preferences and hasattr(user.preferences, 'gender_preference') else 'any',
+                'interests': user.preferences.interests.split(',') if user.preferences and hasattr(user.preferences, 'interests') and user.preferences.interests else []
+            }
         }
         return jsonify(profile_data)
     except Exception as e:
