@@ -21,6 +21,37 @@ class User(db.Model):
     preferences = db.relationship('UserPreferences', backref='user', uselist=False, cascade='all, delete-orphan')
     matches_initiated = db.relationship('Match', foreign_keys='Match.user1_id', backref='initiator')
     matches_received = db.relationship('Match', foreign_keys='Match.user2_id', backref='receiver')
-    reservations = db.relationship('Reservation', backref='user', lazy='dynamic')
+    # REMOVED: reservations = db.relationship('Reservation', backref='user', lazy='dynamic')
     feedbacks = db.relationship('DateFeedback', foreign_keys='DateFeedback.user_id', backref='user', lazy='dynamic')
     payments = db.relationship('Payment', backref='user', lazy='dynamic')
+    
+    @hybrid_property
+    def all_matches(self):
+        """Get all matches where user is involved"""
+        return self.matches_initiated + self.matches_received
+    
+    @hybrid_property
+    def reservations_through_matches(self):
+        """Get reservations through matches"""
+        # This is a property to access reservations indirectly
+        from models.reservation import Reservation
+        from models.match import Match
+        return Reservation.query.join(Match).filter(
+            (Match.user1_id == self.id) | (Match.user2_id == self.id)
+        ).all()
+    
+    def __repr__(self):
+        return f'<User {self.email}>'
+    
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'email': self.email,
+            'phone': self.phone,
+            'role': self.role,
+            'is_active': self.is_active,
+            'is_verified': self.is_verified,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_login': self.last_login.isoformat() if self.last_login else None
+        }
