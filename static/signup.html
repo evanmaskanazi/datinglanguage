@@ -514,6 +514,7 @@
             try {
                 const token = await getCSRFToken();
                 const formData = {
+                    display_name: document.getElementById('displayName').value.trim(),
                     email: document.getElementById('email').value.trim(),
                     password: document.getElementById('password').value
                 };
