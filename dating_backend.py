@@ -237,6 +237,8 @@ def get_csrf_token():
     """Get CSRF token for API requests"""
     return jsonify({'csrf_token': generate_csrf()})
 
+
+
 # Authentication endpoints
 @app.route('/api/auth/register', methods=['POST'])
 @limiter.limit("10 per hour")
@@ -622,11 +624,12 @@ def dashboard():
     """Serve the dashboard"""
     return send_file('static/dashboard.html')
 
+
+
 @app.route('/signup.html')
 def signup_page():
-    """Serve the signup page - you'll need to create this"""
-    # For now, redirect to login
-    return redirect('/login.html')
+    """Serve the signup page"""
+    return send_file('static/signup.html')
 
 # === DYNAMIC IMAGE GENERATION ===
 @app.route('/static/images/default-avatar.jpg')
@@ -719,6 +722,8 @@ def favicon():
     img_io.seek(0)
     
     return send_file(img_io, mimetype='image/x-icon')
+
+
 
 # === ERROR HANDLERS ===
 @app.errorhandler(404)
