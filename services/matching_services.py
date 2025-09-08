@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from flask import jsonify
 from sqlalchemy import and_, or_
+from models.user import User
 from models.match import Match, MatchStatus
 from models.profile import UserProfile, UserPreferences
 from models.restaurant import RestaurantTable
@@ -10,6 +12,15 @@ class MatchingService:
         self.db = db
         self.cache = cache
         self.logger = logger
+    
+    def get_user_matches(self, user_id):
+        """Get user's matches - placeholder for now"""
+        try:
+            # TODO: Implement actual match retrieval logic
+            return jsonify([])
+        except Exception as e:
+            self.logger.error(f"Get user matches error: {str(e)}")
+            return jsonify({'error': 'Failed to get matches'}), 500
     
     def browse_matches(self, user_id, params):
         """Browse potential matches for available tables"""
@@ -25,7 +36,7 @@ class MatchingService:
             restaurant_id = params.get('restaurant_id')
             
             # Get available tables
-            tables_query = RestaurantTable.query.filter_by(is_active=True)
+            tables_query = RestaurantTable.query.filter_by(is_available=True)
             if restaurant_id:
                 tables_query = tables_query.filter_by(restaurant_id=restaurant_id)
             
@@ -45,7 +56,7 @@ class MatchingService:
                             'user_id': match_user.id,
                             'display_name': match_user.profile.display_name,
                             'age': match_user.profile.age,
-                            'bio': match_user.profile.bio[:100] + '...' if len(match_user.profile.bio) > 100 else match_user.profile.bio,
+                            'bio': match_user.profile.bio[:100] + '...' if match_user.profile.bio and len(match_user.profile.bio) > 100 else match_user.profile.bio or '',
                             'compatibility_score': self._calculate_compatibility(user_prefs, match_user.preferences)
                         })
                 
