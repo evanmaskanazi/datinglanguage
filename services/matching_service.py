@@ -4,7 +4,7 @@ from sqlalchemy import and_, or_
 from models.user import User
 from models.match import Match, MatchStatus
 from models.profile import UserProfile, UserPreferences
-from models.restaurant import RestaurantTable
+from models.restaurant import Restaurant, RestaurantTable
 from models.reservation import Reservation
 
 class MatchingService:
@@ -62,18 +62,39 @@ class MatchingService:
             
             result = []
             for match in matches:
+                # Determine the other user
                 other_user_id = match.user2_id if match.user1_id == user_id else match.user1_id
                 other_user = User.query.get(other_user_id)
                 
+                # Get restaurant info (handle both DB and API restaurants)
+                restaurant_name = "Unknown Restaurant"
+                if match.restaurant_id:
+                    if str(match.restaurant_id).startswith('api_'):
+                        # For API restaurants, we'll need to store the name separately or fetch it
+                        # For now, use a placeholder
+                        restaurant_name = "API Restaurant"
+                    else:
+                        try:
+                            restaurant = Restaurant.query.get(int(match.restaurant_id))
+                            if restaurant:
+                                restaurant_name = restaurant.name
+                        except (ValueError, TypeError):
+                            pass
+                
                 if other_user:
+                    # Convert status to string if it's an enum
+                    status_str = match.status.value if hasattr(match.status, 'value') else str(match.status)
+                    
                     result.append({
                         'id': match.id,
                         'user_id': other_user.id,
                         'name': other_user.email.split('@')[0],  # Use email prefix as name
-                        'status': match.status.value,
+                        'status': status_str,
+                        'restaurant_name': restaurant_name,
                         'restaurant_id': match.restaurant_id,
-                        'proposed_datetime': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
-                        'compatibility_score': match.compatibility_score
+                        'date': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
+                        'compatibility_score': match.compatibility_score or 0,
+                        'avatar_url': '/static/images/default-avatar.jpg'
                     })
             
             return jsonify(result)
@@ -95,13 +116,22 @@ class MatchingService:
     def request_match(self, user_id, data):
         """Request a match with another user"""
         try:
+            # Parse the datetime string if provided
+            proposed_datetime = datetime.utcnow()
+            if data.get('datetime'):
+                try:
+                    proposed_datetime = datetime.fromisoformat(data.get('datetime').replace('Z', '+00:00'))
+                except ValueError:
+                    # If parsing fails, use current time
+                    proposed_datetime = datetime.utcnow()
+            
             # Create a new match request
             match = Match(
                 user1_id=user_id,
                 user2_id=data.get('match_user_id'),
-                restaurant_id=data.get('restaurant_id'),
+                restaurant_id=str(data.get('restaurant_id')),  # Convert to string to handle both types
                 table_id=data.get('table_id'),
-                proposed_datetime=datetime.fromisoformat(data.get('datetime', datetime.utcnow().isoformat())),
+                proposed_datetime=proposed_datetime,
                 status=MatchStatus.PENDING,
                 compatibility_score=data.get('compatibility', 75)
             )
@@ -134,6 +164,18 @@ class MatchingService:
             if response_data.get('accept'):
                 match.status = MatchStatus.ACCEPTED
                 message = 'Match accepted!'
+                
+                # TODO: Create reservation when match is accepted
+                # reservation = Reservation(
+                #     user1_id=match.user1_id,
+                #     user2_id=match.user2_id,
+                #     restaurant_id=match.restaurant_id,
+                #     table_id=match.table_id,
+                #     reservation_datetime=match.proposed_datetime,
+                #     status='confirmed'
+                # )
+                # self.db.session.add(reservation)
+                
             else:
                 match.status = MatchStatus.DECLINED
                 message = 'Match declined'
