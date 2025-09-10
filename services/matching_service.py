@@ -12,6 +12,8 @@ class MatchingService:
         self.db = db
         self.cache = cache
         self.logger = logger
+        # Initialize fallback storage for when cache fails
+        self._restaurant_name_fallback = {}
     
     def get_suggestions(self, user_id, data):
         """Get suggested matches for a time slot"""
@@ -94,14 +96,22 @@ class MatchingService:
             return jsonify({'error': 'Failed to get matches'}), 500
     
     def _get_restaurant_name(self, match):
-        """Get restaurant name for a match - FIXED VERSION"""
+        """Get restaurant name for a match - FIXED VERSION with fallback"""
         try:
             # First check if we have the restaurant name stored with the match
             match_cache_key = f"match_restaurant_{match.id}"
+            
+            # Try cache first
             cached_name = self.cache.get(match_cache_key)
             if cached_name:
                 self.logger.info(f"Found cached restaurant name for match {match.id}: {cached_name}")
                 return cached_name
+            
+            # Try fallback dict if cache failed
+            if match_cache_key in self._restaurant_name_fallback:
+                name = self._restaurant_name_fallback[match_cache_key]
+                self.logger.info(f"Found fallback restaurant name for match {match.id}: {name}")
+                return name
             
             # If not cached with match, try to get from restaurant data
             if match.restaurant_id:
@@ -120,7 +130,7 @@ class MatchingService:
                             name = 'External Restaurant'
                         
                         # Store this name with the match for future use
-                        self.cache.set(match_cache_key, name)
+                        self._store_restaurant_name(match_cache_key, name)
                         self.logger.info(f"Retrieved restaurant name from backup cache: {name}")
                         return name
                     else:
@@ -132,7 +142,7 @@ class MatchingService:
                         restaurant = Restaurant.query.get(int(restaurant_id))
                         if restaurant:
                             # Cache this name with the match
-                            self.cache.set(match_cache_key, restaurant.name)
+                            self._store_restaurant_name(match_cache_key, restaurant.name)
                             return restaurant.name
                         else:
                             self.logger.warning(f"Database restaurant {restaurant_id} not found")
@@ -146,6 +156,33 @@ class MatchingService:
         except Exception as e:
             self.logger.error(f"Error getting restaurant name for match {match.id}: {str(e)}")
             return "Unknown Restaurant"
+    
+    def _store_restaurant_name(self, cache_key, name):
+        """Store restaurant name with multiple fallback methods"""
+        try:
+            # Method 1: Try normal cache.set
+            try:
+                success = self.cache.set(cache_key, name)
+                if success:
+                    self.logger.info(f"Successfully cached restaurant name '{name}' with key {cache_key}")
+                    return
+            except Exception as e:
+                self.logger.warning(f"Primary cache.set failed: {e}")
+            
+            # Method 2: Try with timeout
+            try:
+                self.cache.set(cache_key, name, timeout=86400)  # 24 hours
+                self.logger.info(f"Successfully cached with timeout for key {cache_key}")
+                return
+            except Exception as e:
+                self.logger.warning(f"Timeout cache.set failed: {e}")
+            
+            # Method 3: Store in fallback dict
+            self._restaurant_name_fallback[cache_key] = name
+            self.logger.info(f"Stored in fallback dict for key {cache_key}")
+            
+        except Exception as e:
+            self.logger.error(f"All cache storage methods failed for {cache_key}: {e}")
     
     def browse_matches(self, user_id, params):
         """Browse potential matches for available tables"""
@@ -190,7 +227,7 @@ class MatchingService:
             # Log what we received to debug
             self.logger.info(f"Received match request - restaurant_id: {restaurant_id}, restaurant_name: {restaurant_name}")
             
-            # If no restaurant name provided, try to get it
+            # If no restaurant name provided or generic name, try to get it
             if restaurant_name in ["Unknown Restaurant", "API Restaurant"]:
                 restaurant_name = self._get_restaurant_name_for_new_match(restaurant_id)
                 self.logger.info(f"Retrieved restaurant name from cache/DB: {restaurant_name}")
@@ -221,25 +258,49 @@ class MatchingService:
             self.db.session.add(match)
             self.db.session.commit()
             
-            # CRITICAL FIX: Store restaurant name with the match ID - with error handling
+            # CRITICAL FIX: Store restaurant name with multiple fallback methods
             match_cache_key = f"match_restaurant_{match.id}"
+            cache_success = False
+            
+            # Try multiple cache storage methods
             try:
-                # Set cache with longer expiration and verify it worked
-                cache_success = self.cache.set(match_cache_key, restaurant_name)
-                if cache_success:
-                    self.logger.info(f"Successfully cached restaurant name '{restaurant_name}' for match {match.id}")
-                else:
-                    self.logger.warning(f"Cache.set returned False for match {match.id}")
-                    
-                # Also store in a backup location with restaurant_id as key for future retrieval
+                # Method 1: Try normal cache.set
+                try:
+                    cache_success = self.cache.set(match_cache_key, restaurant_name)
+                    if cache_success:
+                        self.logger.info(f"Successfully cached restaurant name '{restaurant_name}' for match {match.id}")
+                except Exception as e:
+                    self.logger.warning(f"Primary cache.set failed: {e}")
+                
+                # Method 2: If primary fails, try alternative storage
+                if not cache_success:
+                    try:
+                        # Some cache implementations need explicit expiration
+                        self.cache.set(match_cache_key, restaurant_name, timeout=86400)  # 24 hours
+                        cache_success = True
+                        self.logger.info(f"Successfully cached with timeout for match {match.id}")
+                    except Exception as e:
+                        self.logger.warning(f"Timeout cache.set failed: {e}")
+                
+                # Method 3: Store in backup location regardless
                 if restaurant_id.startswith('api_'):
                     backup_cache_key = f"restaurant_{restaurant_id}"
                     backup_data = {'name': restaurant_name, 'cached_at': datetime.utcnow().isoformat()}
-                    self.cache.set(backup_cache_key, backup_data)
-                    self.logger.info(f"Stored backup cache for restaurant {restaurant_id}: {restaurant_name}")
+                    try:
+                        self.cache.set(backup_cache_key, backup_data, timeout=86400)
+                        self.logger.info(f"Stored backup cache for restaurant {restaurant_id}: {restaurant_name}")
+                    except Exception as e:
+                        self.logger.warning(f"Backup cache storage failed: {e}")
+                        
+                # Method 4: If all cache methods fail, store in a simple dict fallback
+                if not cache_success:
+                    self._restaurant_name_fallback[match_cache_key] = restaurant_name
+                    self.logger.info(f"Stored in fallback dict for match {match.id}")
                     
             except Exception as cache_error:
-                self.logger.error(f"Cache error for match {match.id}: {cache_error}")
+                self.logger.error(f"All cache methods failed for match {match.id}: {cache_error}")
+                # Still store in fallback dict as last resort
+                self._restaurant_name_fallback[match_cache_key] = restaurant_name
             
             self.logger.info(f"Created match {match.id} with restaurant name: {restaurant_name}")
             
