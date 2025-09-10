@@ -26,6 +26,8 @@ def init_database():
             # Run migrations for both restaurant and matches tables BEFORE importing models
         print("Running matches table migration...")
         migrate_matches_columns()
+        print("Running restaurant ID column migration...")
+        migrate_restaurant_id_column()
 
         print("Running restaurant table migration...")
         migrate_restaurant_columns()
@@ -182,6 +184,35 @@ def migrate_matches_columns():
         raise
 
 
+def migrate_restaurant_id_column():
+    """Change restaurant_id column to handle both integer and string IDs"""
+    from sqlalchemy import text
+
+    try:
+        # Check current column type
+        check_sql = """
+        SELECT data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'matches' AND column_name = 'restaurant_id';
+        """
+
+        result = db.session.execute(text(check_sql)).fetchone()
+
+        if result and result[0] == 'integer':
+            print("Converting restaurant_id column from INTEGER to VARCHAR...")
+
+            # Convert the column type
+            convert_sql = "ALTER TABLE matches ALTER COLUMN restaurant_id TYPE VARCHAR(255);"
+            db.session.execute(text(convert_sql))
+            db.session.commit()
+            print("✅ Restaurant ID column conversion completed!")
+        else:
+            print("✅ Restaurant ID column is already VARCHAR!")
+
+    except Exception as e:
+        print(f"❌ Restaurant ID migration failed: {e}")
+        db.session.rollback()
+        raise
 
 def migrate_restaurant_columns():
     """Add missing columns to restaurants table"""
