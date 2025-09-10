@@ -7,6 +7,30 @@ class RestaurantService:
         self.db = db
         self.cache = cache
         self.logger = logger
+
+     # Add this method to the RestaurantService class in restaurant_service.py
+    def get_restaurant(self, restaurant_id):
+    """Get restaurant details by ID"""
+        try:
+            restaurant = Restaurant.query.get(restaurant_id)
+            if not restaurant or not restaurant.is_active:
+                return jsonify({'error': 'Restaurant not found'}), 404
+        
+        # Get available tables count
+            available_tables = RestaurantTable.query.filter_by(
+                restaurant_id=restaurant_id,
+                is_available=True
+            ).count()
+        
+            result = restaurant.to_dict()
+            result['available_tables'] = available_tables
+        
+            return jsonify(result)
+        
+        except Exception as e:
+            self.logger.error(f"Get restaurant error: {str(e)}")
+            return jsonify({'error': 'Failed to get restaurant'}), 500
+    
     
     def get_available_restaurants(self, params):
         """Get available restaurants based on filters"""
