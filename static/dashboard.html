@@ -1424,43 +1424,83 @@ document.addEventListener('click', function(e) {
         }
 
         // Confirm match request
-        async function confirmMatch() {
-            if (!selectedTime || !selectedMatch) {
-                showToast('Please select a time and a match', 'error');
-                return;
-            }
+  // Confirm match request
+async function confirmMatch() {
+    if (!selectedTime || !selectedMatch) {
+        showToast('Please select a time and a match', 'error');
+        return;
+    }
 
-            try {
-                const response = await fetch('/api/matches/request', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': await getCSRFToken()
-                    },
-                    body: JSON.stringify({
-                        restaurant_id: selectedRestaurant,
-                        match_user_id: selectedMatch,
-                        datetime: `${document.getElementById('dateFilter').value} ${selectedTime}`
-                    })
-                });
+    try {
+        // Get current user to prevent self-matches
+        const currentUserResponse = await fetch('/api/profile', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
 
-                if (!response.ok) {
-                    throw new Error('Failed to request match');
-                }
-
-                showToast('Match request sent successfully!', 'success');
-                closeModal();
-
-                // Reload matches
-                loadMatches();
-                loadStats();
-
-            } catch (error) {
-                console.error('Error requesting match:', error);
-                showToast('Failed to send match request', 'error');
-            }
+        if (!currentUserResponse.ok) {
+            throw new Error('Failed to get current user information');
         }
+
+        const currentUser = await currentUserResponse.json();
+
+        // Prevent self-matches
+        if (currentUser && currentUser.id === selectedMatch) {
+            showToast('You cannot send a match request to yourself!', 'error');
+            return;
+        }
+
+        // Get the selected date from the date filter
+        const dateFilter = document.getElementById('dateFilter');
+        const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
+
+        // Create proper datetime string
+        const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+
+        console.log('Sending match request:', {
+            restaurant_id: selectedRestaurant,
+            match_user_id: selectedMatch,
+            datetime: dateTimeString
+        });
+
+        const response = await fetch('/api/matches/request', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': await getCSRFToken()
+            },
+            body: JSON.stringify({
+                restaurant_id: selectedRestaurant,
+                match_user_id: selectedMatch,
+                datetime: dateTimeString,
+                table_id: null,
+                compatibility: Math.floor(Math.random() * 20) + 80
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast(result.message || 'Match request sent successfully!', 'success');
+            closeModal();
+
+            // Reload matches and stats
+            await loadMatches();
+            await loadStats();
+
+        } else {
+            // Handle specific error messages from backend
+            const errorMessage = result.error || 'Failed to send match request';
+            showToast(errorMessage, 'error');
+            console.error('Match request failed:', result);
+        }
+
+    } catch (error) {
+        console.error('Error requesting match:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
 
         // Accept match
         async function acceptMatch(matchId) {
