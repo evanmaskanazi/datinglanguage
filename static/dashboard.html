@@ -1025,6 +1025,16 @@ async function authenticatedFetch(url, options = {}) {
             }
         }
 
+// Handle restaurant card clicks
+document.addEventListener('click', function(e) {
+    const restaurantCard = e.target.closest('.restaurant-card');
+    if (restaurantCard) {
+        const restaurantId = restaurantCard.getAttribute('data-restaurant-id');
+        openMatchModal(restaurantId);
+    }
+});
+
+
         // Load user profile
         async function loadUserProfile() {
             try {
@@ -1212,24 +1222,24 @@ async function authenticatedFetch(url, options = {}) {
 
         // Create restaurant card HTML
         function createRestaurantCard(restaurant) {
-            return `
-                <div class="restaurant-card" onclick="openMatchModal(${restaurant.id})">
-                    <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
-                        <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                        <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
-                        <div class="restaurant-meta">
-                            <div class="restaurant-rating">
-                                ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
-                                <span>${restaurant.rating || 0}</span>
-                            </div>
-                            <span class="available-slots">${restaurant.available_slots || 0} slots</span>
-                        </div>
+    return `
+        <div class="restaurant-card" data-restaurant-id="${restaurant.id}">
+            <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
+            <div class="restaurant-info">
+                <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
+                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
+                <div class="restaurant-meta">
+                    <div class="restaurant-rating">
+                        ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
+                        <span>${restaurant.rating || 0}</span>
                     </div>
+                    <span class="available-slots">${restaurant.available_slots || 0} slots</span>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
         // Create match card HTML
         function createMatchCard(match) {
