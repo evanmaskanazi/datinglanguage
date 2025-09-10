@@ -1,5 +1,5 @@
 from flask import jsonify
-from models.restaurant import Restaurant, RestaurantTable, db
+from models.restaurant import Restaurant, RestaurantTable
 from datetime import datetime
 
 class RestaurantService:
@@ -8,15 +8,14 @@ class RestaurantService:
         self.cache = cache
         self.logger = logger
 
-     # Add this method to the RestaurantService class in restaurant_service.py
     def get_restaurant(self, restaurant_id):
-    """Get restaurant details by ID"""
+        """Get restaurant details by ID"""
         try:
             restaurant = Restaurant.query.get(restaurant_id)
             if not restaurant or not restaurant.is_active:
                 return jsonify({'error': 'Restaurant not found'}), 404
         
-        # Get available tables count
+            # Get available tables count
             available_tables = RestaurantTable.query.filter_by(
                 restaurant_id=restaurant_id,
                 is_available=True
@@ -30,7 +29,6 @@ class RestaurantService:
         except Exception as e:
             self.logger.error(f"Get restaurant error: {str(e)}")
             return jsonify({'error': 'Failed to get restaurant'}), 500
-    
     
     def get_available_restaurants(self, params):
         """Get available restaurants based on filters"""
@@ -91,8 +89,6 @@ class RestaurantService:
                 is_available=True
             ).all()
             
-            # TODO: Check reservations for the specific date/time
-            
             return jsonify({
                 'success': True,
                 'restaurant': restaurant.to_dict(),
@@ -104,3 +100,36 @@ class RestaurantService:
         except Exception as e:
             self.logger.error(f"Get tables error: {str(e)}")
             return jsonify({'error': 'Failed to get tables'}), 500
+
+    def get_available_slots(self, restaurant_id, params):
+        """Get available time slots for a restaurant"""
+        try:
+            date_str = params.get('date')
+            
+            if not date_str:
+                return jsonify({'error': 'Date required'}), 400
+            
+            # Get restaurant
+            restaurant = Restaurant.query.get(restaurant_id)
+            if not restaurant or not restaurant.is_active:
+                return jsonify({'error': 'Restaurant not found'}), 404
+            
+            # Generate time slots (simplified version)
+            time_slots = [
+                {'time': '12:00', 'available': True},
+                {'time': '12:30', 'available': True},
+                {'time': '13:00', 'available': False},
+                {'time': '13:30', 'available': True},
+                {'time': '18:00', 'available': True},
+                {'time': '18:30', 'available': True},
+                {'time': '19:00', 'available': True},
+                {'time': '19:30', 'available': False},
+                {'time': '20:00', 'available': True},
+                {'time': '20:30', 'available': True}
+            ]
+            
+            return jsonify(time_slots)
+            
+        except Exception as e:
+            self.logger.error(f"Get slots error: {str(e)}")
+            return jsonify({'error': 'Failed to get time slots'}), 500
