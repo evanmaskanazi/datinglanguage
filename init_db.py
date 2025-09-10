@@ -62,9 +62,66 @@ def init_database():
             else:
                 print(f"Admin user already exists: {admin_email}")
 
+
         except Exception as e:
+
             print(f"Error during admin user creation: {e}")
+
             db.session.rollback()
+
+            # Create test users for matching
+
+        try:
+
+            if User.query.count() < 5:  # Only create if we don't have enough users
+
+                print("Creating test users for matching...")
+
+                test_users = [
+
+                    {'email': 'sarah@example.com', 'name': 'Sarah M.'},
+
+                    {'email': 'emma@example.com', 'name': 'Emma K.'},
+
+                    {'email': 'lisa@example.com', 'name': 'Lisa R.'},
+
+                    {'email': 'john@example.com', 'name': 'John D.'}
+
+                ]
+
+                for user_data in test_users:
+
+                    existing_user = User.query.filter_by(email=user_data['email']).first()
+
+                    if not existing_user:
+                        test_user = User(
+
+                            email=user_data['email'],
+
+                            password_hash=bcrypt.generate_password_hash('TestPass123!').decode('utf-8'),
+
+                            role='user',
+
+                            is_active=True,
+
+                            is_verified=True
+
+                        )
+
+                        db.session.add(test_user)
+
+                db.session.commit()
+
+                print("Test users created successfully!")
+
+
+        except Exception as e:
+
+            print(f"Error creating test users: {e}")
+
+            db.session.rollback()
+
+        # Only add restaurants if database is empty
 
         # Only add restaurants if database is empty
         try:
