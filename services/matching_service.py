@@ -13,11 +13,71 @@ class MatchingService:
         self.cache = cache
         self.logger = logger
     
-    def get_user_matches(self, user_id):
-        """Get user's matches - placeholder for now"""
+    def get_suggestions(self, user_id, data):
+        """Get suggested matches for a time slot"""
         try:
-            # TODO: Implement actual match retrieval logic
-            return jsonify([])
+            # Generate mock matches for now since we don't have real users
+            mock_matches = [
+                {
+                    'id': 1,
+                    'name': 'Sarah M.',
+                    'age': 28,
+                    'compatibility': 85,
+                    'avatar_url': '/static/images/default-avatar.jpg',
+                    'interests': ['Italian food', 'Travel', 'Books'],
+                    'bio': 'Love trying new restaurants and exploring the city!'
+                },
+                {
+                    'id': 2,
+                    'name': 'Emma K.',
+                    'age': 26,
+                    'compatibility': 92,
+                    'avatar_url': '/static/images/default-avatar.jpg',
+                    'interests': ['Art', 'Cooking', 'Yoga'],
+                    'bio': 'Foodie and art enthusiast looking for dinner conversations.'
+                },
+                {
+                    'id': 3,
+                    'name': 'Lisa R.',
+                    'age': 30,
+                    'compatibility': 78,
+                    'avatar_url': '/static/images/default-avatar.jpg',
+                    'interests': ['Photography', 'Hiking', 'Wine'],
+                    'bio': 'Wine lover who enjoys great company and good food.'
+                }
+            ]
+            
+            return jsonify(mock_matches)
+            
+        except Exception as e:
+            self.logger.error(f"Get suggestions error: {str(e)}")
+            return jsonify({'error': 'Failed to get suggestions'}), 500
+    
+    def get_user_matches(self, user_id):
+        """Get user's matches"""
+        try:
+            matches = Match.query.filter(
+                or_(Match.user1_id == user_id, Match.user2_id == user_id)
+            ).order_by(Match.created_at.desc()).all()
+            
+            result = []
+            for match in matches:
+                other_user_id = match.user2_id if match.user1_id == user_id else match.user1_id
+                other_user = User.query.get(other_user_id)
+                
+                if other_user:
+                    result.append({
+                        'id': match.id,
+                        'user_id': other_user.id,
+                        'name': other_user.email.split('@')[0],  # Use email prefix as name
+                        'status': match.status.value,
+                        'restaurant_id': match.restaurant_id,
+                        'proposed_datetime': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
+                        'compatibility_score': match.compatibility_score
+                    })
+            
+            return jsonify(result)
+            
         except Exception as e:
             self.logger.error(f"Get user matches error: {str(e)}")
             return jsonify({'error': 'Failed to get matches'}), 500
@@ -25,114 +85,68 @@ class MatchingService:
     def browse_matches(self, user_id, params):
         """Browse potential matches for available tables"""
         try:
-            # Get user preferences
-            user_prefs = UserPreferences.query.filter_by(user_id=user_id).first()
-            if not user_prefs:
-                return jsonify({'error': 'Please complete your preferences first'}), 400
-            
-            # Parse parameters
-            date_str = params.get('date')
-            time_slot = params.get('time_slot')
-            restaurant_id = params.get('restaurant_id')
-            
-            # Get available tables
-            tables_query = RestaurantTable.query.filter_by(is_available=True)
-            if restaurant_id:
-                tables_query = tables_query.filter_by(restaurant_id=restaurant_id)
-            
-            available_tables = tables_query.all()
-            
-            # Get potential matches based on preferences
-            matches_query = self._build_matches_query(user_id, user_prefs)
-            potential_matches = matches_query.limit(20).all()
-            
-            # Format results
-            results = []
-            for table in available_tables:
-                table_matches = []
-                for match_user in potential_matches:
-                    if self._is_compatible(user_prefs, match_user):
-                        table_matches.append({
-                            'user_id': match_user.id,
-                            'display_name': match_user.profile.display_name,
-                            'age': match_user.profile.age,
-                            'bio': match_user.profile.bio[:100] + '...' if match_user.profile.bio and len(match_user.profile.bio) > 100 else match_user.profile.bio or '',
-                            'compatibility_score': self._calculate_compatibility(user_prefs, match_user.preferences)
-                        })
-                
-                if table_matches:
-                    results.append({
-                        'table_id': table.id,
-                        'restaurant': {
-                            'id': table.restaurant.id,
-                            'name': table.restaurant.name,
-                            'cuisine': table.restaurant.cuisine_type,
-                            'address': table.restaurant.address
-                        },
-                        'capacity': table.capacity,
-                        'time_slot': time_slot,
-                        'potential_matches': sorted(table_matches, key=lambda x: x['compatibility_score'], reverse=True)[:5]
-                    })
-            
-            return jsonify({
-                'success': True,
-                'results': results,
-                'total': len(results)
-            })
+            # For now, return empty array - this would be implemented with real user data
+            return jsonify([])
             
         except Exception as e:
             self.logger.error(f"Browse matches error: {str(e)}")
             return jsonify({'error': 'Failed to browse matches'}), 500
     
-    def _build_matches_query(self, user_id, user_prefs):
-        """Build query for potential matches"""
-        query = UserProfile.query.join(User).filter(
-            User.id != user_id,
-            User.is_active == True,
-            User.is_verified == True
-        )
-        
-        # Apply preference filters
-        if user_prefs.min_age:
-            query = query.filter(UserProfile.age >= user_prefs.min_age)
-        if user_prefs.max_age:
-            query = query.filter(UserProfile.age <= user_prefs.max_age)
-        if user_prefs.preferred_gender:
-            query = query.filter(UserProfile.gender == user_prefs.preferred_gender)
-        
-        return query
+    def request_match(self, user_id, data):
+        """Request a match with another user"""
+        try:
+            # Create a new match request
+            match = Match(
+                user1_id=user_id,
+                user2_id=data.get('match_user_id'),
+                restaurant_id=data.get('restaurant_id'),
+                table_id=data.get('table_id'),
+                proposed_datetime=datetime.fromisoformat(data.get('datetime', datetime.utcnow().isoformat())),
+                status=MatchStatus.PENDING,
+                compatibility_score=data.get('compatibility', 75)
+            )
+            
+            self.db.session.add(match)
+            self.db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'match_id': match.id,
+                'message': 'Match request sent successfully!'
+            }), 201
+            
+        except Exception as e:
+            self.db.session.rollback()
+            self.logger.error(f"Request match error: {str(e)}")
+            return jsonify({'error': 'Failed to request match'}), 500
     
-    def _is_compatible(self, user_prefs, match_user):
-        """Check if two users are compatible"""
-        # Check mutual preferences
-        match_prefs = match_user.preferences
-        if not match_prefs:
-            return False
-        
-        # Check age preferences
-        if user_prefs.min_age and match_user.profile.age < user_prefs.min_age:
-            return False
-        if user_prefs.max_age and match_user.profile.age > user_prefs.max_age:
-            return False
-        
-        # Check if they match each other's preferences
-        if match_prefs.preferred_gender and match_prefs.preferred_gender != user_prefs.gender:
-            return False
-        
-        return True
-    
-    def _calculate_compatibility(self, prefs1, prefs2):
-        """Calculate compatibility score between two users"""
-        score = 50  # Base score
-        
-        # Add points for matching interests
-        if prefs1.interests and prefs2.interests:
-            common_interests = set(prefs1.interests) & set(prefs2.interests)
-            score += len(common_interests) * 10
-        
-        # Add points for similar values
-        if prefs1.values and prefs2.values:
-            common_values = set(prefs1.values) & set(prefs2.values)
-            score += len(common_values) * 15
-        
-        return min(score, 100)  # Cap at 100
+    def respond_to_match(self, user_id, match_id, response_data):
+        """Accept or decline a match"""
+        try:
+            match = Match.query.get(match_id)
+            if not match:
+                return jsonify({'error': 'Match not found'}), 404
+            
+            # Verify user is part of this match
+            if user_id not in [match.user1_id, match.user2_id]:
+                return jsonify({'error': 'Unauthorized'}), 403
+            
+            if response_data.get('accept'):
+                match.status = MatchStatus.ACCEPTED
+                message = 'Match accepted!'
+            else:
+                match.status = MatchStatus.DECLINED
+                message = 'Match declined'
+            
+            match.responded_at = datetime.utcnow()
+            self.db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': message
+            })
+            
+        except Exception as e:
+            self.db.session.rollback()
+            self.logger.error(f"Respond to match error: {str(e)}")
+            return jsonify({'error': 'Failed to respond to match'}), 500
