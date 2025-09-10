@@ -1424,7 +1424,7 @@ document.addEventListener('click', function(e) {
         }
 
         // Confirm match request
-      // Confirm match request
+  // Confirm match request
 async function confirmMatch() {
     if (!selectedTime || !selectedMatch) {
         showToast('Please select a time and a match', 'error');
@@ -1450,6 +1450,19 @@ async function confirmMatch() {
             return;
         }
 
+        // Get the selected date from the date filter
+        const dateFilter = document.getElementById('dateFilter');
+        const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
+
+        // Create proper datetime string
+        const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+
+        console.log('Sending match request:', {
+            restaurant_id: selectedRestaurant,
+            match_user_id: selectedMatch,
+            datetime: dateTimeString
+        });
+
         const response = await fetch('/api/matches/request', {
             method: 'POST',
             credentials: 'include',
@@ -1460,7 +1473,8 @@ async function confirmMatch() {
             body: JSON.stringify({
                 restaurant_id: selectedRestaurant,
                 match_user_id: selectedMatch,
-                datetime: `${document.getElementById('dateFilter').value} ${selectedTime}`,
+                datetime: dateTimeString,
+                table_id: null,
                 compatibility: Math.floor(Math.random() * 20) + 80
             })
         });
@@ -1471,7 +1485,7 @@ async function confirmMatch() {
             showToast(result.message || 'Match request sent successfully!', 'success');
             closeModal();
 
-            // Reload matches
+            // Reload matches and stats
             await loadMatches();
             await loadStats();
 
@@ -1479,6 +1493,7 @@ async function confirmMatch() {
             // Handle specific error messages from backend
             const errorMessage = result.error || 'Failed to send match request';
             showToast(errorMessage, 'error');
+            console.error('Match request failed:', result);
         }
 
     } catch (error) {
