@@ -1336,12 +1336,11 @@ document.addEventListener('click', function(e) {
 
                 const slots = await response.json();
 
-                container.innerHTML = slots.map(slot => `
-                    <div class="time-slot ${slot.available ? '' : 'unavailable'}"
-                         onclick="${slot.available ? 'selectTimeSlot(\'' + slot.time + '\')' : ''}">
-                        ${slot.time}
-                    </div>
-                `).join('');
+               container.innerHTML = slots.map(slot => `
+    <div class="time-slot" onclick="selectTimeSlot('${slot.time}')">
+        ${slot.time}
+    </div>
+`).join('');
 
             } catch (error) {
                 console.error('Error loading time slots:', error);
