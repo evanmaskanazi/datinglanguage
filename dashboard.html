@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <title>Dashboard - Table for Two</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #3498db;
+            --dark-gray: #2c3e50;
+            --light-gray: #ecf0f1;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-gray);
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--dark-gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Main Layout */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sidebar-link {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--dark-gray);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .sidebar-link:hover {
+            background: #f8f9fa;
+            color: var(--primary-color);
+        }
+
+        .sidebar-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 600px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--dark-gray);
+        }
+
+        /* Restaurant Grid */
+        .restaurant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .restaurant-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .restaurant-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .restaurant-info {
+            padding: 1.5rem;
+        }
+
+        .restaurant-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .restaurant-details {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .restaurant-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--warning-color);
+        }
+
+        .available-slots {
+            background: #e8f5e9;
+            color: var(--success-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Date Picker */
+        .date-filter {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .date-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Match Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        /* Time Slots */
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .time-slot {
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-slot:hover {
+            border-color: var(--primary-color);
+        }
+
+        .time-slot.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .time-slot.unavailable {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        /* Potential Matches */
+        .matches-section {
+            margin-top: 2rem;
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .match-card {
+            text-align: center;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .match-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .match-card.selected {
+            border-color: var(--primary-color);
+            background: #fff5f5;
+        }
+
+        .match-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 0.5rem;
+            object-fit: cover;
+        }
+
+        .match-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .match-compatibility {
+            color: var(--success-color);
+            font-size: 0.875rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.dates {
+            background: #ffe0e0;
+            color: var(--primary-color);
+        }
+
+        .stat-icon.matches {
+            background: #e0f2ff;
+            color: var(--secondary-color);
+        }
+
+        .stat-icon.success {
+            background: #e8f5e9;
+            color: var(--success-color);
+        }
+
+        .stat-content h3 {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-content p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        /* Match List Items */
+        .match-list-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .match-list-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .match-list-info {
+            flex: 1;
+        }
+
+        .match-list-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .match-list-details {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        /* Date Cards */
+        .date-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .date-time {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .date-day {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .date-month {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+
+            .sidebar-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+
+            .sidebar-link {
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-nav {
+                display: none;
+            }
+
+            .restaurant-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .matches-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Profile Section */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .profile-info h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-info p {
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Match Status */
+        .match-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .match-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .match-status.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .match-status.completed {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: var(--dark-gray);
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 3000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">Table for Two 🍽️❤️</a>
+            <nav class="header-nav">
+                <a href="#" class="nav-link" onclick="showTab('browse')">Browse Tables</a>
+                <a href="#" class="nav-link" onclick="showTab('matches')">My Matches</a>
+                <a href="#" class="nav-link" onclick="showTab('dates')">Upcoming Dates</a>
+                <div class="user-menu">
+    <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">JD</div>
+    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+    <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; padding: 0.5rem;">
+        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem 1rem; color: var(--dark-gray); text-decoration: none;">Logout</a>
+    </div>
+</div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link active" onclick="showTab('overview')">
+                    <span class="sidebar-icon">🏠</span>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('browse')">
+                    <span class="sidebar-icon">🍽️</span>
+                    <span>Browse Tables</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('matches')">
+                    <span class="sidebar-icon">💕</span>
+                    <span>My Matches</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('dates')">
+                    <span class="sidebar-icon">📅</span>
+                    <span>Upcoming Dates</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('history')">
+                    <span class="sidebar-icon">📜</span>
+                    <span>Date History</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('profile')">
+                    <span class="sidebar-icon">👤</span>
+                    <span>My Profile</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('settings')">
+                    <span class="sidebar-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <h1 class="page-title">Welcome back, <span id="userName">User</span>!</h1>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon dates">📅</div>
+                        <div class="stat-content">
+                            <h3 id="totalDates">0</h3>
+                            <p>Total Dates</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon matches">💕</div>
+                        <div class="stat-content">
+                            <h3 id="activeMatches">0</h3>
+                            <p>Active Matches</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">⭐</div>
+                        <div class="stat-content">
+                            <h3 id="successRate">0%</h3>
+                            <p>Success Rate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 1rem;">Recommended Tables This Week</h2>
+                <div id="recommendedRestaurants" class="restaurant-grid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading recommendations...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browse Tables Tab -->
+            <div id="browse" class="tab-content">
+                <h1 class="page-title">Browse Available Tables</h1>
+
+                <div class="date-filter">
+                    <input type="date" id="dateFilter" class="date-input">
+                    <select id="timeFilter" class="date-input">
+                        <option value="">All Times</option>
+                        <option value="lunch">Lunch (12pm-2pm)</option>
+                        <option value="dinner">Dinner (6pm-10pm)</option>
+                    </select>
+                    <select id="cuisineFilter" class="date-input">
+                        <option value="">All Cuisines</option>
+                        <option value="italian">Italian</option>
+                        <option value="asian">Asian</option>
+                        <option value="mediterranean">Mediterranean</option>
+                        <option value="american">American</option>
+                    </select>
+                    <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
+                </div>
+
+                <div id="restaurantsList" class="restaurant-grid">
+                    <!-- Restaurants will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Matches Tab -->
+            <div id="matches" class="tab-content">
+                <h1 class="page-title">My Matches</h1>
+                <div id="matchesList">
+                    <!-- Matches will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Upcoming Dates Tab -->
+            <div id="dates" class="tab-content">
+                <h1 class="page-title">Upcoming Dates</h1>
+                <div id="upcomingDatesList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <h3>No upcoming dates</h3>
+                        <p>Browse available tables to find your next dinner date!</p>
+                        <button class="btn btn-primary" onclick="showTab('browse')">Browse Tables</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history" class="tab-content">
+                <h1 class="page-title">Date History</h1>
+                <div id="dateHistoryList">
+                    <!-- Date history will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content">
+                <h1 class="page-title">My Profile</h1>
+                <div class="profile-header">
+                    <img src="/static/images/default-avatar.jpg" alt="Profile" class="profile-avatar-large">
+                    <div class="profile-info">
+                        <h2 id="profileName">Loading...</h2>
+                        <p id="profileEmail">Loading...</p>
+                        <p id="profileLocation">Loading...</p>
+                        <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
+                    </div>
+                </div>
+
+                <h3>About Me</h3>
+                <p id="profileBio">Loading...</p>
+
+                <h3 style="margin-top: 2rem;">Dating Preferences</h3>
+                <div id="profilePreferences">
+                    <!-- Preferences will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h1 class="page-title">Settings</h1>
+                <div>
+                    <h3>Notification Preferences</h3>
+                    <label style="display: block; margin: 1rem 0;">
+                        <input type="checkbox" id="emailNotifications" checked>
+                        Email notifications for new matches
+                    </label>
+                    <label style="display: block; margin: 1rem 0;">
+                        <input type="checkbox" id="smsNotifications">
+                        SMS reminders for upcoming dates
+                    </label>
+
+                    <h3 style="margin-top: 2rem;">Privacy Settings</h3>
+                    <label style="display: block; margin: 1rem 0;">
+                        <input type="checkbox" id="profileVisibility" checked>
+                        Show my profile to potential matches
+                    </label>
+
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Match Selection Modal -->
+    <div id="matchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Select Time & Match</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+
+            <div id="modalRestaurantInfo">
+                <!-- Restaurant info will be populated here -->
+            </div>
+
+            <h3>Available Times</h3>
+            <div id="timeSlots" class="time-slots">
+                <!-- Time slots will be populated here -->
+            </div>
+
+            <div class="matches-section">
+                <h3>Suggested Matches</h3>
+                <div id="suggestedMatches" class="matches-grid">
+                    <!-- Matches will be populated here -->
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: right;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmMatch()">Request Match</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
+    <script>
+        // Check for auth token on page load
+
+
+// Function to make authenticated API calls
+async function authenticatedFetch(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        credentials: 'include'
+    });
+
+    // If unauthorized, redirect to login
+    if (response.status === 401) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    return response;
+}
+        // Global variables
+        let currentUser = null;
+        let selectedRestaurant = null;
+        let selectedTime = null;
+        let selectedMatch = null;
+        let csrfToken = null;
+        let websocket = null;
+
+        // CSRF Token management
+        async function getCSRFToken() {
+            if (!csrfToken) {
+                try {
+                    const response = await fetch('/api/csrf-token', {
+                        credentials: 'same-origin'
+                    });
+                    const data = await response.json();
+                    csrfToken = data.csrf_token;
+                } catch (error) {
+                    console.error('Failed to get CSRF token:', error);
+                }
+            }
+            return csrfToken;
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            try {
+                // Load user profile
+                await loadUserProfile();
+
+                // Load initial data
+                await Promise.all([
+                    loadStats(),
+                    loadRecommendedRestaurants(),
+                    loadMatches(),
+                    loadUpcomingDates()
+                ]);
+
+                // Set up real-time updates
+                setupWebSocket();
+
+                // Set today's date as default filter
+                document.getElementById('dateFilter').valueAsDate = new Date();
+
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+                showToast('Error loading dashboard', 'error');
+            }
+        }
+
+// Handle restaurant card clicks
+document.addEventListener('click', function(e) {
+    const restaurantCard = e.target.closest('.restaurant-card');
+    if (restaurantCard) {
+        const restaurantId = restaurantCard.getAttribute('data-restaurant-id');
+        openMatchModal(restaurantId);
+    }
+});
+
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+               const response = await authenticatedFetch('/api/profile');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                currentUser = await response.json();
+
+                // Update UI with user data
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userAvatar').textContent = getInitials(currentUser.name);
+                document.getElementById('profileName').textContent = currentUser.name;
+                document.getElementById('profileEmail').textContent = currentUser.email;
+                document.getElementById('profileLocation').textContent = currentUser.location || 'Not set';
+                document.getElementById('profileBio').textContent = currentUser.bio || 'No bio yet';
+
+                // Load preferences
+                if (currentUser.preferences) {
+                    const prefsHtml = `
+                        <p><strong>Age Range:</strong> ${currentUser.preferences.min_age} - ${currentUser.preferences.max_age}</p>
+                        <p><strong>Preferred Gender:</strong> ${currentUser.preferences.gender_preference || 'Any'}</p>
+                        <p><strong>Interests:</strong> ${currentUser.preferences.interests?.join(', ') || 'None specified'}</p>
+                    `;
+                    document.getElementById('profilePreferences').innerHTML = prefsHtml;
+                }
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Load dashboard stats
+        async function loadStats() {
+            try {
+               const response = await authenticatedFetch('/api/user/stats');
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalDates').textContent = stats.total_dates || 0;
+                    document.getElementById('activeMatches').textContent = stats.active_matches || 0;
+                    document.getElementById('successRate').textContent = `${stats.success_rate || 0}%`;
+
+                    // Update notification badge
+                    if (stats.pending_matches > 0) {
+                        document.getElementById('notificationBadge').textContent = stats.pending_matches;
+                        document.getElementById('notificationBadge').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load recommended restaurants
+        async function loadRecommendedRestaurants() {
+            const container = document.getElementById('recommendedRestaurants');
+
+            try {
+               const response = await authenticatedFetch('/api/restaurants?recommended=true&limit=3');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurants');
+                }
+
+                const restaurants = await response.json();
+
+                if (restaurants.length === 0) {
+                    container.innerHTML = '<p>No recommendations available at the moment.</p>';
+                    return;
+                }
+
+                container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
+
+            } catch (error) {
+                console.error('Error loading restaurants:', error);
+                container.innerHTML = '<p>Error loading recommendations. Please try again later.</p>';
+            }
+        }
+
+        // Load all restaurants for browse tab
+        async function loadAllRestaurants() {
+            const container = document.getElementById('restaurantsList');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading restaurants...</p></div>';
+
+            try {
+                const filters = getActiveFilters();
+                const queryParams = new URLSearchParams(filters);
+
+               const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurants');
+                }
+
+                const restaurants = await response.json();
+
+                if (restaurants.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><h3>No restaurants found</h3><p>Try adjusting your filters</p></div>';
+                    return;
+                }
+
+                container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
+
+            } catch (error) {
+                console.error('Error loading restaurants:', error);
+                container.innerHTML = '<p>Error loading restaurants. Please try again later.</p>';
+            }
+        }
+
+        // Get active filters
+        function getActiveFilters() {
+            const filters = {};
+
+            const date = document.getElementById('dateFilter').value;
+            if (date) filters.date = date;
+
+            const time = document.getElementById('timeFilter').value;
+            if (time) filters.time = time;
+
+            const cuisine = document.getElementById('cuisineFilter').value;
+            if (cuisine) filters.cuisine = cuisine;
+
+            return filters;
+        }
+
+        // Apply filters
+        function applyFilters() {
+            loadAllRestaurants();
+        }
+
+        // Load matches
+        async function loadMatches() {
+            const container = document.getElementById('matchesList');
+
+            try {
+                const response = await authenticatedFetch('/api/matches');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load matches');
+                }
+
+                const matches = await response.json();
+
+                if (matches.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💕</div><h3>No matches yet</h3><p>Start browsing tables to find your perfect dinner companion!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = matches.map(match => createMatchCard(match)).join('');
+
+            } catch (error) {
+                console.error('Error loading matches:', error);
+                container.innerHTML = '<p>Error loading matches. Please try again later.</p>';
+            }
+        }
+
+        // Load upcoming dates
+        async function loadUpcomingDates() {
+            const container = document.getElementById('upcomingDatesList');
+
+            try {
+            const response = await authenticatedFetch('/api/dates/upcoming');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load dates');
+                }
+
+                const dates = await response.json();
+
+                if (dates.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No upcoming dates</h3><p>Browse available tables to find your next dinner date!</p><button class="btn btn-primary" onclick="showTab(\'browse\')">Browse Tables</button></div>';
+                    return;
+                }
+
+                container.innerHTML = dates.map(date => createDateCard(date)).join('');
+
+            } catch (error) {
+                console.error('Error loading dates:', error);
+            }
+        }
+
+        // Create restaurant card HTML
+        function createRestaurantCard(restaurant) {
+    return `
+        <div class="restaurant-card" data-restaurant-id="${restaurant.id}">
+            <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
+            <div class="restaurant-info">
+                <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
+                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
+                <div class="restaurant-meta">
+                    <div class="restaurant-rating">
+                        ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
+                        <span>${restaurant.rating || 0}</span>
+                    </div>
+                    <span class="available-slots">${restaurant.available_slots || 0} slots</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+        // Create match card HTML
+        function createMatchCard(match) {
+            const statusClass = match.status.toLowerCase();
+            return `
+                <div class="match-list-item">
+                    <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-list-avatar">
+                    <div class="match-list-info">
+                        <h3 class="match-list-name">${escapeHtml(match.name)}</h3>
+                        <p class="match-list-details">${escapeHtml(match.restaurant_name)} • ${formatDate(match.date)}</p>
+                        <span class="match-status ${statusClass}">${match.status}</span>
+                    </div>
+                    <div>
+                        ${match.status === 'PENDING' ? '<button class="btn btn-primary" onclick="acceptMatch(' + match.id + ')">Accept</button>' : ''}
+                        ${match.status === 'CONFIRMED' ? '<button class="btn btn-success" onclick="viewDateDetails(' + match.id + ')">View Details</button>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create date card HTML
+        function createDateCard(date) {
+            const dateObj = new Date(date.datetime);
+            return `
+                <div class="date-card">
+                    <div class="date-time">
+                        <div class="date-day">${dateObj.getDate()}</div>
+                        <div class="date-month">${dateObj.toLocaleString('default', { month: 'short' })}</div>
+                    </div>
+                    <div>
+                        <h3>${escapeHtml(date.restaurant_name)}</h3>
+                        <p>${escapeHtml(date.restaurant_address)}</p>
+                        <p>With ${escapeHtml(date.match_name)} at ${dateObj.toLocaleTimeString('default', { hour: 'numeric', minute: '2-digit' })}</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="viewDateDetails(${date.id})">View Details</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Open match modal
+        async function openMatchModal(restaurantId) {
+            selectedRestaurant = restaurantId;
+            const modal = document.getElementById('matchModal');
+
+            try {
+                // Load restaurant details
+                const response = await fetch(`/api/restaurants/${restaurantId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurant');
+                }
+
+                const restaurant = await response.json();
+
+                // Update modal with restaurant info
+                document.getElementById('modalRestaurantInfo').innerHTML = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3>${escapeHtml(restaurant.name)}</h3>
+                        <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                        <p>${escapeHtml(restaurant.address)}</p>
+                    </div>
+                `;
+
+                // Load available time slots
+                await loadTimeSlots(restaurantId);
+
+                // Show modal
+                modal.classList.add('active');
+
+            } catch (error) {
+                console.error('Error opening modal:', error);
+                showToast('Error loading restaurant details', 'error');
+            }
+        }
+
+        // Load time slots
+        async function loadTimeSlots(restaurantId) {
+            const container = document.getElementById('timeSlots');
+            container.innerHTML = '<p>Loading available times...</p>';
+
+            try {
+                const date = document.getElementById('dateFilter').value || new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/restaurants/${restaurantId}/slots?date=${date}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load time slots');
+                }
+
+                const slots = await response.json();
+
+                container.innerHTML = slots.map(slot => `
+                    <div class="time-slot ${slot.available ? '' : 'unavailable'}"
+                         onclick="${slot.available ? 'selectTimeSlot(\'' + slot.time + '\')' : ''}">
+                        ${slot.time}
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading time slots:', error);
+                container.innerHTML = '<p>Error loading times. Please try again.</p>';
+            }
+        }
+
+        // Select time slot
+        async function selectTimeSlot(time) {
+            selectedTime = time;
+
+            // Update UI
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+                if (slot.textContent.trim() === time) {
+                    slot.classList.add('selected');
+                }
+            });
+
+            // Load suggested matches
+            await loadSuggestedMatches();
+        }
+
+        // Load suggested matches
+        async function loadSuggestedMatches() {
+            const container = document.getElementById('suggestedMatches');
+            container.innerHTML = '<p>Finding compatible matches...</p>';
+
+            try {
+                const response = await fetch('/api/matches/suggestions', {
+                    credentials: 'include',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': await getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        restaurant_id: selectedRestaurant,
+                        time: selectedTime,
+                        date: document.getElementById('dateFilter').value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load matches');
+                }
+
+                const matches = await response.json();
+
+                if (matches.length === 0) {
+                    container.innerHTML = '<p>No matches available for this time slot.</p>';
+                    return;
+                }
+
+                container.innerHTML = matches.map(match => `
+                    <div class="match-card" onclick="selectMatch(${match.id})">
+                        <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-avatar">
+                        <div class="match-name">${escapeHtml(match.name)}</div>
+                        <div class="match-compatibility">${match.compatibility}% match</div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading matches:', error);
+                container.innerHTML = '<p>Error finding matches. Please try again.</p>';
+            }
+        }
+
+        // Select match
+        function selectMatch(matchId) {
+            selectedMatch = matchId;
+
+            // Update UI
+            document.querySelectorAll('.match-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.onclick.toString().includes(matchId)) {
+                    card.classList.add('selected');
+                }
+            });
+        }
+
+        // Confirm match request
+      // Confirm match request
+async function confirmMatch() {
+    if (!selectedTime || !selectedMatch) {
+        showToast('Please select a time and a match', 'error');
+        return;
+    }
+
+    try {
+        // Get current user to prevent self-matches
+        const currentUserResponse = await fetch('/api/profile', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        if (!currentUserResponse.ok) {
+            throw new Error('Failed to get current user information');
+        }
+
+        const currentUser = await currentUserResponse.json();
+
+        // Prevent self-matches
+        if (currentUser && currentUser.id === selectedMatch) {
+            showToast('You cannot send a match request to yourself!', 'error');
+            return;
+        }
+
+        const response = await fetch('/api/matches/request', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': await getCSRFToken()
+            },
+            body: JSON.stringify({
+                restaurant_id: selectedRestaurant,
+                match_user_id: selectedMatch,
+                datetime: `${document.getElementById('dateFilter').value} ${selectedTime}`,
+                compatibility: Math.floor(Math.random() * 20) + 80
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast(result.message || 'Match request sent successfully!', 'success');
+            closeModal();
+
+            // Reload matches
+            await loadMatches();
+            await loadStats();
+
+        } else {
+            // Handle specific error messages from backend
+            const errorMessage = result.error || 'Failed to send match request';
+            showToast(errorMessage, 'error');
+        }
+
+    } catch (error) {
+        console.error('Error requesting match:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+        // Accept match
+        async function acceptMatch(matchId) {
+            try {
+                const response = await fetch(`/api/matches/${matchId}/accept`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'X-CSRF-Token': await getCSRFToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to accept match');
+                }
+
+                showToast('Match accepted!', 'success');
+                loadMatches();
+                loadUpcomingDates();
+                loadStats();
+
+            } catch (error) {
+                console.error('Error accepting match:', error);
+                showToast('Failed to accept match', 'error');
+            }
+        }
+
+        // View date details
+        function viewDateDetails(dateId) {
+            // In a real app, this would open a detailed view
+            showToast('Date details feature coming soon!', 'info');
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('matchModal');
+            modal.classList.remove('active');
+
+            // Reset selections
+            selectedRestaurant = null;
+            selectedTime = null;
+            selectedMatch = null;
+        }
+
+        // Show tab
+        function showTab(tabName) {
+            // Update sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.onclick.toString().includes(tabName)) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'browse') {
+                loadAllRestaurants();
+            } else if (tabName === 'matches') {
+                loadMatches();
+            } else if (tabName === 'dates') {
+                loadUpcomingDates();
+            } else if (tabName === 'history') {
+                loadDateHistory();
+            }
+        }
+
+        // Load date history
+        async function loadDateHistory() {
+            const container = document.getElementById('dateHistoryList');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading history...</p></div>';
+
+            try {
+                const response = await fetch('/api/dates/history', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load history');
+                }
+
+                const dates = await response.json();
+
+                if (dates.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><h3>No past dates</h3><p>Your date history will appear here</p></div>';
+                    return;
+                }
+
+                container.innerHTML = dates.map(date => createDateCard(date)).join('');
+
+            } catch (error) {
+                console.error('Error loading history:', error);
+                container.innerHTML = '<p>Error loading history. Please try again later.</p>';
+            }
+        }
+
+        // Edit profile
+        // Edit profile
+function editProfile() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Profile</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <form id="editProfileForm">
+                <div style="margin-bottom: 1rem;">
+                    <label>Name:</label>
+                    <input type="text" id="editName" value="${currentUser.name}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Location:</label>
+                    <input type="text" id="editLocation" value="${currentUser.location || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Bio:</label>
+                    <textarea id="editBio" class="date-input" style="width: 100%; height: 100px; margin-top: 0.5rem; resize: vertical;">${currentUser.bio || ''}</textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Age Range:</label>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <input type="number" id="editMinAge" value="${currentUser.preferences?.min_age || 18}" class="date-input" placeholder="Min Age">
+                        <input type="number" id="editMaxAge" value="${currentUser.preferences?.max_age || 99}" class="date-input" placeholder="Max Age">
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Interests (comma-separated):</label>
+                    <input type="text" id="editInterests" value="${currentUser.preferences?.interests?.join(', ') || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="text-align: right; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Handle form submission
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const profileData = {
+            name: document.getElementById('editName').value,
+            location: document.getElementById('editLocation').value,
+            bio: document.getElementById('editBio').value,
+            preferences: {
+                min_age: parseInt(document.getElementById('editMinAge').value),
+                max_age: parseInt(document.getElementById('editMaxAge').value),
+                interests: document.getElementById('editInterests').value.split(',').map(i => i.trim()).filter(i => i)
+            }
+        };
+
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': await getCSRFToken()
+                },
+                body: JSON.stringify(profileData)
+            });
+
+            if (response.ok) {
+                showToast('Profile updated successfully!', 'success');
+                modal.remove();
+                loadUserProfile(); // Reload profile data
+            } else {
+                showToast('Failed to update profile', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            showToast('Failed to update profile', 'error');
+        }
+    });
+}
+
+        // Save settings
+        async function saveSettings() {
+            const settings = {
+                email_notifications: document.getElementById('emailNotifications').checked,
+                sms_notifications: document.getElementById('smsNotifications').checked,
+                profile_visibility: document.getElementById('profileVisibility').checked
+            };
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': await getCSRFToken()
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save settings');
+                }
+
+                showToast('Settings saved successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showToast('Failed to save settings', 'error');
+            }
+        }
+
+        // Setup WebSocket for real-time updates
+        function setupWebSocket() {
+    if (typeof io === 'undefined') {
+        console.log('Socket.IO not loaded, using polling instead');
+        // Set up periodic polling instead
+        setInterval(async () => {
+            try {
+                await loadStats();
+            } catch (error) {
+                console.log('Polling error:', error);
+            }
+        }, 30000);
+        return;
+    }
+
+    websocket = io('/', {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5
+    });
+
+    websocket.on('connect', () => {
+        console.log('WebSocket connected');
+    });
+
+    websocket.on('new_match', (data) => {
+        showToast('You have a new match!', 'success');
+        loadMatches();
+        loadStats();
+    });
+
+    websocket.on('disconnect', () => {
+        console.log('WebSocket disconnected');
+    });
+}
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'new_match':
+                    showToast('You have a new match request!', 'info');
+                    loadMatches();
+                    loadStats();
+                    break;
+                case 'match_accepted':
+                    showToast('Your match request was accepted!', 'success');
+                    loadMatches();
+                    loadUpcomingDates();
+                    break;
+                case 'match_declined':
+                    showToast('Your match request was declined', 'info');
+                    loadMatches();
+                    break;
+                case 'date_reminder':
+                    showToast(`Reminder: You have a date at ${data.restaurant} in ${data.time}`, 'info');
+                    break;
+            }
+        }
+
+        // Utility functions
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('default', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; margin-left: 1rem;">✕</button>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 100);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+    function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+   async function logout() {
+    try {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-CSRF-Token': await getCSRFToken()
+            }
+        });
+    } finally {
+        window.location.href = '/login.html';
+    }
+}
+
+
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        // Handle page visibility for WebSocket
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && websocket) {
+                websocket.close();
+            } else if (!document.hidden && !websocket) {
+                setupWebSocket();
+            }
+        });
+
+
+    </script>
+</body>
+</html>
