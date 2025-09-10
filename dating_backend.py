@@ -403,107 +403,6 @@ def get_restaurants():
         if price_range:
             query = query.filter_by(price_range=int(price_range))
 
-        # Format database restaurants with safe field access
-        db_restaurants = query.limit(limit // 2).all()
-
-        # Format database restaurants with safe field access
-        for r in db_restaurants:
-            available_tables = RestaurantTable.query.filter_by(
-                restaurant_id=r.id, is_available=True
-            ).count()
-
-            restaurants.append({
-                'id': r.id,
-                'name': r.name,
-                'cuisine': r.cuisine_type,
-                'address': r.address,
-                'price_range': '$' * (r.price_range or 1),
-                'rating': r.rating or 4.0,
-                'available_slots': available_tables * 4,  # Assume 4 time slots per table
-                'image_url': getattr(r, 'image_url', None) or '/static/images/restaurant-placeholder.jpg',
-                'source': getattr(r, 'source', 'internal')
-            })
-
-        # Format database restaurants
-        for r in db_restaurants:
-            available_tables = RestaurantTable.query.filter_by(
-                restaurant_id=r.id, is_available=True
-            ).count()
-
-            restaurants.append({
-                'id': r.id,
-                'name': r.name,
-                'cuisine': r.cuisine_type,
-                'address': r.address,
-                'price_range': '$' * (r.price_range or 1),
-                'rating': r.rating or 4.0,
-                'available_slots': available_tables * 4,  # Assume 4 time slots per table
-                'image_url': '/static/images/restaurant-placeholder.jpg',
-                'source': getattr(r, 'source', 'internal')
-            })
-
-        # If we need more restaurants or for recommendations, fetch from APIs
-        if len(restaurants) < limit or recommended:
-            try:
-                # Try to get fresh restaurants from APIs
-                api_restaurants = restaurant_api.search_restaurants_yelp(
-                    location=location,
-                    cuisine=cuisine,
-                    price=price_range
-                )
-
-                # If Yelp fails, try Google
-                if not api_restaurants:
-                    api_restaurants = restaurant_api.search_restaurants_google(
-                        location=location,
-                        cuisine=cuisine
-                    )
-
-                # Add API restaurants to the list
-                for api_restaurant in api_restaurants[:limit - len(restaurants)]:
-                    restaurants.append({
-                        'id': f"api_{api_restaurant.get('external_id', 'unknown')}",
-                        'name': api_restaurant.get('name', 'Unknown'),
-                        'cuisine': api_restaurant.get('cuisine_type', 'International'),
-                        'address': api_restaurant.get('address', ''),
-                        'price_range': '$' * (api_restaurant.get('price_range', 2)),
-                        'rating': api_restaurant.get('rating', 4.0),
-                        'available_slots': 8,  # Default for API restaurants
-                        'image_url': api_restaurant.get('image_url', '/static/images/restaurant-placeholder.jpg'),
-                        'source': api_restaurant.get('source', 'api')
-                    })
-
-            except Exception as api_error:
-                logger.warning(f"API restaurant fetch failed: {api_error}")
-
-        return jsonify(restaurants)
-
-    except Exception as e:
-        logger.error(f"Get restaurants error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to get restaurants'}), 500
-
-
-@app.route('/api/restaurants', methods=['GET'])
-def get_restaurants():
-    """Get available restaurants from database and APIs"""
-    try:
-        # Get query parameters
-        location = request.args.get('location', 'Tel Aviv')
-        cuisine = request.args.get('cuisine')
-        price_range = request.args.get('price_range')
-        recommended = request.args.get('recommended', 'false').lower() == 'true'
-        limit = int(request.args.get('limit', 50))
-
-        restaurants = []
-
-        # First, get restaurants from database
-        query = Restaurant.query.filter_by(is_active=True)
-
-        if cuisine:
-            query = query.filter(Restaurant.cuisine_type.ilike(f'%{cuisine}%'))
-        if price_range:
-            query = query.filter_by(price_range=int(price_range))
-
         # Get database restaurants (FIXED: removed duplicate processing)
         db_restaurants = query.limit(limit // 2).all()
 
@@ -612,13 +511,26 @@ def get_restaurants():
         logger.error(f"Get restaurants error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get restaurants'}), 500
 
-@app.route('/api/restaurants/<int:restaurant_id>/tables', methods=['GET'])
+
+@app.route('/api/restaurants/<restaurant_id>/tables', methods=['GET'])  # Remove <int:>
 def get_restaurant_tables(restaurant_id):
     """Get available tables for a restaurant"""
     try:
+        # Handle API restaurants (string IDs starting with 'api_')
+        if str(restaurant_id).startswith('api_'):
+            # Return mock tables for API restaurants
+            return jsonify([
+                {'id': 1, 'table_number': '1', 'capacity': 2, 'location': 'window', 'is_available': True},
+                {'id': 2, 'table_number': '2', 'capacity': 2, 'location': 'center', 'is_available': True},
+                {'id': 3, 'table_number': '3', 'capacity': 2, 'location': 'corner', 'is_available': False}
+            ])
+
+        # Handle database restaurants (integer IDs)
         from services.restaurant_service import RestaurantService
         restaurant_service = RestaurantService(db, cache, logger)
-        return restaurant_service.get_available_tables(restaurant_id, request.args)
+        return restaurant_service.get_available_tables(int(restaurant_id), request.args)
+    except ValueError:
+        return jsonify({'error': 'Invalid restaurant ID'}), 400
     except Exception as e:
         logger.error(f"Get tables error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get tables'}), 500
@@ -644,6 +556,114 @@ def get_restaurant_slots(restaurant_id):
     except Exception as e:
         logger.error(f"Get slots error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get time slots'}), 500
+
+
+@app.route('/api/restaurants/<restaurant_id>', methods=['GET'])
+def get_restaurant(restaurant_id):
+    """Get restaurant details"""
+    try:
+        # Handle API restaurants (prefixed with 'api_')
+        if str(restaurant_id).startswith('api_'):
+            # Extract the actual place ID (remove 'api_' prefix)
+            place_id = restaurant_id[4:]  # Remove 'api_' prefix
+
+            # Try Google Places API first
+            try:
+                import requests
+                google_api_key = os.getenv('GOOGLE_PLACES_API_KEY')
+                if google_api_key:
+                    google_url = f"https://maps.googleapis.com/maps/api/place/details/json"
+                    params = {
+                        'place_id': place_id,
+                        'fields': 'name,formatted_address,rating,price_level,types',
+                        'key': google_api_key
+                    }
+
+                    response = requests.get(google_url, params=params, timeout=5)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get('status') == 'OK' and 'result' in data:
+                            place = data['result']
+
+                            # Map price_level to readable format
+                            price_map = {0: '$', 1: '$', 2: '$$', 3: '$$$', 4: '$$$$'}
+                            price_range = price_map.get(place.get('price_level', 2), '$$')
+
+                            # Determine cuisine from types
+                            cuisine = 'International'
+                            types = place.get('types', [])
+                            if 'italian_restaurant' in types:
+                                cuisine = 'Italian'
+                            elif 'chinese_restaurant' in types:
+                                cuisine = 'Chinese'
+                            elif 'mexican_restaurant' in types:
+                                cuisine = 'Mexican'
+                            elif 'japanese_restaurant' in types:
+                                cuisine = 'Japanese'
+
+                            return jsonify({
+                                'id': restaurant_id,
+                                'name': place.get('name', 'Restaurant'),
+                                'cuisine': cuisine,
+                                'address': place.get('formatted_address', 'Address not available'),
+                                'price_range': price_range,
+                                'rating': place.get('rating', 4.0),
+                                'available_tables': 3
+                            })
+            except Exception as e:
+                logger.warning(f"Google Places API failed for {place_id}: {e}")
+
+            # Fallback to lookup table
+            restaurant_lookup = {
+                'ChIJ1-U0Qp1MHRURJFvgKIuvslw': 'Cafe Central',
+                'ChIJ3fIA445LHRURFH_Ww1-rgMU': 'Bella Vista Restaurant',
+                'ChIJkS1XOoRMHRURRyqhiUCrnxE': 'Tokyo Sushi House',
+                'ChIJW_PEYptMHRURb-4h9AYDN_w': 'Mediterranean Delights',
+                'ChIJoSYW_oFLHRUROTeWytMUISo': 'American Bistro',
+                'ChIJ2dL3yiVNHRURma-Gja8DSow': 'Italian Garden',
+                'ChIJ1YYt7YNMHRURP03UUCeI3Do': 'French Corner',
+                'ChIJ4bopMXZMHRURzCb29y_gXok': 'Asian Fusion',
+                'ChIJzTn1pCJNHRURQsMg5TCDr6c': 'Mexican Cantina',
+                'ChIJt-3lqYBLHRURN_cghNWVlz0': 'Steakhouse Prime',
+                'ChIJh3glpn5MHRUR6jwTBg3yMK4': 'Seafood Palace'
+            }
+
+            restaurant_name = restaurant_lookup.get(place_id, 'Local Restaurant')
+
+            return jsonify({
+                'id': restaurant_id,
+                'name': restaurant_name,
+                'cuisine': 'International',
+                'address': 'Location varies',
+                'price_range': '$$',
+                'rating': 4.0,
+                'available_tables': 3
+            })
+
+        # Handle database restaurants
+        try:
+            restaurant = Restaurant.query.get(int(restaurant_id))
+            if not restaurant:
+                return jsonify({'error': 'Restaurant not found'}), 404
+
+            return jsonify({
+                'id': restaurant.id,
+                'name': restaurant.name,
+                'cuisine': restaurant.cuisine_type,
+                'address': restaurant.address,
+                'price_range': '$' * (restaurant.price_range or 1),
+                'rating': restaurant.rating or 4.0,
+                'available_tables': RestaurantTable.query.filter_by(
+                    restaurant_id=restaurant.id, is_available=True
+                ).count()
+            })
+        except ValueError:
+            return jsonify({'error': 'Invalid restaurant ID'}), 400
+
+    except Exception as e:
+        logger.error(f"Get restaurant error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get restaurant'}), 500
+
 
 # API endpoint to refresh restaurants from APIs
 @app.route('/api/admin/restaurants/refresh', methods=['POST'])
