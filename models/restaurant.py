@@ -20,6 +20,11 @@ class Restaurant(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # NEW FIELDS FOR API INTEGRATION
+    external_id = db.Column(db.String(255), unique=True, nullable=True)
+    source = db.Column(db.String(50), default='internal')  # 'internal', 'yelp', 'google'
+    image_url = db.Column(db.String(500))
+    
     # Relationships
     tables = db.relationship('RestaurantTable', backref='restaurant', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -31,7 +36,10 @@ class Restaurant(db.Model):
             'address': self.address,
             'price_range': self.price_range,
             'ambiance': self.ambiance,
-            'rating': self.rating
+            'rating': self.rating,
+            'external_id': self.external_id,
+            'source': self.source,
+            'image_url': self.image_url
         }
 
 class RestaurantTable(db.Model):
