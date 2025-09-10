@@ -382,6 +382,8 @@ def update_profile():
         return jsonify({'error': 'Failed to update profile'}), 500
 
 # Restaurant endpoints with API integration
+# Replace your get_restaurants() function in dating_backend.py with this:
+
 @app.route('/api/restaurants', methods=['GET'])
 def get_restaurants():
     """Get available restaurants from database and APIs"""
@@ -403,10 +405,10 @@ def get_restaurants():
         if price_range:
             query = query.filter_by(price_range=int(price_range))
 
-        # Get database restaurants (FIXED: removed duplicate processing)
+        # Get database restaurants
         db_restaurants = query.limit(limit // 2).all()
 
-        # Format database restaurants (ONLY ONCE!)
+        # Format database restaurants
         for r in db_restaurants:
             available_tables = RestaurantTable.query.filter_by(
                 restaurant_id=r.id, is_available=True
@@ -419,7 +421,7 @@ def get_restaurants():
                 'address': r.address,
                 'price_range': '$' * (r.price_range or 1),
                 'rating': r.rating or 4.0,
-                'available_slots': available_tables * 4,  # Assume 4 time slots per table
+                'available_slots': available_tables * 4,
                 'image_url': getattr(r, 'image_url', None) or '/static/images/restaurant-placeholder.jpg',
                 'source': getattr(r, 'source', 'internal')
             })
@@ -429,40 +431,41 @@ def get_restaurants():
             try:
                 logger.info(f"Fetching API restaurants for location: {location}")
 
-                # Try to get fresh restaurants from APIs
+                # FIX 8: Try Google Places API FIRST (better coverage for international)
                 api_restaurants = []
 
-                # Try Yelp first
                 try:
-                    api_restaurants = restaurant_api.search_restaurants_yelp(
+                    api_restaurants = restaurant_api.search_restaurants_google(
                         location=location,
-                        cuisine=cuisine,
-                        price=price_range
+                        cuisine=cuisine
                     )
-                    logger.info(f"Yelp API returned {len(api_restaurants)} restaurants")
-                except Exception as yelp_error:
-                    logger.error(f"Yelp API failed: {yelp_error}")
+                    logger.info(f"Google API returned {len(api_restaurants)} restaurants")
+                except Exception as google_error:
+                    logger.error(f"Google API failed: {google_error}")
 
-                # If Yelp fails, try Google
-                if not api_restaurants:
+                # FIX 9: Only try Yelp if Google fails or returns few results
+                if len(api_restaurants) < 5:  # If Google returned less than 5
                     try:
-                        api_restaurants = restaurant_api.search_restaurants_google(
+                        yelp_restaurants = restaurant_api.search_restaurants_yelp(
                             location=location,
-                            cuisine=cuisine
+                            cuisine=cuisine,
+                            price=price_range
                         )
-                        logger.info(f"Google API returned {len(api_restaurants)} restaurants")
-                    except Exception as google_error:
-                        logger.error(f"Google API failed: {google_error}")
+                        logger.info(f"Yelp API returned {len(yelp_restaurants)} restaurants")
+                        # Combine with Google results
+                        api_restaurants.extend(yelp_restaurants)
+                    except Exception as yelp_error:
+                        logger.error(f"Yelp API failed: {yelp_error}")
 
-                # If both APIs fail, use mock restaurants for testing
+                # FIX 10: Enhanced mock restaurants with more variety
                 if not api_restaurants:
-                    logger.warning("All APIs failed, using mock restaurants")
+                    logger.warning("All APIs failed, using enhanced mock restaurants")
                     api_restaurants = [
                         {
                             'external_id': 'ChIJ1-U0Qp1MHRURJFvgKIuvslw',
                             'name': 'Cafe Central',
                             'cuisine_type': 'International',
-                            'address': 'Downtown Tel Aviv',
+                            'address': 'Rothschild Blvd, Tel Aviv',
                             'price_range': 2,
                             'rating': 4.2,
                             'source': 'mock'
@@ -471,7 +474,7 @@ def get_restaurants():
                             'external_id': 'ChIJ3fIA445LHRURFH_Ww1-rgMU',
                             'name': 'Bella Vista Restaurant',
                             'cuisine_type': 'Italian',
-                            'address': 'Beach Road Tel Aviv',
+                            'address': 'Hayarkon St, Tel Aviv',
                             'price_range': 3,
                             'rating': 4.5,
                             'source': 'mock'
@@ -480,17 +483,82 @@ def get_restaurants():
                             'external_id': 'ChIJkS1XOoRMHRURRyqhiUCrnxE',
                             'name': 'Tokyo Sushi House',
                             'cuisine_type': 'Japanese',
-                            'address': 'Central Tel Aviv',
+                            'address': 'Dizengoff St, Tel Aviv',
+                            'price_range': 3,
+                            'rating': 4.4,
+                            'source': 'mock'
+                        },
+                        {
+                            'external_id': 'ChIJW_PEYptMHRURb-4h9AYDN_w',
+                            'name': 'Mediterranean Delights',
+                            'cuisine_type': 'Mediterranean',
+                            'address': 'Ibn Gabirol St, Tel Aviv',
+                            'price_range': 2,
+                            'rating': 4.3,
+                            'source': 'mock'
+                        },
+                        {
+                            'external_id': 'ChIJoSYW_oFLHRUROTeWytMUISo',
+                            'name': 'American Bistro',
+                            'cuisine_type': 'American',
+                            'address': 'Allenby St, Tel Aviv',
+                            'price_range': 2,
+                            'rating': 4.1,
+                            'source': 'mock'
+                        },
+                        {
+                            'external_id': 'ChIJ2dL3yiVNHRURma-Gja8DSow',
+                            'name': 'Italian Garden',
+                            'cuisine_type': 'Italian',
+                            'address': 'King George St, Tel Aviv',
+                            'price_range': 3,
+                            'rating': 4.6,
+                            'source': 'mock'
+                        },
+                        {
+                            'external_id': 'ChIJ1YYt7YNMHRURP03UUCeI3Do',
+                            'name': 'French Corner',
+                            'cuisine_type': 'French',
+                            'address': 'Ben Yehuda St, Tel Aviv',
+                            'price_range': 4,
+                            'rating': 4.7,
+                            'source': 'mock'
+                        },
+                        {
+                            'external_id': 'ChIJ4bopMXZMHRURzCb29y_gXok',
+                            'name': 'Asian Fusion',
+                            'cuisine_type': 'Asian',
+                            'address': 'Shenkin St, Tel Aviv',
                             'price_range': 3,
                             'rating': 4.4,
                             'source': 'mock'
                         }
                     ]
 
-                # Add API restaurants to the list
+                # FIX 11: Cache restaurant data for individual lookups
                 for api_restaurant in api_restaurants[:limit - len(restaurants)]:
+                    restaurant_id = f"api_{api_restaurant.get('external_id', 'unknown')}"
+
+                    # Cache this restaurant data for later individual lookups
+                    cache_key = f"restaurant_{restaurant_id}"
+                    cache_data = {
+                        'name': api_restaurant.get('name', 'Unknown'),
+                        'cuisine': api_restaurant.get('cuisine_type', 'International'),
+                        'address': api_restaurant.get('address', ''),
+                        'rating': api_restaurant.get('rating', 4.0),
+                        'price_range': api_restaurant.get('price_range', 2),
+                        'source': api_restaurant.get('source', 'api'),
+                        'cached_at': datetime.utcnow().isoformat()
+                    }
+
+                    try:
+                        cache.set(cache_key, cache_data, timeout=86400)  # Cache for 24 hours
+                        logger.info(f"Cached restaurant data for {restaurant_id}")
+                    except Exception as cache_error:
+                        logger.warning(f"Failed to cache restaurant {restaurant_id}: {cache_error}")
+
                     restaurants.append({
-                        'id': f"api_{api_restaurant.get('external_id', 'unknown')}",
+                        'id': restaurant_id,
                         'name': api_restaurant.get('name', 'Unknown'),
                         'cuisine': api_restaurant.get('cuisine_type', 'International'),
                         'address': api_restaurant.get('address', ''),
@@ -564,10 +632,27 @@ def get_restaurant(restaurant_id):
     try:
         # Handle API restaurants (prefixed with 'api_')
         if str(restaurant_id).startswith('api_'):
+            # FIX 1: Check cache first (populated by get_restaurants())
+            cache_key = f"restaurant_{restaurant_id}"
+            cached_data = cache.get(cache_key)
+
+            if cached_data and isinstance(cached_data, dict):
+                logger.info(f"Found cached restaurant data for {restaurant_id}")
+                return jsonify({
+                    'id': restaurant_id,
+                    'name': cached_data.get('name', 'Restaurant'),
+                    'cuisine': cached_data.get('cuisine', 'International'),
+                    'address': cached_data.get('address', 'Address not available'),
+                    'price_range': '$' * cached_data.get('price_range', 2),
+                    'rating': cached_data.get('rating', 4.0),
+                    'available_tables': 3,
+                    'source': cached_data.get('source', 'api')
+                })
+
             # Extract the actual place ID (remove 'api_' prefix)
             place_id = restaurant_id[4:]  # Remove 'api_' prefix
 
-            # Try Google Places API first
+            # FIX 2: Try Google Places API with better error handling
             try:
                 import requests
                 google_api_key = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -580,8 +665,12 @@ def get_restaurant(restaurant_id):
                     }
 
                     response = requests.get(google_url, params=params, timeout=5)
+                    logger.info(f"Google Places API response status: {response.status_code}")
+
                     if response.status_code == 200:
                         data = response.json()
+                        logger.info(f"Google Places API status: {data.get('status')}")
+
                         if data.get('status') == 'OK' and 'result' in data:
                             place = data['result']
 
@@ -600,8 +689,14 @@ def get_restaurant(restaurant_id):
                                 cuisine = 'Mexican'
                             elif 'japanese_restaurant' in types:
                                 cuisine = 'Japanese'
+                            elif 'indian_restaurant' in types:
+                                cuisine = 'Indian'
+                            elif 'thai_restaurant' in types:
+                                cuisine = 'Thai'
+                            elif 'french_restaurant' in types:
+                                cuisine = 'French'
 
-                            return jsonify({
+                            restaurant_data = {
                                 'id': restaurant_id,
                                 'name': place.get('name', 'Restaurant'),
                                 'cuisine': cuisine,
@@ -609,36 +704,142 @@ def get_restaurant(restaurant_id):
                                 'price_range': price_range,
                                 'rating': place.get('rating', 4.0),
                                 'available_tables': 3
-                            })
+                            }
+
+                            # FIX 3: Cache this data for future use
+                            try:
+                                cache_data = {
+                                    'name': restaurant_data['name'],
+                                    'cuisine': cuisine,
+                                    'address': restaurant_data['address'],
+                                    'rating': restaurant_data['rating'],
+                                    'price_range': place.get('price_level', 2),
+                                    'source': 'google',
+                                    'cached_at': datetime.utcnow().isoformat()
+                                }
+                                cache.set(cache_key, cache_data, timeout=86400)
+                                logger.info(f"Cached Google Places data for {restaurant_id}")
+                            except Exception as cache_error:
+                                logger.warning(f"Failed to cache Google data: {cache_error}")
+
+                            return jsonify(restaurant_data)
+                        else:
+                            logger.warning(f"Google Places API error status: {data.get('status')} for {place_id}")
+                    else:
+                        logger.error(f"Google Places API HTTP error: {response.status_code}")
+                        logger.error(f"Response: {response.text}")
             except Exception as e:
                 logger.warning(f"Google Places API failed for {place_id}: {e}")
 
-            # Fallback to lookup table
+            # FIX 4: Enhanced fallback lookup table with more restaurants
             restaurant_lookup = {
-                'ChIJ1-U0Qp1MHRURJFvgKIuvslw': 'Cafe Central',
-                'ChIJ3fIA445LHRURFH_Ww1-rgMU': 'Bella Vista Restaurant',
-                'ChIJkS1XOoRMHRURRyqhiUCrnxE': 'Tokyo Sushi House',
-                'ChIJW_PEYptMHRURb-4h9AYDN_w': 'Mediterranean Delights',
-                'ChIJoSYW_oFLHRUROTeWytMUISo': 'American Bistro',
-                'ChIJ2dL3yiVNHRURma-Gja8DSow': 'Italian Garden',
-                'ChIJ1YYt7YNMHRURP03UUCeI3Do': 'French Corner',
-                'ChIJ4bopMXZMHRURzCb29y_gXok': 'Asian Fusion',
-                'ChIJzTn1pCJNHRURQsMg5TCDr6c': 'Mexican Cantina',
-                'ChIJt-3lqYBLHRURN_cghNWVlz0': 'Steakhouse Prime',
-                'ChIJh3glpn5MHRUR6jwTBg3yMK4': 'Seafood Palace'
+                'ChIJ1-U0Qp1MHRURJFvgKIuvslw': {
+                    'name': 'Cafe Central',
+                    'cuisine': 'International',
+                    'address': 'Rothschild Blvd, Tel Aviv',
+                    'rating': 4.2
+                },
+                'ChIJ3fIA445LHRURFH_Ww1-rgMU': {
+                    'name': 'Bella Vista Restaurant',
+                    'cuisine': 'Italian',
+                    'address': 'Hayarkon St, Tel Aviv',
+                    'rating': 4.5
+                },
+                'ChIJkS1XOoRMHRURRyqhiUCrnxE': {
+                    'name': 'Tokyo Sushi House',
+                    'cuisine': 'Japanese',
+                    'address': 'Dizengoff St, Tel Aviv',
+                    'rating': 4.4
+                },
+                'ChIJW_PEYptMHRURb-4h9AYDN_w': {
+                    'name': 'Mediterranean Delights',
+                    'cuisine': 'Mediterranean',
+                    'address': 'Ibn Gabirol St, Tel Aviv',
+                    'rating': 4.3
+                },
+                'ChIJoSYW_oFLHRUROTeWytMUISo': {
+                    'name': 'American Bistro',
+                    'cuisine': 'American',
+                    'address': 'Allenby St, Tel Aviv',
+                    'rating': 4.1
+                },
+                'ChIJ2dL3yiVNHRURma-Gja8DSow': {
+                    'name': 'Italian Garden',
+                    'cuisine': 'Italian',
+                    'address': 'King George St, Tel Aviv',
+                    'rating': 4.6
+                },
+                'ChIJ1YYt7YNMHRURP03UUCeI3Do': {
+                    'name': 'French Corner',
+                    'cuisine': 'French',
+                    'address': 'Ben Yehuda St, Tel Aviv',
+                    'rating': 4.7
+                },
+                'ChIJ4bopMXZMHRURzCb29y_gXok': {
+                    'name': 'Asian Fusion',
+                    'cuisine': 'Asian',
+                    'address': 'Shenkin St, Tel Aviv',
+                    'rating': 4.4
+                },
+                'ChIJzTn1pCJNHRURQsMg5TCDr6c': {
+                    'name': 'Mexican Cantina',
+                    'cuisine': 'Mexican',
+                    'address': 'Florentin, Tel Aviv',
+                    'rating': 4.2
+                },
+                'ChIJt-3lqYBLHRURN_cghNWVlz0': {
+                    'name': 'Steakhouse Prime',
+                    'cuisine': 'American',
+                    'address': 'Ramat Aviv, Tel Aviv',
+                    'rating': 4.5
+                },
+                'ChIJh3glpn5MHRUR6jwTBg3yMK4': {
+                    'name': 'Seafood Palace',
+                    'cuisine': 'Seafood',
+                    'address': 'Jaffa Port, Tel Aviv',
+                    'rating': 4.3
+                }
             }
 
-            restaurant_name = restaurant_lookup.get(place_id, 'Local Restaurant')
+            restaurant_info = restaurant_lookup.get(place_id)
+            if restaurant_info:
+                restaurant_data = {
+                    'id': restaurant_id,
+                    'name': restaurant_info['name'],
+                    'cuisine': restaurant_info['cuisine'],
+                    'address': restaurant_info['address'],
+                    'price_range': '$$',
+                    'rating': restaurant_info['rating'],
+                    'available_tables': 3
+                }
 
-            return jsonify({
-                'id': restaurant_id,
-                'name': restaurant_name,
-                'cuisine': 'International',
-                'address': 'Location varies',
-                'price_range': '$$',
-                'rating': 4.0,
-                'available_tables': 3
-            })
+                # Cache the lookup table data too
+                try:
+                    cache_data = {
+                        'name': restaurant_info['name'],
+                        'cuisine': restaurant_info['cuisine'],
+                        'address': restaurant_info['address'],
+                        'rating': restaurant_info['rating'],
+                        'price_range': 2,
+                        'source': 'lookup',
+                        'cached_at': datetime.utcnow().isoformat()
+                    }
+                    cache.set(cache_key, cache_data, timeout=86400)
+                except Exception as cache_error:
+                    logger.warning(f"Failed to cache lookup data: {cache_error}")
+
+                return jsonify(restaurant_data)
+            else:
+                # Last resort fallback
+                return jsonify({
+                    'id': restaurant_id,
+                    'name': 'Local Restaurant',
+                    'cuisine': 'International',
+                    'address': 'Tel Aviv, Israel',
+                    'price_range': '$$',
+                    'rating': 4.0,
+                    'available_tables': 3
+                })
 
         # Handle database restaurants
         try:
