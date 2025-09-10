@@ -15,6 +15,32 @@ class MatchingService:
         self.logger = logger
         # Initialize fallback storage for when cache fails
         self._restaurant_name_fallback = {}
+        
+        # CRITICAL FIX: Add the same lookup table as in get_restaurant()
+        self._restaurant_lookup = {
+            'ChIJ1-U0Qp1MHRURJFvgKIuvslw': 'Cafe Central',
+            'ChIJ3fIA445LHRURFH_Ww1-rgMU': 'Bella Vista Restaurant',
+            'ChIJkS1XOoRMHRURRyqhiUCrnxE': 'Tokyo Sushi House',
+            'ChIJW_PEYptMHRURb-4h9AYDN_w': 'Mediterranean Delights',
+            'ChIJoSYW_oFLHRUROTeWytMUISo': 'American Bistro',
+            'ChIJ2dL3yiVNHRURma-Gja8DSow': 'Italian Garden',
+            'ChIJ1YYt7YNMHRURP03UUCeI3Do': 'French Corner',
+            'ChIJ4bopMXZMHRURzCb29y_gXok': 'Asian Fusion',
+            'ChIJzTn1pCJNHRURQsMg5TCDr6c': 'Mexican Cantina',
+            'ChIJt-3lqYBLHRURN_cghNWVlz0': 'Steakhouse Prime',
+            'ChIJh3glpn5MHRUR6jwTBg3yMK4': 'Seafood Palace',
+            'ChIJjWNkBJ9LHRURiO82rTq2iHE': 'Harbor Grill',
+            'ChIJa9zBe3tLHRURQHbcLSWNU1g': 'Garden Terrace',
+            'ChIJ9wL1Br1MHRURYYfQ5YPDPrQ': 'City Bistro',
+            'ChIJ-0LvBXZMHRURYXaYjlzxXnw': 'Rooftop Restaurant',
+            'ChIJcVF66phMHRURqVgw7iKaPXM': 'Corner Cafe',
+            'ChIJ6644AptLHRURlCPeKB29rbE': 'Ocean View',
+            'ChIJ_0sxxIJMHRURZQRo4UaZubI': 'Downtown Eatery',
+            'ChIJVZbho31LHRURHeEapaQghuI': 'Sunset Grill',
+            'ChIJgSHEw4VMHRUR4rzGHwN5kEM': 'Marina Restaurant',
+            'ChIJ0_0kufVLHRURbEnQPFPvfXI': 'Beachside Diner',
+            'ChIJLWAqo4VMHRUR1ImdDJQXu0c': 'Central Market'
+        }
 
     def get_suggestions(self, user_id, data):
         """Get suggested matches for a time slot"""
@@ -141,7 +167,15 @@ class MatchingService:
                         return name
                     else:
                         self.logger.warning(f"No cached data found for API restaurant {restaurant_id}")
-                        return "External Restaurant"
+                        
+                        # CRITICAL FIX: Use lookup table instead of returning "External Restaurant"
+                        place_id = restaurant_id[4:]  # Remove 'api_' prefix
+                        restaurant_name = self._restaurant_lookup.get(place_id, 'External Restaurant')
+                        self.logger.info(f"Using lookup table for {place_id}: {restaurant_name}")
+                        
+                        # Store this name for future use
+                        self._store_restaurant_name(match_cache_key, restaurant_name)
+                        return restaurant_name
                 else:
                     # Database restaurant
                     try:
@@ -166,7 +200,7 @@ class MatchingService:
     def _store_restaurant_name(self, cache_key, name):
         """Store restaurant name with multiple fallback methods"""
         try:
-            # Method 1: Try normal cache.set
+            # Method 1: Try normal cache.set (FIXED: removed timeout parameter)
             try:
                 success = self.cache.set(cache_key, name)
                 if success:
@@ -175,15 +209,7 @@ class MatchingService:
             except Exception as e:
                 self.logger.warning(f"Primary cache.set failed: {e}")
 
-            # Method 2: Try with timeout
-            try:
-                self.cache.set(cache_key, name)  # 24 hours
-                self.logger.info(f"Successfully cached with timeout for key {cache_key}")
-                return
-            except Exception as e:
-                self.logger.warning(f"Timeout cache.set failed: {e}")
-
-            # Method 3: Store in fallback dict
+            # Method 2: Store in fallback dict as backup
             self._restaurant_name_fallback[cache_key] = name
             self.logger.info(f"Stored in fallback dict for key {cache_key}")
 
@@ -265,32 +291,20 @@ class MatchingService:
             self.db.session.add(match)
             self.db.session.commit()
 
-            # CRITICAL FIX: Store restaurant name with multiple fallback methods
+            # CRITICAL FIX: Store restaurant name (FIXED: removed timeout parameters)
             match_cache_key = f"match_restaurant_{match.id}"
-            cache_success = False
-
-            # Try multiple cache storage methods
+            
             try:
-                # Method 1: Try normal cache.set
-                try:
-                    cache_success = self.cache.set(match_cache_key, restaurant_name)
-                    if cache_success:
-                        self.logger.info(
-                            f"Successfully cached restaurant name '{restaurant_name}' for match {match.id}")
-                except Exception as e:
-                    self.logger.warning(f"Primary cache.set failed: {e}")
+                # Try to cache the restaurant name
+                cache_success = self.cache.set(match_cache_key, restaurant_name)
+                if cache_success:
+                    self.logger.info(f"Successfully cached restaurant name '{restaurant_name}' for match {match.id}")
+                else:
+                    # Store in fallback dict if cache fails
+                    self._restaurant_name_fallback[match_cache_key] = restaurant_name
+                    self.logger.info(f"Stored in fallback dict for match {match.id}")
 
-                # Method 2: If primary fails, try alternative storage
-                if not cache_success:
-                    try:
-                        # Some cache implementations need explicit expiration
-                        self.cache.set(match_cache_key, restaurant_name)  # 24 hours
-                        cache_success = True
-                        self.logger.info(f"Successfully cached with timeout for match {match.id}")
-                    except Exception as e:
-                        self.logger.warning(f"Timeout cache.set failed: {e}")
-
-                # Method 3: Store in backup location regardless
+                # Also store backup cache for API restaurants
                 if restaurant_id.startswith('api_'):
                     backup_cache_key = f"restaurant_{restaurant_id}"
                     backup_data = {'name': restaurant_name, 'cached_at': datetime.utcnow().isoformat()}
@@ -300,15 +314,11 @@ class MatchingService:
                     except Exception as e:
                         self.logger.warning(f"Backup cache storage failed: {e}")
 
-                # Method 4: If all cache methods fail, store in a simple dict fallback
-                if not cache_success:
-                    self._restaurant_name_fallback[match_cache_key] = restaurant_name
-                    self.logger.info(f"Stored in fallback dict for match {match.id}")
-
             except Exception as cache_error:
-                self.logger.error(f"All cache methods failed for match {match.id}: {cache_error}")
-                # Still store in fallback dict as last resort
+                self.logger.error(f"Cache methods failed for match {match.id}: {cache_error}")
+                # Store in fallback dict as last resort
                 self._restaurant_name_fallback[match_cache_key] = restaurant_name
+                self.logger.info(f"Stored in fallback dict for match {match.id}")
 
             self.logger.info(f"Created match {match.id} with restaurant name: {restaurant_name}")
 
@@ -327,7 +337,7 @@ class MatchingService:
         """Get restaurant name when creating a new match"""
         try:
             if restaurant_id.startswith('api_'):
-                # External API restaurant - check backup cache
+                # External API restaurant - check backup cache first
                 cache_key = f"restaurant_{restaurant_id}"
                 cached_restaurant = self.cache.get(cache_key)
                 if cached_restaurant:
@@ -339,7 +349,12 @@ class MatchingService:
                         return "External Restaurant"
                 else:
                     self.logger.warning(f"No cached restaurant data found for {restaurant_id}")
-                    return "External Restaurant"
+                    
+                    # CRITICAL FIX: Use lookup table instead of returning "External Restaurant"
+                    place_id = restaurant_id[4:]  # Remove 'api_' prefix
+                    restaurant_name = self._restaurant_lookup.get(place_id, 'External Restaurant')
+                    self.logger.info(f"Using lookup table for new match {place_id}: {restaurant_name}")
+                    return restaurant_name
             else:
                 # Database restaurant
                 try:
