@@ -68,30 +68,8 @@ class MatchingService:
                 other_user_id = match.user2_id if match.user1_id == user_id else match.user1_id
                 other_user = User.query.get(other_user_id)
                 
-                # Get restaurant info (handle both DB and API restaurants)
-                restaurant_name = "Unknown Restaurant"
-                if match.restaurant_id:
-                    if str(match.restaurant_id).startswith('api_'):
-                        # Try to get restaurant name from match cache first
-                        match_cache_key = f"match_restaurant_{match.id}"
-                        cached_name = self.cache.get(match_cache_key)
-                        if cached_name:
-                            restaurant_name = cached_name
-                        else:
-                            # Fallback to restaurant cache
-                            cache_key = f"restaurant_{match.restaurant_id}"
-                            cached_restaurant = self.cache.get(cache_key)
-                            if cached_restaurant and isinstance(cached_restaurant, dict):
-                                restaurant_name = cached_restaurant.get('name', 'External Restaurant')
-                            else:
-                                restaurant_name = "External Restaurant"
-                    else:
-                        try:
-                            restaurant = Restaurant.query.get(int(match.restaurant_id))
-                            if restaurant:
-                                restaurant_name = restaurant.name
-                        except (ValueError, TypeError):
-                            pass
+                # CRITICAL FIX: Get restaurant name properly
+                restaurant_name = self._get_restaurant_name(match)
                 
                 if other_user:
                     # Convert status to string if it's an enum
@@ -114,6 +92,53 @@ class MatchingService:
         except Exception as e:
             self.logger.error(f"Get user matches error: {str(e)}")
             return jsonify({'error': 'Failed to get matches'}), 500
+    
+    def _get_restaurant_name(self, match):
+        """Get restaurant name for a match - FIXED VERSION"""
+        try:
+            # First check if we have the restaurant name stored with the match
+            match_cache_key = f"match_restaurant_{match.id}"
+            cached_name = self.cache.get(match_cache_key)
+            if cached_name:
+                self.logger.info(f"Found cached restaurant name for match {match.id}: {cached_name}")
+                return cached_name
+            
+            # If not cached with match, try to get from restaurant data
+            if match.restaurant_id:
+                restaurant_id = str(match.restaurant_id)
+                
+                if restaurant_id.startswith('api_'):
+                    # External API restaurant
+                    cache_key = f"restaurant_{restaurant_id}"
+                    cached_restaurant = self.cache.get(cache_key)
+                    if cached_restaurant and isinstance(cached_restaurant, dict):
+                        name = cached_restaurant.get('name', 'External Restaurant')
+                        # Store this name with the match for future use
+                        self.cache.set(match_cache_key, name)
+                        return name
+                    else:
+                        self.logger.warning(f"No cached data found for API restaurant {restaurant_id}")
+                        return "External Restaurant"
+                else:
+                    # Database restaurant
+                    try:
+                        restaurant = Restaurant.query.get(int(restaurant_id))
+                        if restaurant:
+                            # Cache this name with the match
+                            self.cache.set(match_cache_key, restaurant.name)
+                            return restaurant.name
+                        else:
+                            self.logger.warning(f"Database restaurant {restaurant_id} not found")
+                            return "Unknown Restaurant"
+                    except (ValueError, TypeError) as e:
+                        self.logger.error(f"Error converting restaurant_id to int: {e}")
+                        return "Unknown Restaurant"
+            
+            return "Unknown Restaurant"
+            
+        except Exception as e:
+            self.logger.error(f"Error getting restaurant name for match {match.id}: {str(e)}")
+            return "Unknown Restaurant"
     
     def browse_matches(self, user_id, params):
         """Browse potential matches for available tables"""
@@ -151,24 +176,16 @@ class MatchingService:
                     # If parsing fails, use current time
                     proposed_datetime = datetime.utcnow()
             
-            # Get restaurant name - use from data if provided, otherwise try cache/database
+            # CRITICAL FIX: Ensure restaurant name is properly handled
             restaurant_id = str(data.get('restaurant_id'))
-            restaurant_name = data.get('restaurant_name', "Unknown Restaurant")  # Get from frontend
+            restaurant_name = data.get('restaurant_name', "Unknown Restaurant")
             
+            # Log what we received to debug
+            self.logger.info(f"Received match request - restaurant_id: {restaurant_id}, restaurant_name: {restaurant_name}")
+            
+            # If no restaurant name provided, try to get it
             if restaurant_name == "Unknown Restaurant":
-                # Only try cache/database if not provided by frontend
-                if restaurant_id.startswith('api_'):
-                    cache_key = f"restaurant_{restaurant_id}"
-                    cached_restaurant = self.cache.get(cache_key)
-                    if cached_restaurant and isinstance(cached_restaurant, dict):
-                        restaurant_name = cached_restaurant.get('name', 'External Restaurant')
-                else:
-                    try:
-                        restaurant = Restaurant.query.get(int(restaurant_id))
-                        if restaurant:
-                            restaurant_name = restaurant.name
-                    except (ValueError, TypeError):
-                        pass
+                restaurant_name = self._get_restaurant_name_for_new_match(restaurant_id)
             
             # Check for existing match to prevent duplicates (only for same date/time)
             existing_match = Match.query.filter(
@@ -196,9 +213,11 @@ class MatchingService:
             self.db.session.add(match)
             self.db.session.commit()
             
-            # Store restaurant name in cache for later retrieval (FIXED: removed timeout parameter)
+            # CRITICAL FIX: Store restaurant name with the match ID
             match_cache_key = f"match_restaurant_{match.id}"
-            self.cache.set(match_cache_key, restaurant_name)  # Removed timeout=86400*30
+            self.cache.set(match_cache_key, restaurant_name)
+            
+            self.logger.info(f"Created match {match.id} with restaurant name: {restaurant_name}")
             
             return jsonify({
                 'success': True,
@@ -210,6 +229,31 @@ class MatchingService:
             self.db.session.rollback()
             self.logger.error(f"Request match error: {str(e)}")
             return jsonify({'error': 'Failed to request match'}), 500
+    
+    def _get_restaurant_name_for_new_match(self, restaurant_id):
+        """Get restaurant name when creating a new match"""
+        try:
+            if restaurant_id.startswith('api_'):
+                # External API restaurant
+                cache_key = f"restaurant_{restaurant_id}"
+                cached_restaurant = self.cache.get(cache_key)
+                if cached_restaurant and isinstance(cached_restaurant, dict):
+                    return cached_restaurant.get('name', 'External Restaurant')
+                else:
+                    return "External Restaurant"
+            else:
+                # Database restaurant
+                try:
+                    restaurant = Restaurant.query.get(int(restaurant_id))
+                    if restaurant:
+                        return restaurant.name
+                    else:
+                        return "Unknown Restaurant"
+                except (ValueError, TypeError):
+                    return "Unknown Restaurant"
+        except Exception as e:
+            self.logger.error(f"Error getting restaurant name for new match: {str(e)}")
+            return "Unknown Restaurant"
     
     def respond_to_match(self, user_id, match_id, response_data):
         """Accept or decline a match"""
