@@ -14,38 +14,42 @@ class MatchingService:
         self.logger = logger
     
     def get_suggestions(self, user_id, data):
-        """Get suggested matches for a time slot"""
-        try:
-            # Get real test users (excluding current user)
-            test_users = User.query.filter(
-                and_(
-                    User.id != user_id,
-                    User.email.in_(['sarah@example.com', 'emma@example.com', 'lisa@example.com', 'john@example.com'])
-                )
-            ).limit(3).all()
-            
-            suggestions = []
-            for user in test_users:
-                suggestions.append({
-                    'id': user.id,
-                    'name': user.email.split('@')[0].title(),
-                    'age': 28,  # Mock age for now
-                    'compatibility': 85,
-                    'avatar_url': '/static/images/default-avatar.jpg',
-                    'interests': ['Food', 'Travel', 'Books'],
-                    'bio': f'Looking forward to meeting new people over dinner!'
-                })
-            
-            # If no test users found, return empty array instead of mock data
-            if not suggestions:
-                self.logger.warning("No test users found for suggestions")
-                return jsonify([])
-            
-            return jsonify(suggestions)
-            
-        except Exception as e:
-            self.logger.error(f"Get suggestions error: {str(e)}")
-            return jsonify({'error': 'Failed to get suggestions'}), 500
+    """Get suggested matches for a time slot"""
+    try:
+        # Always get the same test users in consistent order
+        test_users = User.query.filter(
+            and_(
+                User.id != user_id,
+                User.email.in_(['sarah@example.com', 'emma@example.com', 'lisa@example.com', 'john@example.com'])
+            )
+        ).order_by(User.email).limit(3).all()  # Added order_by for consistency
+        
+        suggestions = []
+        # Create consistent persona mapping
+        persona_map = {
+            'sarah@example.com': {'name': 'Sarah M.', 'age': 28, 'compatibility': 85, 'interests': ['Italian food', 'Travel', 'Books']},
+            'emma@example.com': {'name': 'Emma K.', 'age': 26, 'compatibility': 92, 'interests': ['Art', 'Cooking', 'Yoga']},
+            'lisa@example.com': {'name': 'Lisa R.', 'age': 30, 'compatibility': 78, 'interests': ['Photography', 'Hiking', 'Wine']},
+            'john@example.com': {'name': 'John D.', 'age': 32, 'compatibility': 88, 'interests': ['Sports', 'Music', 'Food']}
+        }
+        
+        for user in test_users:
+            persona = persona_map.get(user.email, {'name': user.email.split('@')[0].title(), 'age': 28, 'compatibility': 80, 'interests': ['Food', 'Travel']})
+            suggestions.append({
+                'id': user.id,
+                'name': persona['name'],
+                'age': persona['age'],
+                'compatibility': persona['compatibility'],
+                'avatar_url': '/static/images/default-avatar.jpg',
+                'interests': persona['interests'],
+                'bio': f'Looking forward to meeting new people over dinner!'
+            })
+        
+        return jsonify(suggestions)
+        
+    except Exception as e:
+        self.logger.error(f"Get suggestions error: {str(e)}")
+        return jsonify({'error': 'Failed to get suggestions'}), 500
     
     def get_user_matches(self, user_id):
         """Get user's matches"""
