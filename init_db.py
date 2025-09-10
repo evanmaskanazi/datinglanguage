@@ -13,18 +13,27 @@ from dating_backend import app, db, bcrypt
 def init_database():
     """Initialize database with tables and default data"""
     with app.app_context():
-        # Import ALL models to ensure they're registered with SQLAlchemy
-        import models  # This will import everything from __init__.py
-
         print("Creating database tables (preserving existing data)...")
-        db.create_all()  # This creates missing tables but keeps existing data
 
-        # Run migration for restaurant columns
+        # First create basic tables without importing models that might fail
+        try:
+            db.create_all()
+            print("Basic tables created successfully")
+        except Exception as e:
+            print(f"Error creating tables: {e}")
+
+        # Run migration for restaurant columns BEFORE importing models
         print("Running restaurant table migration...")
         migrate_restaurant_columns()
 
-        # Now we can safely use the models
-        from models import User, Restaurant, RestaurantTable
+        # NOW we can safely import models after migration
+        try:
+            from models.user import User
+            from models.restaurant import Restaurant, RestaurantTable
+            print("Models imported successfully")
+        except Exception as e:
+            print(f"Error importing models: {e}")
+            return
 
         print("Checking for admin user...")
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@tablefortwo.com')
@@ -54,48 +63,64 @@ def init_database():
             db.session.rollback()
 
         # Only add restaurants if database is empty
-        if Restaurant.query.count() == 0:
-            print("No restaurants found, adding initial restaurants...")
-            add_restaurants()
-        else:
-            existing_count = Restaurant.query.count()
-            print(f"Database already has {existing_count} restaurants, skipping restaurant initialization")
+        try:
+            if Restaurant.query.count() == 0:
+                print("No restaurants found, adding initial restaurants...")
+                add_restaurants()
+            else:
+                existing_count = Restaurant.query.count()
+                print(f"Database already has {existing_count} restaurants, skipping restaurant initialization")
+        except Exception as e:
+            print(f"Error checking/adding restaurants: {e}")
 
         print("Database initialization complete!")
 
 
 def migrate_restaurant_columns():
     """Add missing columns to restaurants table"""
-    migration_sql = [
-        """
-        ALTER TABLE restaurants 
-        ADD COLUMN IF NOT EXISTS external_id VARCHAR(255);
-        """,
-        """
-        ALTER TABLE restaurants 
-        ADD COLUMN IF NOT EXISTS source VARCHAR(50) DEFAULT 'internal';
-        """,
-        """
-        ALTER TABLE restaurants 
-        ADD COLUMN IF NOT EXISTS image_url VARCHAR(500);
-        """
-    ]
+    from sqlalchemy import text
 
     try:
-        for sql in migration_sql:
-            print(f"Executing migration: {sql.strip()}")
-            db.session.execute(sql)
+        # Check if columns exist first, then add them
+        check_sql = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'restaurants' AND column_name IN ('external_id', 'source', 'image_url');
+        """
 
-        db.session.commit()
-        print("✅ Restaurant table migration completed!")
+        result = db.session.execute(text(check_sql)).fetchall()
+        existing_columns = [row[0] for row in result]
+
+        migrations_needed = []
+
+        if 'external_id' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN external_id VARCHAR(255);")
+
+        if 'source' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN source VARCHAR(50) DEFAULT 'internal';")
+
+        if 'image_url' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN image_url VARCHAR(500);")
+
+        for sql in migrations_needed:
+            print(f"Executing migration: {sql}")
+            db.session.execute(text(sql))
+
+        if migrations_needed:
+            db.session.commit()
+            print("✅ Restaurant table migration completed!")
+        else:
+            print("✅ Restaurant columns already exist, no migration needed!")
 
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         db.session.rollback()
+        raise
+
 
 def add_restaurants():
     """Add restaurants from both test data and API sources"""
-    from models import Restaurant, RestaurantTable
+    from models.restaurant import Restaurant, RestaurantTable
     from services.restaurant_api_service import RestaurantAPIService
 
     # Initialize API service
@@ -191,7 +216,8 @@ def add_restaurants():
             try:
                 yelp_restaurants = api_service.search_restaurants_yelp(city)
                 for restaurant_data in yelp_restaurants[:5]:  # Limit to 5 per city
-                    if not Restaurant.query.filter_by(external_id=restaurant_data.get('external_id')).first():
+                    external_id = restaurant_data.get('external_id')
+                    if external_id and not Restaurant.query.filter_by(external_id=external_id).first():
                         restaurant = Restaurant(**restaurant_data)
                         db.session.add(restaurant)
                         db.session.flush()
@@ -222,49 +248,54 @@ def add_restaurants():
         print(f"Error adding restaurants: {e}")
         db.session.rollback()
 
+
 def update_restaurants_from_api():
     """Function to periodically update restaurants from APIs"""
-    from models import Restaurant, RestaurantTable
-    from services.restaurant_api_service import RestaurantAPIService
+    with app.app_context():
+        from models.restaurant import Restaurant, RestaurantTable
+        from services.restaurant_api_service import RestaurantAPIService
 
-    api_service = RestaurantAPIService(logger=None)
+        api_service = RestaurantAPIService(logger=None)
 
-    print("Updating restaurants from APIs...")
-    cities = ['Tel Aviv', 'Jerusalem', 'Haifa']
+        print("Updating restaurants from APIs...")
+        cities = ['Tel Aviv', 'Jerusalem', 'Haifa']
 
-    for city in cities:
-        try:
-            # Fetch fresh data
-            restaurants = api_service.search_restaurants_yelp(city)
+        for city in cities:
+            try:
+                # Fetch fresh data
+                restaurants = api_service.search_restaurants_yelp(city)
 
-            for restaurant_data in restaurants:
-                existing = Restaurant.query.filter_by(external_id=restaurant_data.get('external_id')).first()
+                for restaurant_data in restaurants:
+                    external_id = restaurant_data.get('external_id')
+                    if external_id:
+                        existing = Restaurant.query.filter_by(external_id=external_id).first()
 
-                if existing:
-                    # Update existing restaurant
-                    existing.rating = restaurant_data.get('rating', existing.rating)
-                    existing.is_active = True
-                else:
-                    # Add new restaurant
-                    restaurant = Restaurant(**restaurant_data)
-                    db.session.add(restaurant)
-                    db.session.flush()
+                        if existing:
+                            # Update existing restaurant
+                            existing.rating = restaurant_data.get('rating', existing.rating)
+                            existing.is_active = True
+                        else:
+                            # Add new restaurant
+                            restaurant = Restaurant(**restaurant_data)
+                            db.session.add(restaurant)
+                            db.session.flush()
 
-                    # Add tables
-                    for i in range(1, 3):
-                        table = RestaurantTable(
-                            restaurant_id=restaurant.id,
-                            table_number=str(i),
-                            capacity=2,
-                            location='main_dining',
-                            is_available=True
-                        )
-                        db.session.add(table)
-        except Exception as e:
-            print(f"Error updating restaurants for {city}: {e}")
+                            # Add tables
+                            for i in range(1, 3):
+                                table = RestaurantTable(
+                                    restaurant_id=restaurant.id,
+                                    table_number=str(i),
+                                    capacity=2,
+                                    location='main_dining',
+                                    is_available=True
+                                )
+                                db.session.add(table)
+            except Exception as e:
+                print(f"Error updating restaurants for {city}: {e}")
 
-    db.session.commit()
-    print("Restaurant update completed!")
+        db.session.commit()
+        print("Restaurant update completed!")
+
 
 if __name__ == '__main__':
     init_database()

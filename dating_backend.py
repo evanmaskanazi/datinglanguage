@@ -403,7 +403,23 @@ def get_restaurants():
         if price_range:
             query = query.filter_by(price_range=int(price_range))
 
-        db_restaurants = query.limit(limit // 2).all()
+        # Format database restaurants with safe field access
+        for r in db_restaurants:
+            available_tables = RestaurantTable.query.filter_by(
+                restaurant_id=r.id, is_available=True
+            ).count()
+
+            restaurants.append({
+                'id': r.id,
+                'name': r.name,
+                'cuisine': r.cuisine_type,
+                'address': r.address,
+                'price_range': '$' * (r.price_range or 1),
+                'rating': r.rating or 4.0,
+                'available_slots': available_tables * 4,  # Assume 4 time slots per table
+                'image_url': getattr(r, 'image_url', None) or '/static/images/restaurant-placeholder.jpg',
+                'source': getattr(r, 'source', 'internal')
+            })
 
         # Format database restaurants
         for r in db_restaurants:
