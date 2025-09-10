@@ -108,13 +108,20 @@ class MatchingService:
                 restaurant_id = str(match.restaurant_id)
                 
                 if restaurant_id.startswith('api_'):
-                    # External API restaurant
-                    cache_key = f"restaurant_{restaurant_id}"
-                    cached_restaurant = self.cache.get(cache_key)
-                    if cached_restaurant and isinstance(cached_restaurant, dict):
-                        name = cached_restaurant.get('name', 'External Restaurant')
+                    # External API restaurant - try backup cache first
+                    backup_cache_key = f"restaurant_{restaurant_id}"
+                    cached_restaurant = self.cache.get(backup_cache_key)
+                    if cached_restaurant:
+                        if isinstance(cached_restaurant, dict):
+                            name = cached_restaurant.get('name', 'External Restaurant')
+                        elif isinstance(cached_restaurant, str):
+                            name = cached_restaurant
+                        else:
+                            name = 'External Restaurant'
+                        
                         # Store this name with the match for future use
                         self.cache.set(match_cache_key, name)
+                        self.logger.info(f"Retrieved restaurant name from backup cache: {name}")
                         return name
                     else:
                         self.logger.warning(f"No cached data found for API restaurant {restaurant_id}")
@@ -184,8 +191,9 @@ class MatchingService:
             self.logger.info(f"Received match request - restaurant_id: {restaurant_id}, restaurant_name: {restaurant_name}")
             
             # If no restaurant name provided, try to get it
-            if restaurant_name == "Unknown Restaurant":
+            if restaurant_name in ["Unknown Restaurant", "API Restaurant"]:
                 restaurant_name = self._get_restaurant_name_for_new_match(restaurant_id)
+                self.logger.info(f"Retrieved restaurant name from cache/DB: {restaurant_name}")
             
             # Check for existing match to prevent duplicates (only for same date/time)
             existing_match = Match.query.filter(
@@ -213,9 +221,25 @@ class MatchingService:
             self.db.session.add(match)
             self.db.session.commit()
             
-            # CRITICAL FIX: Store restaurant name with the match ID
+            # CRITICAL FIX: Store restaurant name with the match ID - with error handling
             match_cache_key = f"match_restaurant_{match.id}"
-            self.cache.set(match_cache_key, restaurant_name)
+            try:
+                # Set cache with longer expiration and verify it worked
+                cache_success = self.cache.set(match_cache_key, restaurant_name)
+                if cache_success:
+                    self.logger.info(f"Successfully cached restaurant name '{restaurant_name}' for match {match.id}")
+                else:
+                    self.logger.warning(f"Cache.set returned False for match {match.id}")
+                    
+                # Also store in a backup location with restaurant_id as key for future retrieval
+                if restaurant_id.startswith('api_'):
+                    backup_cache_key = f"restaurant_{restaurant_id}"
+                    backup_data = {'name': restaurant_name, 'cached_at': datetime.utcnow().isoformat()}
+                    self.cache.set(backup_cache_key, backup_data)
+                    self.logger.info(f"Stored backup cache for restaurant {restaurant_id}: {restaurant_name}")
+                    
+            except Exception as cache_error:
+                self.logger.error(f"Cache error for match {match.id}: {cache_error}")
             
             self.logger.info(f"Created match {match.id} with restaurant name: {restaurant_name}")
             
@@ -234,12 +258,18 @@ class MatchingService:
         """Get restaurant name when creating a new match"""
         try:
             if restaurant_id.startswith('api_'):
-                # External API restaurant
+                # External API restaurant - check backup cache
                 cache_key = f"restaurant_{restaurant_id}"
                 cached_restaurant = self.cache.get(cache_key)
-                if cached_restaurant and isinstance(cached_restaurant, dict):
-                    return cached_restaurant.get('name', 'External Restaurant')
+                if cached_restaurant:
+                    if isinstance(cached_restaurant, dict):
+                        return cached_restaurant.get('name', 'External Restaurant')
+                    elif isinstance(cached_restaurant, str):
+                        return cached_restaurant
+                    else:
+                        return "External Restaurant"
                 else:
+                    self.logger.warning(f"No cached restaurant data found for {restaurant_id}")
                     return "External Restaurant"
             else:
                 # Database restaurant
