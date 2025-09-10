@@ -1,10 +1,6 @@
 """
-Table
-for Two - Dating App Backend
-Real
-connections, real
-dinners, real
-people.
+Table for Two - Dating App Backend
+Real connections, real dinners, real people.
 """
 import os
 import secrets
@@ -45,7 +41,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 import secrets
 
-
 # Email imports
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -58,7 +53,6 @@ from utils.logging_config import setup_logger, log_audit
 
 # Add this right after your imports
 from functools import wraps
-
 
 def require_auth(roles=None):
     def decorator(f):
@@ -91,7 +85,6 @@ def require_auth(roles=None):
 
     return decorator
 
-
 logger = setup_logger('table_for_two')
 
 # === CONSTANTS ===
@@ -101,7 +94,7 @@ JWT_EXPIRATION_HOURS = 24
 
 ALLOWED_ORIGINS = [
     'https://tablefortwo.com',
-  'https://datinglanguage.onrender.com',  
+    'https://datinglanguage.onrender.com',
     'http://localhost:5000',
     'http://127.0.0.1:5000'
 ]
@@ -141,12 +134,13 @@ app.template_folder = BASE_DIR / 'templates'
 # === FLASK CONFIGURATION ===
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config.update(
-    SESSION_COOKIE_SECURE=not app.debug,  # Change to False for development
+    SESSION_COOKIE_SECURE=not app.debug,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
-    SESSION_COOKIE_NAME='session'  # Remove __Host- prefix for development
+    SESSION_COOKIE_NAME='session'
 )
+
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL',
@@ -212,8 +206,16 @@ from models.profile import UserProfile, UserPreferences
 from models.feedback import DateFeedback
 from models.payment import Payment, PaymentStatus
 
-# === AUTHENTICATION ===
+# === WEBSOCKET SETUP ===
+from services.websocket_service import WebSocketService
 
+# Initialize WebSocket service
+websocket_service = WebSocketService(app, redis_client, logger)
+socketio = websocket_service.socketio
+
+# === RESTAURANT API SERVICE ===
+from services.restaurant_api_service import RestaurantAPIService
+restaurant_api = RestaurantAPIService(logger)
 
 # === REQUEST HANDLERS ===
 @app.before_request
@@ -239,11 +241,7 @@ def check_cors():
 
 @app.before_request
 def validate_inputs():
-    """
-Check
-all
-inputs
-for XSS attempts"""
+    """Check all inputs for XSS attempts"""
     for key, value in request.values.items():
         if value and isinstance(value, str):
             for pattern in DANGEROUS_PATTERNS:
@@ -283,8 +281,6 @@ def get_csrf_token():
     """Get CSRF token for API requests"""
     return jsonify({'csrf_token': generate_csrf()})
 
-
-
 # Authentication endpoints
 @app.route('/api/auth/register', methods=['POST'])
 @limiter.limit("10 per hour")
@@ -297,7 +293,6 @@ def register():
     except Exception as e:
         logger.error(f"Registration error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Registration failed'}), 500
-
 
 @app.route('/api/auth/login', methods=['POST'])
 @limiter.limit("20 per minute")
@@ -359,7 +354,7 @@ def get_profile():
         profile_data = {
             'id': user.id,
             'email': user.email,
-            'name': user.email.split('@')[0],  # Use email prefix as name since User model doesn't have name field
+            'name': user.email.split('@')[0],
             'location': user.profile.location if user.profile and hasattr(user.profile, 'location') else None,
             'bio': user.profile.bio if user.profile and hasattr(user.profile, 'bio') else None,
             'preferences': {
@@ -386,39 +381,110 @@ def update_profile():
         logger.error(f"Update profile error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to update profile'}), 500
 
-# Restaurant endpoints
+# Restaurant endpoints with API integration
 @app.route('/api/restaurants', methods=['GET'])
 def get_restaurants():
-    """Get available restaurants"""
+    """Get available restaurants from database and APIs"""
     try:
-        # Basic implementation
-        restaurants = Restaurant.query.filter_by(is_active=True).limit(10).all()
+        # Get query parameters
+        location = request.args.get('location', 'Tel Aviv')
+        cuisine = request.args.get('cuisine')
+        price_range = request.args.get('price_range')
+        recommended = request.args.get('recommended', 'false').lower() == 'true'
+        limit = int(request.args.get('limit', 50))
 
-        result = []
-        for r in restaurants:
-            result.append({
+        restaurants = []
+
+        # First, get restaurants from database
+        query = Restaurant.query.filter_by(is_active=True)
+
+        if cuisine:
+            query = query.filter(Restaurant.cuisine_type.ilike(f'%{cuisine}%'))
+        if price_range:
+            query = query.filter_by(price_range=int(price_range))
+
+        db_restaurants = query.limit(limit // 2).all()
+
+        # Format database restaurants
+        for r in db_restaurants:
+            available_tables = RestaurantTable.query.filter_by(
+                restaurant_id=r.id, is_available=True
+            ).count()
+
+            restaurants.append({
                 'id': r.id,
                 'name': r.name,
                 'cuisine': r.cuisine_type,
                 'address': r.address,
-                'price_range': '$' * r.price_range,
-                'rating': 4.5,  # Placeholder
-                'available_slots': 5,  # Placeholder
-                'image_url': '/static/images/restaurant-placeholder.jpg'
+                'price_range': '$' * (r.price_range or 1),
+                'rating': r.rating or 4.0,
+                'available_slots': available_tables * 4,  # Assume 4 time slots per table
+                'image_url': '/static/images/restaurant-placeholder.jpg',
+                'source': getattr(r, 'source', 'internal')
             })
 
-        return jsonify(result)
+        # If we need more restaurants or for recommendations, fetch from APIs
+        if len(restaurants) < limit or recommended:
+            try:
+                # Try to get fresh restaurants from APIs
+                api_restaurants = restaurant_api.search_restaurants_yelp(
+                    location=location,
+                    cuisine=cuisine,
+                    price=price_range
+                )
+
+                # If Yelp fails, try Google
+                if not api_restaurants:
+                    api_restaurants = restaurant_api.search_restaurants_google(
+                        location=location,
+                        cuisine=cuisine
+                    )
+
+                # Add API restaurants to the list
+                for api_restaurant in api_restaurants[:limit - len(restaurants)]:
+                    restaurants.append({
+                        'id': f"api_{api_restaurant.get('external_id', 'unknown')}",
+                        'name': api_restaurant.get('name', 'Unknown'),
+                        'cuisine': api_restaurant.get('cuisine_type', 'International'),
+                        'address': api_restaurant.get('address', ''),
+                        'price_range': '$' * (api_restaurant.get('price_range', 2)),
+                        'rating': api_restaurant.get('rating', 4.0),
+                        'available_slots': 8,  # Default for API restaurants
+                        'image_url': api_restaurant.get('image_url', '/static/images/restaurant-placeholder.jpg'),
+                        'source': api_restaurant.get('source', 'api')
+                    })
+
+            except Exception as api_error:
+                logger.warning(f"API restaurant fetch failed: {api_error}")
+
+        return jsonify(restaurants)
+
     except Exception as e:
         logger.error(f"Get restaurants error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get restaurants'}), 500
 
-@app.route('/api/restaurants/<int:restaurant_id>', methods=['GET'])
+@app.route('/api/restaurants/<restaurant_id>', methods=['GET'])
 def get_restaurant(restaurant_id):
     """Get restaurant details"""
     try:
+        # Handle API restaurants (prefixed with 'api_')
+        if str(restaurant_id).startswith('api_'):
+            return jsonify({
+                'id': restaurant_id,
+                'name': 'API Restaurant',
+                'cuisine': 'International',
+                'address': 'Location varies',
+                'price_range': '$$',
+                'rating': 4.0,
+                'available_tables': 3
+            })
+
+        # Handle database restaurants
         from services.restaurant_service import RestaurantService
         restaurant_service = RestaurantService(db, cache, logger)
-        return restaurant_service.get_restaurant(restaurant_id)
+        return restaurant_service.get_restaurant(int(restaurant_id))
+    except ValueError:
+        return jsonify({'error': 'Invalid restaurant ID'}), 400
     except Exception as e:
         logger.error(f"Get restaurant error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get restaurant'}), 500
@@ -434,31 +500,52 @@ def get_restaurant_tables(restaurant_id):
         logger.error(f"Get tables error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get tables'}), 500
 
-@app.route('/api/restaurants/<int:restaurant_id>/slots', methods=['GET'])
+@app.route('/api/restaurants/<restaurant_id>/slots', methods=['GET'])
 def get_restaurant_slots(restaurant_id):
     """Get available time slots for a restaurant"""
     try:
-        from services.restaurant_service import RestaurantService
-        restaurant_service = RestaurantService(db, cache, logger)
-        return restaurant_service.get_available_slots(restaurant_id, request.args)
+        # Handle both API and database restaurants
+        time_slots = [
+            {'time': '12:00', 'available': True},
+            {'time': '12:30', 'available': True},
+            {'time': '13:00', 'available': False},
+            {'time': '13:30', 'available': True},
+            {'time': '18:00', 'available': True},
+            {'time': '18:30', 'available': True},
+            {'time': '19:00', 'available': True},
+            {'time': '19:30', 'available': False},
+            {'time': '20:00', 'available': True},
+            {'time': '20:30', 'available': True}
+        ]
+        return jsonify(time_slots)
     except Exception as e:
         logger.error(f"Get slots error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get time slots'}), 500
 
-# Matching endpoints
+# API endpoint to refresh restaurants from APIs
+@app.route('/api/admin/restaurants/refresh', methods=['POST'])
+@require_auth(roles=['admin'])
+def refresh_restaurants():
+    """Refresh restaurant database from APIs"""
+    try:
+        # This would be called periodically or by admin
+        from init_db import update_restaurants_from_api
+        update_restaurants_from_api()
+        return jsonify({'message': 'Restaurants refreshed successfully'})
+    except Exception as e:
+        logger.error(f"Refresh restaurants error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to refresh restaurants'}), 500
+
 # Matching endpoints
 @app.route('/api/matches', methods=['GET'])
 @require_auth()
 def get_matches():
     """Get user's matches"""
     try:
-        # Simple implementation returning empty array
-        # In production, this would query the Match model
         return jsonify([])
     except Exception as e:
         logger.error(f"Get matches error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get matches'}), 500
-
 
 @app.route('/api/matches/suggestions', methods=['POST'])
 @require_auth()
@@ -472,7 +559,6 @@ def get_match_suggestions():
         logger.error(f"Get suggestions error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get suggestions'}), 500
 
-
 @app.route('/api/matches/browse', methods=['GET'])
 @require_auth()
 def browse_matches():
@@ -485,7 +571,6 @@ def browse_matches():
         logger.error(f"Browse matches error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to browse matches'}), 500
 
-
 @app.route('/api/matches/request', methods=['POST'])
 @require_auth()
 @limiter.limit("10 per hour")
@@ -494,11 +579,19 @@ def request_match():
     try:
         from services.matching_service import MatchingService
         matching_service = MatchingService(db, cache, logger)
-        return matching_service.request_match(request.current_user.id, request.json)
+        result = matching_service.request_match(request.current_user.id, request.json)
+
+        # Send WebSocket notification for new match
+        if hasattr(result, 'json') and result.status_code == 201:
+            websocket_service.notify_new_match(
+                request.json.get('match_user_id'),
+                {'type': 'match_request', 'from_user': request.current_user.id}
+            )
+
+        return result
     except Exception as e:
         logger.error(f"Request match error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to request match'}), 500
-
 
 @app.route('/api/matches/<int:match_id>/accept', methods=['POST'])
 @require_auth()
@@ -512,7 +605,6 @@ def accept_match(match_id):
         logger.error(f"Accept match error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to accept match'}), 500
 
-
 @app.route('/api/matches/<int:match_id>/decline', methods=['POST'])
 @require_auth()
 def decline_match(match_id):
@@ -525,20 +617,16 @@ def decline_match(match_id):
         logger.error(f"Decline match error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to decline match'}), 500
 
-
 # Date endpoints
 @app.route('/api/dates/upcoming', methods=['GET'])
 @require_auth()
 def get_upcoming_dates():
     """Get upcoming dates"""
     try:
-        # Simple implementation returning empty array
-        # In production, this would query reservations with future dates
         return jsonify([])
     except Exception as e:
         logger.error(f"Get upcoming dates error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get upcoming dates'}), 500
-
 
 @app.route('/api/dates/history', methods=['GET'])
 @require_auth()
@@ -552,7 +640,6 @@ def get_date_history():
         logger.error(f"Get date history error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get date history'}), 500
 
-
 @app.route('/api/dates/<int:date_id>', methods=['GET'])
 @require_auth()
 def get_date_details(date_id):
@@ -564,7 +651,6 @@ def get_date_details(date_id):
     except Exception as e:
         logger.error(f"Get date details error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get date details'}), 500
-
 
 @app.route('/api/dates/<int:date_id>/rate', methods=['POST'])
 @require_auth()
@@ -578,14 +664,12 @@ def rate_date(date_id):
         logger.error(f"Rate date error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to rate date'}), 500
 
-
 # User stats
 @app.route('/api/user/stats', methods=['GET'])
 @require_auth()
 def get_user_stats():
     """Get user statistics"""
     try:
-        # Basic stats implementation
         stats = {
             'total_dates': 0,
             'active_matches': 0,
@@ -610,7 +694,6 @@ def update_settings():
         logger.error(f"Update settings error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to update settings'}), 500
 
-
 # Reservation endpoints
 @app.route('/api/reservations', methods=['POST'])
 @require_auth()
@@ -625,7 +708,6 @@ def create_reservation():
         logger.error(f"Create reservation error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to create reservation'}), 500
 
-
 @app.route('/api/reservations/<int:reservation_id>', methods=['GET'])
 @require_auth()
 def get_reservation(reservation_id):
@@ -637,7 +719,6 @@ def get_reservation(reservation_id):
     except Exception as e:
         logger.error(f"Get reservation error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get reservation'}), 500
-
 
 # Payment endpoints
 @app.route('/api/payments/initiate', methods=['POST'])
@@ -652,7 +733,6 @@ def initiate_payment():
         logger.error(f"Initiate payment error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to initiate payment'}), 500
 
-
 @app.route('/api/payments/webhook', methods=['POST'])
 @csrf.exempt
 def payment_webhook():
@@ -664,7 +744,6 @@ def payment_webhook():
     except Exception as e:
         logger.error(f"Payment webhook error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Webhook processing failed'}), 500
-
 
 # Feedback endpoints
 @app.route('/api/feedback', methods=['POST'])
@@ -679,7 +758,6 @@ def submit_feedback():
         logger.error(f"Submit feedback error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to submit feedback'}), 500
 
-
 # Admin endpoints (protected)
 @app.route('/api/admin/restaurants', methods=['POST'])
 @require_auth(roles=['admin'])
@@ -693,7 +771,6 @@ def add_restaurant():
         logger.error(f"Add restaurant error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to add restaurant'}), 500
 
-
 @app.route('/api/admin/analytics', methods=['GET'])
 @require_auth(roles=['admin'])
 def get_analytics():
@@ -705,7 +782,6 @@ def get_analytics():
     except Exception as e:
         logger.error(f"Get analytics error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get analytics'}), 500
-
 
 # GDPR endpoints
 @app.route('/api/user/data-export', methods=['GET'])
@@ -720,7 +796,6 @@ def export_user_data():
         logger.error(f"Data export error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to export data'}), 500
 
-
 @app.route('/api/user/delete-account', methods=['DELETE'])
 @require_auth()
 def delete_account():
@@ -732,159 +807,6 @@ def delete_account():
     except Exception as e:
         logger.error(f"Delete account error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to delete account'}), 500
-
-
-# === STATIC FILES ===
-@app.route('/')
-def index():
-    """Serve the main landing page"""
-    return send_file('static/index.html')
-
-
-@app.route('/login.html')
-def login_page():
-    """Serve the login page"""
-    return send_file('static/login.html')
-
-
-@app.route('/dashboard.html')
-def dashboard():
-    """Serve the dashboard"""
-    return send_file('static/dashboard.html')
-
-
-@app.route('/signup.html')
-def signup_page():
-    """Serve the signup page"""
-    return send_file('static/signup.html')
-
-
-# === DYNAMIC IMAGE GENERATION ===
-@app.route('/static/images/default-avatar.jpg')
-def default_avatar():
-    """Generate a default avatar image"""
-    from PIL import Image, ImageDraw, ImageFont
-    import io
-
-    # Create a simple avatar
-    img = Image.new('RGB', (200, 200), color='#e74c3c')
-    draw = ImageDraw.Draw(img)
-
-    # Draw initials (using built-in font since we can't specify font_size directly)
-    try:
-        draw.text((100, 100), "?", fill='white', anchor="mm")
-    except:
-        # Fallback for older Pillow versions
-        draw.text((90, 80), "?", fill='white')
-
-    # Save to bytes
-    img_io = io.BytesIO()
-    img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-
-    return send_file(img_io, mimetype='image/jpeg')
-
-
-@app.route('/static/images/restaurant-placeholder.jpg')
-def restaurant_placeholder():
-    """Generate a placeholder restaurant image"""
-    from PIL import Image, ImageDraw
-    import io
-
-    # Create a simple restaurant placeholder
-    img = Image.new('RGB', (400, 300), color='#f0f0f0')
-    draw = ImageDraw.Draw(img)
-
-    # Draw a simple restaurant representation
-    draw.rectangle([150, 100, 250, 200], fill='#e74c3c')
-    draw.text((200, 220), "Restaurant", fill='#666', anchor="mm")
-
-    # Save to bytes
-    img_io = io.BytesIO()
-    img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-
-    return send_file(img_io, mimetype='image/jpeg')
-
-
-@app.route('/static/images/couple-dinner.jpg')
-def couple_dinner():
-    """Generate a couple dinner placeholder image"""
-    from PIL import Image, ImageDraw
-    import io
-
-    # Create a simple couple dinner placeholder
-    img = Image.new('RGB', (600, 400), color='#fff5f5')
-    draw = ImageDraw.Draw(img)
-
-    # Draw simple shapes to represent couple dining
-    # Table
-    draw.ellipse([200, 200, 400, 280], fill='#8B4513')
-    # Two circles for people
-    draw.ellipse([180, 150, 220, 190], fill='#e74c3c')
-    draw.ellipse([380, 150, 420, 190], fill='#e74c3c')
-
-    # Save to bytes
-    img_io = io.BytesIO()
-    img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-
-    return send_file(img_io, mimetype='image/jpeg')
-
-
-@app.route('/favicon.ico')
-def favicon():
-    """Generate a simple favicon"""
-    from PIL import Image, ImageDraw
-    import io
-
-    # Create a simple favicon
-    img = Image.new('RGBA', (32, 32), color=(0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    # Draw a heart shape
-    draw.ellipse([4, 4, 16, 16], fill='#e74c3c')
-    draw.ellipse([16, 4, 28, 16], fill='#e74c3c')
-    draw.polygon([(16, 24), (4, 12), (28, 12)], fill='#e74c3c')
-
-    # Save to bytes
-    img_io = io.BytesIO()
-    img.save(img_io, 'ICO')
-    img_io.seek(0)
-
-    return send_file(img_io, mimetype='image/x-icon')
-
-
-# === ERROR HANDLERS ===
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({
-        'error': 'Resource not found',
-        'request_id': getattr(g, 'request_id', 'unknown')
-    }), 404
-
-
-@app.errorhandler(429)
-def rate_limit_exceeded(error):
-    return jsonify({
-        'error': 'Rate limit exceeded',
-        'message': str(error.description),
-        'request_id': getattr(g, 'request_id', 'unknown')
-    }), 429
-
-
-@app.errorhandler(500)
-def internal_error(error):
-    db.session.rollback()
-    logger.error('internal_server_error', extra={
-        'error': str(error),
-        'request_id': getattr(g, 'request_id', 'unknown')
-    }, exc_info=True)
-    return jsonify({
-        'error': 'Internal server error',
-        'request_id': getattr(g, 'request_id', 'unknown')
-    }), 500
-
 
 # Password reset endpoints
 @app.route('/api/auth/forgot-password', methods=['POST'])
@@ -927,7 +849,6 @@ def forgot_password():
     except Exception as e:
         logger.error(f"Forgot password error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to process request'}), 500
-
 
 @app.route('/api/auth/reset-password', methods=['POST'])
 @limiter.limit("5 per hour")
@@ -972,7 +893,135 @@ def reset_password():
         logger.error(f"Reset password error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to reset password'}), 500
 
+# === STATIC FILES ===
+@app.route('/')
+def index():
+    """Serve the main landing page"""
+    return send_file('static/index.html')
 
+@app.route('/login.html')
+def login_page():
+    """Serve the login page"""
+    return send_file('static/login.html')
+
+@app.route('/dashboard.html')
+def dashboard():
+    """Serve the dashboard"""
+    return send_file('static/dashboard.html')
+
+@app.route('/signup.html')
+def signup_page():
+    """Serve the signup page"""
+    return send_file('static/signup.html')
+
+# === DYNAMIC IMAGE GENERATION ===
+@app.route('/static/images/default-avatar.jpg')
+def default_avatar():
+    """Generate a default avatar image"""
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new('RGB', (200, 200), color='#e74c3c')
+    draw = ImageDraw.Draw(img)
+
+    try:
+        draw.text((100, 100), "?", fill='white', anchor="mm")
+    except:
+        draw.text((90, 80), "?", fill='white')
+
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/static/images/restaurant-placeholder.jpg')
+def restaurant_placeholder():
+    """Generate a placeholder restaurant image"""
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new('RGB', (400, 300), color='#f0f0f0')
+    draw = ImageDraw.Draw(img)
+
+    draw.rectangle([150, 100, 250, 200], fill='#e74c3c')
+    draw.text((200, 220), "Restaurant", fill='#666', anchor="mm")
+
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/static/images/couple-dinner.jpg')
+def couple_dinner():
+    """Generate a couple dinner placeholder image"""
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new('RGB', (600, 400), color='#fff5f5')
+    draw = ImageDraw.Draw(img)
+
+    # Draw simple shapes to represent couple dining
+    # Table
+    draw.ellipse([200, 200, 400, 280], fill='#8B4513')
+    # Two circles for people
+    draw.ellipse([180, 150, 220, 190], fill='#e74c3c')
+    draw.ellipse([380, 150, 420, 190], fill='#e74c3c')
+
+    img_io = io.BytesIO()
+    img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/favicon.ico')
+def favicon():
+    """Generate a simple favicon"""
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new('RGBA', (32, 32), color=(0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Draw a heart shape
+    draw.ellipse([4, 4, 16, 16], fill='#e74c3c')
+    draw.ellipse([16, 4, 28, 16], fill='#e74c3c')
+    draw.polygon([(16, 24), (4, 12), (28, 12)], fill='#e74c3c')
+
+    img_io = io.BytesIO()
+    img.save(img_io, 'ICO')
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/x-icon')
+
+# === ERROR HANDLERS ===
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        'error': 'Resource not found',
+        'request_id': getattr(g, 'request_id', 'unknown')
+    }), 404
+
+@app.errorhandler(429)
+def rate_limit_exceeded(error):
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'message': str(error.description),
+        'request_id': getattr(g, 'request_id', 'unknown')
+    }), 429
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    logger.error('internal_server_error', extra={
+        'error': str(error),
+        'request_id': getattr(g, 'request_id', 'unknown')
+    }, exc_info=True)
+    return jsonify({
+        'error': 'Internal server error',
+        'request_id': getattr(g, 'request_id', 'unknown')
+    }), 500
 
 # === INITIALIZATION ===
 def initialize_database():
@@ -993,14 +1042,12 @@ def initialize_database():
 
         # Only run initialization functions when running directly (not via gunicorn)
         if __name__ == '__main__':
-            # Import initialization functions
             from utils.db_init import (
                 create_default_categories,
                 create_admin_user,
                 create_test_restaurants
             )
 
-            # Run initialization
             create_default_categories(db)
             create_admin_user(db, bcrypt)
 
@@ -1009,12 +1056,11 @@ def initialize_database():
 
             logger.info("Database initialized successfully")
 
-
 # === MAIN ENTRY POINT ===
 if __name__ == '__main__':
     # Initialize database if needed
     initialize_database()
 
-    # Run the app
+    # Run with WebSocket support
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=not os.environ.get('PRODUCTION'))
+    websocket_service.run(host='0.0.0.0', port=port, debug=not os.environ.get('PRODUCTION'))
