@@ -561,7 +561,9 @@ def refresh_restaurants():
 def get_matches():
     """Get user's matches"""
     try:
-        return jsonify([])
+        from services.matching_service import MatchingService
+        matching_service = MatchingService(db, cache, logger)
+        return matching_service.get_user_matches(request.current_user.id)
     except Exception as e:
         logger.error(f"Get matches error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get matches'}), 500
