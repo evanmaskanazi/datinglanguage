@@ -16,7 +16,7 @@ def migrate_restaurant_table():
         migration_sql = [
             """
             ALTER TABLE restaurants 
-            ADD COLUMN IF NOT EXISTS external_id VARCHAR(255) UNIQUE;
+            ADD COLUMN IF NOT EXISTS external_id VARCHAR(255);
             """,
             """
             ALTER TABLE restaurants 
