@@ -72,9 +72,21 @@ class MatchingService:
                 restaurant_name = "Unknown Restaurant"
                 if match.restaurant_id:
                     if str(match.restaurant_id).startswith('api_'):
-                        # For API restaurants, we'll need to store the name separately or fetch it
-                        # For now, use a placeholder
-                        restaurant_name = "API Restaurant"
+                        # For API restaurants, make a direct call to get the name
+                        try:
+                            import requests
+                            from flask import current_app
+                            # Make internal API call to get restaurant details
+                            base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+                            response = requests.get(f'{base_url}/api/restaurants/{match.restaurant_id}', timeout=5)
+                            if response.status_code == 200:
+                                restaurant_data = response.json()
+                                restaurant_name = restaurant_data.get('name', 'External Restaurant')
+                            else:
+                                restaurant_name = "External Restaurant"
+                        except Exception as e:
+                            self.logger.warning(f"Failed to fetch API restaurant name for {match.restaurant_id}: {e}")
+                            restaurant_name = "External Restaurant"
                     else:
                         try:
                             restaurant = Restaurant.query.get(int(match.restaurant_id))
