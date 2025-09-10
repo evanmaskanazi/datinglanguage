@@ -196,9 +196,9 @@ class MatchingService:
             self.db.session.add(match)
             self.db.session.commit()
             
-            # Store restaurant name in cache for later retrieval
+            # Store restaurant name in cache for later retrieval (FIXED: removed timeout parameter)
             match_cache_key = f"match_restaurant_{match.id}"
-            self.cache.set(match_cache_key, restaurant_name, timeout=86400*30)  # Cache for 30 days
+            self.cache.set(match_cache_key, restaurant_name)  # Removed timeout=86400*30
             
             return jsonify({
                 'success': True,
