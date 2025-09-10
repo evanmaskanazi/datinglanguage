@@ -61,7 +61,7 @@ class RestaurantService:
             }
             
             # Cache for 5 minutes
-            self.cache.set(cache_key, result, 300)
+            self.cache.set(cache_key, result)
             
             return jsonify(result)
             
