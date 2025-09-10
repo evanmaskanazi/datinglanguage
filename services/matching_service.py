@@ -16,21 +16,20 @@ class MatchingService:
     def get_suggestions(self, user_id, data):
         """Get suggested matches for a time slot"""
         try:
-            # Always get the same test users in consistent order
+            # Always get the same test users in consistent order (exclude john to get sarah)
             test_users = User.query.filter(
                 and_(
                     User.id != user_id,
-                    User.email.in_(['sarah@example.com', 'emma@example.com', 'lisa@example.com', 'john@example.com'])
+                    User.email.in_(['sarah@example.com', 'emma@example.com', 'lisa@example.com'])  # Removed john
                 )
-            ).order_by(User.email).limit(3).all()  # Added order_by for consistency
+            ).order_by(User.email).all()  # Remove limit to get all 3
             
             suggestions = []
             # Create consistent persona mapping
             persona_map = {
                 'sarah@example.com': {'name': 'Sarah M.', 'age': 28, 'compatibility': 85, 'interests': ['Italian food', 'Travel', 'Books']},
                 'emma@example.com': {'name': 'Emma K.', 'age': 26, 'compatibility': 92, 'interests': ['Art', 'Cooking', 'Yoga']},
-                'lisa@example.com': {'name': 'Lisa R.', 'age': 30, 'compatibility': 78, 'interests': ['Photography', 'Hiking', 'Wine']},
-                'john@example.com': {'name': 'John D.', 'age': 32, 'compatibility': 88, 'interests': ['Sports', 'Music', 'Food']}
+                'lisa@example.com': {'name': 'Lisa R.', 'age': 30, 'compatibility': 78, 'interests': ['Photography', 'Hiking', 'Wine']}
             }
             
             for user in test_users:
@@ -125,17 +124,6 @@ class MatchingService:
             if user_id == match_user_id:
                 return jsonify({'error': 'Cannot send match request to yourself'}), 400
             
-            # Check for existing match to prevent duplicates
-            existing_match = Match.query.filter(
-                or_(
-                    and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
-                    and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
-                )
-            ).filter(Match.status != MatchStatus.DECLINED).first()
-            
-            if existing_match:
-                return jsonify({'error': 'Match request already exists with this user'}), 400
-            
             # Parse the datetime string if provided
             proposed_datetime = datetime.utcnow()
             if data.get('datetime'):
@@ -152,6 +140,18 @@ class MatchingService:
                     self.logger.warning(f"Failed to parse datetime '{data.get('datetime')}': {e}")
                     # If parsing fails, use current time
                     proposed_datetime = datetime.utcnow()
+            
+            # Check for existing match to prevent duplicates (only for same date/time)
+            existing_match = Match.query.filter(
+                or_(
+                    and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
+                    and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
+                ),
+                Match.proposed_datetime == proposed_datetime  # Only check same datetime
+            ).filter(Match.status != MatchStatus.DECLINED).first()
+            
+            if existing_match:
+                return jsonify({'error': 'Match request already exists for this date and time'}), 400
             
             # Create a new match request
             match = Match(
