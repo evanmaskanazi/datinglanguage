@@ -9,15 +9,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import app and database
 from dating_backend import app, db, bcrypt
 
+
 def init_database():
     """Initialize database with tables and default data"""
     with app.app_context():
         # Import ALL models to ensure they're registered with SQLAlchemy
         import models  # This will import everything from __init__.py
 
-        # FIXED: Only create tables, don't drop existing ones
         print("Creating database tables (preserving existing data)...")
         db.create_all()  # This creates missing tables but keeps existing data
+
+        # Run migration for restaurant columns
+        print("Running restaurant table migration...")
+        migrate_restaurant_columns()
 
         # Now we can safely use the models
         from models import User, Restaurant, RestaurantTable
@@ -58,6 +62,36 @@ def init_database():
             print(f"Database already has {existing_count} restaurants, skipping restaurant initialization")
 
         print("Database initialization complete!")
+
+
+def migrate_restaurant_columns():
+    """Add missing columns to restaurants table"""
+    migration_sql = [
+        """
+        ALTER TABLE restaurants 
+        ADD COLUMN IF NOT EXISTS external_id VARCHAR(255);
+        """,
+        """
+        ALTER TABLE restaurants 
+        ADD COLUMN IF NOT EXISTS source VARCHAR(50) DEFAULT 'internal';
+        """,
+        """
+        ALTER TABLE restaurants 
+        ADD COLUMN IF NOT EXISTS image_url VARCHAR(500);
+        """
+    ]
+
+    try:
+        for sql in migration_sql:
+            print(f"Executing migration: {sql.strip()}")
+            db.session.execute(sql)
+
+        db.session.commit()
+        print("✅ Restaurant table migration completed!")
+
+    except Exception as e:
+        print(f"❌ Migration failed: {e}")
+        db.session.rollback()
 
 def add_restaurants():
     """Add restaurants from both test data and API sources"""
