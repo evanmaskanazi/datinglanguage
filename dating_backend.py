@@ -404,6 +404,9 @@ def get_restaurants():
             query = query.filter_by(price_range=int(price_range))
 
         # Format database restaurants with safe field access
+        db_restaurants = query.limit(limit // 2).all()
+
+        # Format database restaurants with safe field access
         for r in db_restaurants:
             available_tables = RestaurantTable.query.filter_by(
                 restaurant_id=r.id, is_available=True
