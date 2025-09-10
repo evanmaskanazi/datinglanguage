@@ -72,21 +72,19 @@ class MatchingService:
                 restaurant_name = "Unknown Restaurant"
                 if match.restaurant_id:
                     if str(match.restaurant_id).startswith('api_'):
-                        # For API restaurants, make a direct call to get the name
-                        try:
-                            import requests
-                            from flask import current_app
-                            # Make internal API call to get restaurant details
-                            base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-                            response = requests.get(f'{base_url}/api/restaurants/{match.restaurant_id}', timeout=5)
-                            if response.status_code == 200:
-                                restaurant_data = response.json()
-                                restaurant_name = restaurant_data.get('name', 'External Restaurant')
+                        # Try to get restaurant name from match cache first
+                        match_cache_key = f"match_restaurant_{match.id}"
+                        cached_name = self.cache.get(match_cache_key)
+                        if cached_name:
+                            restaurant_name = cached_name
+                        else:
+                            # Fallback to restaurant cache
+                            cache_key = f"restaurant_{match.restaurant_id}"
+                            cached_restaurant = self.cache.get(cache_key)
+                            if cached_restaurant and isinstance(cached_restaurant, dict):
+                                restaurant_name = cached_restaurant.get('name', 'External Restaurant')
                             else:
                                 restaurant_name = "External Restaurant"
-                        except Exception as e:
-                            self.logger.warning(f"Failed to fetch API restaurant name for {match.restaurant_id}: {e}")
-                            restaurant_name = "External Restaurant"
                     else:
                         try:
                             restaurant = Restaurant.query.get(int(match.restaurant_id))
@@ -153,6 +151,24 @@ class MatchingService:
                     # If parsing fails, use current time
                     proposed_datetime = datetime.utcnow()
             
+            # Get restaurant name for storage with match
+            restaurant_id = str(data.get('restaurant_id'))
+            restaurant_name = "Unknown Restaurant"
+            
+            if restaurant_id.startswith('api_'):
+                # Try to get restaurant name from cache
+                cache_key = f"restaurant_{restaurant_id}"
+                cached_restaurant = self.cache.get(cache_key)
+                if cached_restaurant and isinstance(cached_restaurant, dict):
+                    restaurant_name = cached_restaurant.get('name', 'External Restaurant')
+            else:
+                try:
+                    restaurant = Restaurant.query.get(int(restaurant_id))
+                    if restaurant:
+                        restaurant_name = restaurant.name
+                except (ValueError, TypeError):
+                    pass
+            
             # Check for existing match to prevent duplicates (only for same date/time)
             existing_match = Match.query.filter(
                 or_(
@@ -169,7 +185,7 @@ class MatchingService:
             match = Match(
                 user1_id=user_id,
                 user2_id=match_user_id,
-                restaurant_id=str(data.get('restaurant_id')),  # Convert to string to handle both types
+                restaurant_id=restaurant_id,
                 table_id=data.get('table_id'),
                 proposed_datetime=proposed_datetime,
                 status=MatchStatus.PENDING,
@@ -178,6 +194,11 @@ class MatchingService:
             
             self.db.session.add(match)
             self.db.session.commit()
+            
+            # Store restaurant name in cache for later retrieval
+            if restaurant_name != "Unknown Restaurant":
+                match_cache_key = f"match_restaurant_{match.id}"
+                self.cache.set(match_cache_key, restaurant_name, timeout=86400*30)  # Cache for 30 days
             
             return jsonify({
                 'success': True,
