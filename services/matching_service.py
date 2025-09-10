@@ -151,23 +151,24 @@ class MatchingService:
                     # If parsing fails, use current time
                     proposed_datetime = datetime.utcnow()
             
-            # Get restaurant name for storage with match
+            # Get restaurant name - use from data if provided, otherwise try cache/database
             restaurant_id = str(data.get('restaurant_id'))
-            restaurant_name = "Unknown Restaurant"
+            restaurant_name = data.get('restaurant_name', "Unknown Restaurant")  # Get from frontend
             
-            if restaurant_id.startswith('api_'):
-                # Try to get restaurant name from cache
-                cache_key = f"restaurant_{restaurant_id}"
-                cached_restaurant = self.cache.get(cache_key)
-                if cached_restaurant and isinstance(cached_restaurant, dict):
-                    restaurant_name = cached_restaurant.get('name', 'External Restaurant')
-            else:
-                try:
-                    restaurant = Restaurant.query.get(int(restaurant_id))
-                    if restaurant:
-                        restaurant_name = restaurant.name
-                except (ValueError, TypeError):
-                    pass
+            if restaurant_name == "Unknown Restaurant":
+                # Only try cache/database if not provided by frontend
+                if restaurant_id.startswith('api_'):
+                    cache_key = f"restaurant_{restaurant_id}"
+                    cached_restaurant = self.cache.get(cache_key)
+                    if cached_restaurant and isinstance(cached_restaurant, dict):
+                        restaurant_name = cached_restaurant.get('name', 'External Restaurant')
+                else:
+                    try:
+                        restaurant = Restaurant.query.get(int(restaurant_id))
+                        if restaurant:
+                            restaurant_name = restaurant.name
+                    except (ValueError, TypeError):
+                        pass
             
             # Check for existing match to prevent duplicates (only for same date/time)
             existing_match = Match.query.filter(
@@ -196,9 +197,8 @@ class MatchingService:
             self.db.session.commit()
             
             # Store restaurant name in cache for later retrieval
-            if restaurant_name != "Unknown Restaurant":
-                match_cache_key = f"match_restaurant_{match.id}"
-                self.cache.set(match_cache_key, restaurant_name, timeout=86400*30)  # Cache for 30 days
+            match_cache_key = f"match_restaurant_{match.id}"
+            self.cache.set(match_cache_key, restaurant_name, timeout=86400*30)  # Cache for 30 days
             
             return jsonify({
                 'success': True,
