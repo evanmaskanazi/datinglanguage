@@ -1282,42 +1282,60 @@ document.addEventListener('click', function(e) {
         }
 
         // Open match modal
-        async function openMatchModal(restaurantId) {
-            selectedRestaurant = restaurantId;
-            const modal = document.getElementById('matchModal');
+    // Add this function to debug restaurant API responses
+function debugRestaurantAPI(restaurantId) {
+    fetch(`/api/restaurants/${restaurantId}`, { credentials: 'include' })
+        .then(response => response.json())
+        .then(data => {
+            console.log('=== RESTAURANT API DEBUG ===');
+            console.log('Restaurant ID:', restaurantId);
+            console.log('Full API Response:', JSON.stringify(data, null, 2));
+            console.log('All keys:', Object.keys(data));
+            console.log('=== END DEBUG ===');
+        })
+        .catch(error => console.error('Debug API error:', error));
+}
 
-            try {
-                // Load restaurant details
-                const response = await fetch(`/api/restaurants/${restaurantId}`, {
-                    credentials: 'include'
-                });
+// Open match modal - UPDATED VERSION
+async function openMatchModal(restaurantId) {
+    selectedRestaurant = restaurantId;
+    const modal = document.getElementById('matchModal');
 
-                if (!response.ok) {
-                    throw new Error('Failed to load restaurant');
-                }
+    // DEBUG: Log restaurant API response structure
+    debugRestaurantAPI(restaurantId);
 
-                const restaurant = await response.json();
+    try {
+        // Load restaurant details
+        const response = await fetch(`/api/restaurants/${restaurantId}`, {
+            credentials: 'include'
+        });
 
-                // Update modal with restaurant info
-                document.getElementById('modalRestaurantInfo').innerHTML = `
-                    <div style="margin-bottom: 1.5rem;">
-                        <h3>${escapeHtml(restaurant.name)}</h3>
-                        <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                        <p>${escapeHtml(restaurant.address)}</p>
-                    </div>
-                `;
-
-                // Load available time slots
-                await loadTimeSlots(restaurantId);
-
-                // Show modal
-                modal.classList.add('active');
-
-            } catch (error) {
-                console.error('Error opening modal:', error);
-                showToast('Error loading restaurant details', 'error');
-            }
+        if (!response.ok) {
+            throw new Error('Failed to load restaurant');
         }
+
+        const restaurant = await response.json();
+
+        // Update modal with restaurant info
+        document.getElementById('modalRestaurantInfo').innerHTML = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3>${escapeHtml(restaurant.name)}</h3>
+                <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                <p>${escapeHtml(restaurant.address)}</p>
+            </div>
+        `;
+
+        // Load available time slots
+        await loadTimeSlots(restaurantId);
+
+        // Show modal
+        modal.classList.add('active');
+
+    } catch (error) {
+        console.error('Error opening modal:', error);
+        showToast('Error loading restaurant details', 'error');
+    }
+}
 
         // Load time slots
         async function loadTimeSlots(restaurantId) {
@@ -1471,15 +1489,33 @@ async function confirmMatch() {
                 const restaurantData = await restaurantResponse.json();
                 console.log('Restaurant API response:', restaurantData);
 
-                // Try different possible response structures
+                // Try different possible response structures - COMPREHENSIVE CHECK
                 if (restaurantData.name) {
                     restaurantName = restaurantData.name;
                 } else if (restaurantData.restaurant && restaurantData.restaurant.name) {
                     restaurantName = restaurantData.restaurant.name;
                 } else if (restaurantData.data && restaurantData.data.name) {
                     restaurantName = restaurantData.data.name;
+                } else if (typeof restaurantData === 'string') {
+                    // Sometimes the API returns just a string
+                    restaurantName = restaurantData;
+                } else if (restaurantData.title) {
+                    // Some APIs use 'title' instead of 'name'
+                    restaurantName = restaurantData.title;
+                } else if (restaurantData.business_name) {
+                    // Some APIs use 'business_name'
+                    restaurantName = restaurantData.business_name;
                 } else {
-                    console.warn('Restaurant name not found in response structure:', restaurantData);
+                    // Log the full structure to debug
+                    console.warn('Restaurant name not found in response structure:', JSON.stringify(restaurantData, null, 2));
+                    // Try to extract any reasonable name field
+                    const possibleNameFields = Object.keys(restaurantData).filter(key =>
+                        key.toLowerCase().includes('name') || key.toLowerCase().includes('title')
+                    );
+                    if (possibleNameFields.length > 0) {
+                        restaurantName = restaurantData[possibleNameFields[0]];
+                        console.log('Found name in field:', possibleNameFields[0], '=', restaurantName);
+                    }
                 }
 
                 console.log('Extracted restaurant name:', restaurantName);
