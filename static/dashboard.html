@@ -1425,7 +1425,8 @@ document.addEventListener('click', function(e) {
         // Confirm match request
   // Confirm match request
 // Confirm match request
-// Confirm match request
+// Confirm match confirmMatchrequest
+// Updated confirmMatch function with better debugging
 async function confirmMatch() {
     if (!selectedTime || !selectedMatch) {
         showToast('Please select a time and a match', 'error');
@@ -1461,23 +1462,44 @@ async function confirmMatch() {
         // Get restaurant info from selectedRestaurant - fetch it fresh
         let restaurantName = 'Unknown Restaurant';
         try {
+            console.log('Fetching restaurant data for ID:', selectedRestaurant);
             const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}`, {
                 credentials: 'include'
             });
+
             if (restaurantResponse.ok) {
                 const restaurantData = await restaurantResponse.json();
-                restaurantName = restaurantData.name || 'Unknown Restaurant';
+                console.log('Restaurant API response:', restaurantData);
+
+                // Try different possible response structures
+                if (restaurantData.name) {
+                    restaurantName = restaurantData.name;
+                } else if (restaurantData.restaurant && restaurantData.restaurant.name) {
+                    restaurantName = restaurantData.restaurant.name;
+                } else if (restaurantData.data && restaurantData.data.name) {
+                    restaurantName = restaurantData.data.name;
+                } else {
+                    console.warn('Restaurant name not found in response structure:', restaurantData);
+                }
+
+                console.log('Extracted restaurant name:', restaurantName);
+            } else {
+                console.error('Restaurant API call failed:', restaurantResponse.status, restaurantResponse.statusText);
             }
         } catch (error) {
             console.error('Error fetching restaurant name:', error);
         }
 
-        console.log('Sending match request:', {
+        const requestData = {
             restaurant_id: selectedRestaurant,
             match_user_id: selectedMatch,
             datetime: dateTimeString,
-            restaurant_name: restaurantName
-        });
+            restaurant_name: restaurantName,
+            table_id: null,
+            compatibility: Math.floor(Math.random() * 20) + 80
+        };
+
+        console.log('Sending match request with data:', requestData);
 
         const response = await fetch('/api/matches/request', {
             method: 'POST',
@@ -1486,14 +1508,7 @@ async function confirmMatch() {
                 'Content-Type': 'application/json',
                 'X-CSRF-Token': await getCSRFToken()
             },
-            body: JSON.stringify({
-                restaurant_id: selectedRestaurant,
-                match_user_id: selectedMatch,
-                datetime: dateTimeString,
-                restaurant_name: restaurantName,
-                table_id: null,
-                compatibility: Math.floor(Math.random() * 20) + 80
-            })
+            body: JSON.stringify(requestData)
         });
 
         const result = await response.json();
