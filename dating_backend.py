@@ -552,7 +552,7 @@ def get_restaurants():
                     }
 
                     try:
-                        cache.set(cache_key, cache_data, timeout=86400)  # Cache for 24 hours
+                        cache.set(cache_key, cache_data)  # Cache for 24 hours
                         logger.info(f"Cached restaurant data for {restaurant_id}")
                     except Exception as cache_error:
                         logger.warning(f"Failed to cache restaurant {restaurant_id}: {cache_error}")
@@ -717,7 +717,7 @@ def get_restaurant(restaurant_id):
                                     'source': 'google',
                                     'cached_at': datetime.utcnow().isoformat()
                                 }
-                                cache.set(cache_key, cache_data, timeout=86400)
+                                cache.set(cache_key, cache_data)
                                 logger.info(f"Cached Google Places data for {restaurant_id}")
                             except Exception as cache_error:
                                 logger.warning(f"Failed to cache Google data: {cache_error}")
@@ -824,7 +824,7 @@ def get_restaurant(restaurant_id):
                         'source': 'lookup',
                         'cached_at': datetime.utcnow().isoformat()
                     }
-                    cache.set(cache_key, cache_data, timeout=86400)
+                    cache.set(cache_key, cache_data)
                 except Exception as cache_error:
                     logger.warning(f"Failed to cache lookup data: {cache_error}")
 
