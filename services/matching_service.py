@@ -16,38 +16,32 @@ class MatchingService:
     def get_suggestions(self, user_id, data):
         """Get suggested matches for a time slot"""
         try:
-            # Generate mock matches for now since we don't have real users
-            mock_matches = [
-                {
-                    'id': 1,
-                    'name': 'Sarah M.',
-                    'age': 28,
+            # Get real test users (excluding current user)
+            test_users = User.query.filter(
+                and_(
+                    User.id != user_id,
+                    User.email.in_(['sarah@example.com', 'emma@example.com', 'lisa@example.com', 'john@example.com'])
+                )
+            ).limit(3).all()
+            
+            suggestions = []
+            for user in test_users:
+                suggestions.append({
+                    'id': user.id,
+                    'name': user.email.split('@')[0].title(),
+                    'age': 28,  # Mock age for now
                     'compatibility': 85,
                     'avatar_url': '/static/images/default-avatar.jpg',
-                    'interests': ['Italian food', 'Travel', 'Books'],
-                    'bio': 'Love trying new restaurants and exploring the city!'
-                },
-                {
-                    'id': 2,
-                    'name': 'Emma K.',
-                    'age': 26,
-                    'compatibility': 92,
-                    'avatar_url': '/static/images/default-avatar.jpg',
-                    'interests': ['Art', 'Cooking', 'Yoga'],
-                    'bio': 'Foodie and art enthusiast looking for dinner conversations.'
-                },
-                {
-                    'id': 3,
-                    'name': 'Lisa R.',
-                    'age': 30,
-                    'compatibility': 78,
-                    'avatar_url': '/static/images/default-avatar.jpg',
-                    'interests': ['Photography', 'Hiking', 'Wine'],
-                    'bio': 'Wine lover who enjoys great company and good food.'
-                }
-            ]
+                    'interests': ['Food', 'Travel', 'Books'],
+                    'bio': f'Looking forward to meeting new people over dinner!'
+                })
             
-            return jsonify(mock_matches)
+            # If no test users found, return empty array instead of mock data
+            if not suggestions:
+                self.logger.warning("No test users found for suggestions")
+                return jsonify([])
+            
+            return jsonify(suggestions)
             
         except Exception as e:
             self.logger.error(f"Get suggestions error: {str(e)}")
@@ -116,6 +110,23 @@ class MatchingService:
     def request_match(self, user_id, data):
         """Request a match with another user"""
         try:
+            match_user_id = data.get('match_user_id')
+            
+            # Prevent self-matches
+            if user_id == match_user_id:
+                return jsonify({'error': 'Cannot send match request to yourself'}), 400
+            
+            # Check for existing match to prevent duplicates
+            existing_match = Match.query.filter(
+                or_(
+                    and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
+                    and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
+                )
+            ).filter(Match.status != MatchStatus.DECLINED).first()
+            
+            if existing_match:
+                return jsonify({'error': 'Match request already exists with this user'}), 400
+            
             # Parse the datetime string if provided
             proposed_datetime = datetime.utcnow()
             if data.get('datetime'):
@@ -128,7 +139,7 @@ class MatchingService:
             # Create a new match request
             match = Match(
                 user1_id=user_id,
-                user2_id=data.get('match_user_id'),
+                user2_id=match_user_id,
                 restaurant_id=str(data.get('restaurant_id')),  # Convert to string to handle both types
                 table_id=data.get('table_id'),
                 proposed_datetime=proposed_datetime,
