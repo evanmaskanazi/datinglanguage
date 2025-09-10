@@ -950,6 +950,8 @@
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
     <script>
         // Check for auth token on page load
 
@@ -1551,10 +1553,89 @@ async function authenticatedFetch(url, options = {}) {
         }
 
         // Edit profile
-        function editProfile() {
-            // In a real app, this would open an edit form
-            showToast('Profile editing feature coming soon!', 'info');
+        // Edit profile
+function editProfile() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Profile</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <form id="editProfileForm">
+                <div style="margin-bottom: 1rem;">
+                    <label>Name:</label>
+                    <input type="text" id="editName" value="${currentUser.name}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Location:</label>
+                    <input type="text" id="editLocation" value="${currentUser.location || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Bio:</label>
+                    <textarea id="editBio" class="date-input" style="width: 100%; height: 100px; margin-top: 0.5rem; resize: vertical;">${currentUser.bio || ''}</textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Age Range:</label>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <input type="number" id="editMinAge" value="${currentUser.preferences?.min_age || 18}" class="date-input" placeholder="Min Age">
+                        <input type="number" id="editMaxAge" value="${currentUser.preferences?.max_age || 99}" class="date-input" placeholder="Max Age">
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>Interests (comma-separated):</label>
+                    <input type="text" id="editInterests" value="${currentUser.preferences?.interests?.join(', ') || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div style="text-align: right; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Handle form submission
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const profileData = {
+            name: document.getElementById('editName').value,
+            location: document.getElementById('editLocation').value,
+            bio: document.getElementById('editBio').value,
+            preferences: {
+                min_age: parseInt(document.getElementById('editMinAge').value),
+                max_age: parseInt(document.getElementById('editMaxAge').value),
+                interests: document.getElementById('editInterests').value.split(',').map(i => i.trim()).filter(i => i)
+            }
+        };
+
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': await getCSRFToken()
+                },
+                body: JSON.stringify(profileData)
+            });
+
+            if (response.ok) {
+                showToast('Profile updated successfully!', 'success');
+                modal.remove();
+                loadUserProfile(); // Reload profile data
+            } else {
+                showToast('Failed to update profile', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            showToast('Failed to update profile', 'error');
         }
+    });
+}
 
         // Save settings
         async function saveSettings() {
@@ -1589,30 +1670,39 @@ async function authenticatedFetch(url, options = {}) {
 
         // Setup WebSocket for real-time updates
         function setupWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws`;
+    if (typeof io === 'undefined') {
+        console.log('Socket.IO not loaded, using polling instead');
+        // Set up periodic polling instead
+        setInterval(async () => {
+            try {
+                await loadStats();
+            } catch (error) {
+                console.log('Polling error:', error);
+            }
+        }, 30000);
+        return;
+    }
 
-            websocket = new WebSocket(wsUrl);
+    websocket = io('/', {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5
+    });
 
-            websocket.onopen = () => {
-                console.log('WebSocket connected');
-            };
+    websocket.on('connect', () => {
+        console.log('WebSocket connected');
+    });
 
-            websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            };
+    websocket.on('new_match', (data) => {
+        showToast('You have a new match!', 'success');
+        loadMatches();
+        loadStats();
+    });
 
-            websocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-
-            websocket.onclose = () => {
-                console.log('WebSocket disconnected');
-                // Reconnect after 5 seconds
-                setTimeout(setupWebSocket, 5000);
-            };
-        }
+    websocket.on('disconnect', () => {
+        console.log('WebSocket disconnected');
+    });
+}
 
         // Handle WebSocket messages
         function handleWebSocketMessage(data) {
