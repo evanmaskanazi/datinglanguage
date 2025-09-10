@@ -9,18 +9,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import app and database
 from dating_backend import app, db, bcrypt
 
-
 def init_database():
     """Initialize database with tables and default data"""
     with app.app_context():
         # Import ALL models to ensure they're registered with SQLAlchemy
         import models  # This will import everything from __init__.py
 
-        print("Dropping existing tables...")
-        db.drop_all()
-
-        print("Creating database tables...")
-        db.create_all()
+        # FIXED: Only create tables, don't drop existing ones
+        print("Creating database tables (preserving existing data)...")
+        db.create_all()  # This creates missing tables but keeps existing data
 
         # Now we can safely use the models
         from models import User, Restaurant, RestaurantTable
@@ -52,12 +49,15 @@ def init_database():
             print(f"Error during admin user creation: {e}")
             db.session.rollback()
 
-        # Add initial restaurants
-        print("Adding restaurants...")
-        add_restaurants()
+        # Only add restaurants if database is empty
+        if Restaurant.query.count() == 0:
+            print("No restaurants found, adding initial restaurants...")
+            add_restaurants()
+        else:
+            existing_count = Restaurant.query.count()
+            print(f"Database already has {existing_count} restaurants, skipping restaurant initialization")
 
         print("Database initialization complete!")
-
 
 def add_restaurants():
     """Add restaurants from both test data and API sources"""
@@ -97,6 +97,34 @@ def add_restaurants():
                 {'table_number': 'A1', 'capacity': 2, 'location': 'terrace'},
                 {'table_number': 'A2', 'capacity': 2, 'location': 'indoor'}
             ]
+        },
+        {
+            'name': 'Urban Spice',
+            'cuisine_type': 'Asian',
+            'address': '789 Central St, Tel Aviv',
+            'price_range': 2,
+            'ambiance': 'modern',
+            'rating': 4.3,
+            'is_active': True,
+            'source': 'internal',
+            'tables': [
+                {'table_number': 'B1', 'capacity': 2, 'location': 'booth'},
+                {'table_number': 'B2', 'capacity': 2, 'location': 'window'}
+            ]
+        },
+        {
+            'name': 'Mediterranean Pearl',
+            'cuisine_type': 'Mediterranean',
+            'address': '321 Seaside Ave, Tel Aviv',
+            'price_range': 4,
+            'ambiance': 'upscale',
+            'rating': 4.7,
+            'is_active': True,
+            'source': 'internal',
+            'tables': [
+                {'table_number': 'VIP1', 'capacity': 2, 'location': 'private'},
+                {'table_number': 'VIP2', 'capacity': 2, 'location': 'terrace'}
+            ]
         }
     ]
 
@@ -121,41 +149,21 @@ def add_restaurants():
 
         # Try to fetch restaurants from APIs if keys are available
         cities = ['Tel Aviv', 'Jerusalem', 'Haifa']  # Israeli cities
-        cuisines = ['italian', 'asian', 'mediterranean', 'american']
 
         for city in cities:
             print(f"Fetching restaurants for {city}...")
 
             # Try Yelp API first
-            yelp_restaurants = api_service.search_restaurants_yelp(city)
-            for restaurant_data in yelp_restaurants[:10]:  # Limit to 10 per city
-                if not Restaurant.query.filter_by(external_id=restaurant_data['external_id']).first():
-                    restaurant = Restaurant(**restaurant_data)
-                    db.session.add(restaurant)
-                    db.session.flush()
-
-                    # Add default tables for API restaurants
-                    for i in range(1, 4):  # Add 3 tables per restaurant
-                        table = RestaurantTable(
-                            restaurant_id=restaurant.id,
-                            table_number=str(i),
-                            capacity=2,
-                            location='main_dining',
-                            is_available=True
-                        )
-                        db.session.add(table)
-
-            # Try Google Places API as fallback
-            if not yelp_restaurants:
-                google_restaurants = api_service.search_restaurants_google(city)
-                for restaurant_data in google_restaurants[:10]:
-                    if not Restaurant.query.filter_by(external_id=restaurant_data['external_id']).first():
+            try:
+                yelp_restaurants = api_service.search_restaurants_yelp(city)
+                for restaurant_data in yelp_restaurants[:5]:  # Limit to 5 per city
+                    if not Restaurant.query.filter_by(external_id=restaurant_data.get('external_id')).first():
                         restaurant = Restaurant(**restaurant_data)
                         db.session.add(restaurant)
                         db.session.flush()
 
-                        # Add default tables
-                        for i in range(1, 3):
+                        # Add default tables for API restaurants
+                        for i in range(1, 4):  # Add 3 tables per restaurant
                             table = RestaurantTable(
                                 restaurant_id=restaurant.id,
                                 table_number=str(i),
@@ -164,6 +172,8 @@ def add_restaurants():
                                 is_available=True
                             )
                             db.session.add(table)
+            except Exception as api_error:
+                print(f"API error for {city}: {api_error}")
 
         db.session.commit()
         print("Restaurants added successfully!")
@@ -178,7 +188,6 @@ def add_restaurants():
         print(f"Error adding restaurants: {e}")
         db.session.rollback()
 
-
 def update_restaurants_from_api():
     """Function to periodically update restaurants from APIs"""
     from models import Restaurant, RestaurantTable
@@ -190,36 +199,38 @@ def update_restaurants_from_api():
     cities = ['Tel Aviv', 'Jerusalem', 'Haifa']
 
     for city in cities:
-        # Fetch fresh data
-        restaurants = api_service.search_restaurants_yelp(city)
+        try:
+            # Fetch fresh data
+            restaurants = api_service.search_restaurants_yelp(city)
 
-        for restaurant_data in restaurants:
-            existing = Restaurant.query.filter_by(external_id=restaurant_data['external_id']).first()
+            for restaurant_data in restaurants:
+                existing = Restaurant.query.filter_by(external_id=restaurant_data.get('external_id')).first()
 
-            if existing:
-                # Update existing restaurant
-                existing.rating = restaurant_data.get('rating', existing.rating)
-                existing.is_active = True
-            else:
-                # Add new restaurant
-                restaurant = Restaurant(**restaurant_data)
-                db.session.add(restaurant)
-                db.session.flush()
+                if existing:
+                    # Update existing restaurant
+                    existing.rating = restaurant_data.get('rating', existing.rating)
+                    existing.is_active = True
+                else:
+                    # Add new restaurant
+                    restaurant = Restaurant(**restaurant_data)
+                    db.session.add(restaurant)
+                    db.session.flush()
 
-                # Add tables
-                for i in range(1, 3):
-                    table = RestaurantTable(
-                        restaurant_id=restaurant.id,
-                        table_number=str(i),
-                        capacity=2,
-                        location='main_dining',
-                        is_available=True
-                    )
-                    db.session.add(table)
+                    # Add tables
+                    for i in range(1, 3):
+                        table = RestaurantTable(
+                            restaurant_id=restaurant.id,
+                            table_number=str(i),
+                            capacity=2,
+                            location='main_dining',
+                            is_available=True
+                        )
+                        db.session.add(table)
+        except Exception as e:
+            print(f"Error updating restaurants for {city}: {e}")
 
     db.session.commit()
     print("Restaurant update completed!")
-
 
 if __name__ == '__main__':
     init_database()
