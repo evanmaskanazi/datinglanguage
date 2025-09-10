@@ -23,6 +23,10 @@ def init_database():
             print(f"Error creating tables: {e}")
 
         # Run migration for restaurant columns BEFORE importing models
+            # Run migrations for both restaurant and matches tables BEFORE importing models
+        print("Running matches table migration...")
+        migrate_matches_columns()
+
         print("Running restaurant table migration...")
         migrate_restaurant_columns()
 
