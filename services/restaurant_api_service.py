@@ -8,7 +8,7 @@ class RestaurantAPIService:
         self.logger = logger
         # You'll need to sign up for these APIs and add keys to environment variables
         self.yelp_api_key = os.environ.get('YELP_API_KEY')
-        self.google_places_key = os.environ.get('GOOGLE_PLACES_KEY')
+        self.google_places_key = os.environ.get('GOOGLE_PLACES_API_KEY')
         
     def search_restaurants_yelp(self, location, cuisine=None, price=None):
         """Search restaurants using Yelp API"""
