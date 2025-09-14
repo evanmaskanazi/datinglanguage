@@ -27,7 +27,7 @@ class Restaurant(db.Model):
     owner_password_hash = db.Column(db.String(255))
     is_partner = db.Column(db.Boolean, default=False)  # Partner restaurants have accounts
     
-    # Original relationships
+    # Fixed relationships - using back_populates instead of conflicting backrefs
     tables = db.relationship('RestaurantTable', backref='restaurant', lazy='dynamic', cascade='all, delete-orphan')
     reservations = db.relationship('Reservation', back_populates='restaurant', lazy='dynamic')
     
