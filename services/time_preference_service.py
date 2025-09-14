@@ -4,8 +4,8 @@ Service for handling user time preferences
 from flask import jsonify
 from datetime import datetime, date, timedelta
 from models.time_preference import UserTimePreference
-from ..models.user import User
-from .. import db, cache
+from models.user import User
+from dating_backend import db, bcrypt
 
 class TimePreferenceService:
     def __init__(self, db_session, cache_manager, logger):
