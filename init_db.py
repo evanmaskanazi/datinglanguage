@@ -284,7 +284,7 @@ def migrate_restaurant_tables_columns():
         check_sql = """
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name = 'restaurant_tables' AND column_name IN ('special_features');
+        WHERE table_name = 'restaurant_tables' AND column_name IN ('special_features', 'created_at');
         """
 
         result = db.session.execute(text(check_sql)).fetchall()
@@ -294,6 +294,10 @@ def migrate_restaurant_tables_columns():
 
         if 'special_features' not in existing_columns:
             migrations_needed.append("ALTER TABLE restaurant_tables ADD COLUMN special_features TEXT;")
+
+        if 'created_at' not in existing_columns:
+            migrations_needed.append(
+                "ALTER TABLE restaurant_tables ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;")
 
         for sql in migrations_needed:
             print(f"Executing migration: {sql}")
