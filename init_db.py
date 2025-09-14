@@ -22,15 +22,15 @@ def init_database():
         except Exception as e:
             print(f"Error creating tables: {e}")
 
-        # Run migration for restaurant columns BEFORE importing models
-            # Run migrations for both restaurant and matches tables BEFORE importing models
+        # Run migrations for both restaurant and matches tables BEFORE importing models
         print("Running matches table migration...")
         migrate_matches_columns()
         print("Running restaurant ID column migration...")
         migrate_restaurant_id_column()
-
         print("Running restaurant table migration...")
         migrate_restaurant_columns()
+        print("Running restaurant owner columns migration...")
+        migrate_restaurant_owner_columns()
 
         # NOW we can safely import models after migration
         try:
@@ -64,66 +64,40 @@ def init_database():
             else:
                 print(f"Admin user already exists: {admin_email}")
 
-
         except Exception as e:
-
             print(f"Error during admin user creation: {e}")
-
             db.session.rollback()
 
-            # Create test users for matching
-
+        # Create test users for matching
         try:
-
             if User.query.count() < 5:  # Only create if we don't have enough users
-
                 print("Creating test users for matching...")
 
                 test_users = [
-
                     {'email': 'sarah@example.com', 'name': 'Sarah M.'},
-
                     {'email': 'emma@example.com', 'name': 'Emma K.'},
-
                     {'email': 'lisa@example.com', 'name': 'Lisa R.'},
-
                     {'email': 'john@example.com', 'name': 'John D.'}
-
                 ]
 
                 for user_data in test_users:
-
                     existing_user = User.query.filter_by(email=user_data['email']).first()
-
                     if not existing_user:
                         test_user = User(
-
                             email=user_data['email'],
-
                             password_hash=bcrypt.generate_password_hash('TestPass123!').decode('utf-8'),
-
                             role='user',
-
                             is_active=True,
-
                             is_verified=True
-
                         )
-
                         db.session.add(test_user)
 
                 db.session.commit()
-
                 print("Test users created successfully!")
 
-
         except Exception as e:
-
             print(f"Error creating test users: {e}")
-
             db.session.rollback()
-
-        # Only add restaurants if database is empty
 
         # Only add restaurants if database is empty
         try:
@@ -214,6 +188,7 @@ def migrate_restaurant_id_column():
         db.session.rollback()
         raise
 
+
 def migrate_restaurant_columns():
     """Add missing columns to restaurants table"""
     from sqlalchemy import text
@@ -252,6 +227,48 @@ def migrate_restaurant_columns():
 
     except Exception as e:
         print(f"❌ Migration failed: {e}")
+        db.session.rollback()
+        raise
+
+
+def migrate_restaurant_owner_columns():
+    """Add missing owner columns to restaurants table"""
+    from sqlalchemy import text
+
+    try:
+        # Check if columns exist first, then add them
+        check_sql = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'restaurants' AND column_name IN ('owner_email', 'owner_password_hash', 'is_partner');
+        """
+
+        result = db.session.execute(text(check_sql)).fetchall()
+        existing_columns = [row[0] for row in result]
+
+        migrations_needed = []
+
+        if 'owner_email' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN owner_email VARCHAR(255);")
+
+        if 'owner_password_hash' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN owner_password_hash VARCHAR(255);")
+
+        if 'is_partner' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurants ADD COLUMN is_partner BOOLEAN DEFAULT FALSE;")
+
+        for sql in migrations_needed:
+            print(f"Executing migration: {sql}")
+            db.session.execute(text(sql))
+
+        if migrations_needed:
+            db.session.commit()
+            print("✅ Restaurant owner columns migration completed!")
+        else:
+            print("✅ Restaurant owner columns already exist, no migration needed!")
+
+    except Exception as e:
+        print(f"❌ Restaurant owner migration failed: {e}")
         db.session.rollback()
         raise
 

@@ -32,6 +32,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from markupsafe import escape
 
@@ -54,19 +55,28 @@ from utils.logging_config import setup_logger, log_audit
 # Add this right after your imports
 from functools import wraps
 
+
 def require_auth(roles=None):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Check session for user_id
-            if 'user_id' not in session:
-                return jsonify({'error': 'Authentication required'}), 401
+            # Check if user is authenticated via Flask-Login
+            if not current_user.is_authenticated:
+                # Fallback to session-based auth
+                if 'user_id' not in session:
+                    return jsonify({'error': 'Authentication required'}), 401
 
-            # Get user from database
-            user = User.query.get(session['user_id'])
-            if not user:
-                session.clear()
-                return jsonify({'error': 'Invalid session'}), 401
+                # Get user from database
+                from models.user import User
+                user = User.query.get(session['user_id'])
+                if not user:
+                    session.clear()
+                    return jsonify({'error': 'Invalid session'}), 401
+
+                # Log in the user for Flask-Login
+                login_user(user)
+            else:
+                user = current_user
 
             # Check if user is active
             if not user.is_active:
@@ -168,6 +178,17 @@ migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 CORS(app, supports_credentials=True)
 csrf = CSRFProtect(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+
+@login_manager.user_loader
+def load_user(user_id):
+    from models.user import User
+    return User.query.get(int(user_id))
 
 # Security headers
 Talisman(app,
@@ -310,7 +331,10 @@ def login():
         if not user or not bcrypt.check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Invalid credentials'}), 401
 
-        # Set session
+        # Use Flask-Login to log in user
+        login_user(user, remember=True)
+
+        # Set session for backward compatibility
         session['user_id'] = user.id
         session['user_email'] = user.email
         session['user_role'] = user.role
@@ -338,6 +362,7 @@ def login():
 def logout():
     """User logout"""
     try:
+        logout_user()
         session.clear()
         return jsonify({'message': 'Logged out successfully'})
     except Exception as e:
@@ -1340,6 +1365,248 @@ def favicon():
     img_io.seek(0)
 
     return send_file(img_io, mimetype='image/x-icon')
+
+
+# Following endpoints
+@app.route('/api/users/follow', methods=['POST'])
+@require_auth()
+def follow_user():
+    """Follow another user"""
+    try:
+        from services.following_service import FollowingService
+        following_service = FollowingService(db, cache, logger)
+        return following_service.follow_user(request.current_user.id, request.json.get('user_id'))
+    except Exception as e:
+        logger.error(f"Follow user error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to follow user'}), 500
+
+
+@app.route('/api/users/unfollow', methods=['POST'])
+@require_auth()
+def unfollow_user():
+    """Unfollow a user"""
+    try:
+        from services.following_service import FollowingService
+        following_service = FollowingService(db, cache, logger)
+        return following_service.unfollow_user(request.current_user.id, request.json.get('user_id'))
+    except Exception as e:
+        logger.error(f"Unfollow user error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to unfollow user'}), 500
+
+
+@app.route('/api/restaurants/follow', methods=['POST'])
+@require_auth()
+@limiter.limit("10 per minute")
+def follow_restaurant():
+    """Follow a restaurant"""
+    try:
+        from services.following_service import FollowingService
+        following_service = FollowingService(db, cache, logger)
+        return following_service.follow_restaurant(request.current_user.id, request.json.get('restaurant_id'))
+    except Exception as e:
+        logger.error(f"Follow restaurant error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to follow restaurant'}), 500
+
+
+@app.route('/api/restaurants/unfollow', methods=['POST'])
+@require_auth()
+def unfollow_restaurant():
+    """Unfollow a restaurant"""
+    try:
+        user = request.current_user
+        restaurant_id = request.json.get('restaurant_id')
+
+        # Handle both internal and API restaurants
+        if str(restaurant_id).startswith('api_'):
+            restaurant = Restaurant.query.filter_by(external_id=restaurant_id[4:]).first()
+        else:
+            restaurant = Restaurant.query.get(int(restaurant_id))
+
+        if not restaurant:
+            return jsonify({'error': 'Restaurant not found'}), 404
+
+        user.unfollow_restaurant(restaurant)
+        db.session.commit()
+
+        return jsonify({'message': f'Unfollowed {restaurant.name}'}), 200
+    except Exception as e:
+        logger.error(f"Unfollow restaurant error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to unfollow restaurant'}), 500
+
+
+@app.route('/api/users/following', methods=['GET'])
+@require_auth()
+def get_user_following():
+    """Get users that current user is following"""
+    try:
+        from services.following_service import FollowingService
+        following_service = FollowingService(db, cache, logger)
+        return following_service.get_user_following(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get following error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get following list'}), 500
+
+
+@app.route('/api/users/restaurants/following', methods=['GET'])
+@require_auth()
+def get_followed_restaurants():
+    """Get restaurants that current user follows"""
+    try:
+        from services.following_service import FollowingService
+        following_service = FollowingService(db, cache, logger)
+        return following_service.get_followed_restaurants(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get followed restaurants error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get followed restaurants'}), 500
+
+
+@app.route('/api/restaurants/all', methods=['GET'])
+@require_auth()
+def get_all_restaurants_for_following():
+    """Get all restaurants for following purposes"""
+    try:
+        restaurants = Restaurant.query.filter_by(is_active=True).all()
+        result = []
+
+        for restaurant in restaurants:
+            is_following = request.current_user.is_following_restaurant(restaurant)
+            result.append({
+                'id': restaurant.id,
+                'name': restaurant.name,
+                'cuisine_type': restaurant.cuisine_type,
+                'address': restaurant.address,
+                'rating': float(restaurant.rating) if restaurant.rating else 0.0,
+                'price_range': '$' * (restaurant.price_range or 1),
+                'is_following': is_following,
+                'follower_count': restaurant.followers.count()
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Get all restaurants error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get restaurants'}), 500
+
+
+# Time preferences endpoints
+@app.route('/api/time-preferences', methods=['POST'])
+@require_auth()
+@limiter.limit("20 per hour")
+def add_time_preference():
+    """Add a time preference"""
+    try:
+        from services.time_preference_service import TimePreferenceService
+        time_service = TimePreferenceService(db, cache, logger)
+        return time_service.add_time_preference(request.current_user.id, request.json)
+    except Exception as e:
+        logger.error(f"Add time preference error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to add time preference'}), 500
+
+
+@app.route('/api/time-preferences', methods=['GET'])
+@require_auth()
+def get_time_preferences():
+    """Get user's time preferences"""
+    try:
+        from services.time_preference_service import TimePreferenceService
+        time_service = TimePreferenceService(db, cache, logger)
+        include_matches = request.args.get('include_matches', 'false').lower() == 'true'
+        return time_service.get_user_preferences(request.current_user.id, include_matches)
+    except Exception as e:
+        logger.error(f"Get time preferences error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get time preferences'}), 500
+
+
+@app.route('/api/time-preferences/<int:preference_id>', methods=['DELETE'])
+@require_auth()
+def remove_time_preference(preference_id):
+    """Remove a time preference"""
+    try:
+        from services.time_preference_service import TimePreferenceService
+        time_service = TimePreferenceService(db, cache, logger)
+        return time_service.remove_time_preference(request.current_user.id, preference_id)
+    except Exception as e:
+        logger.error(f"Remove time preference error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to remove time preference'}), 500
+
+
+@app.route('/api/time-preferences/matches', methods=['GET'])
+@require_auth()
+def get_time_preference_matches():
+    """Get users with matching time preferences from followed users"""
+    try:
+        from services.time_preference_service import TimePreferenceService
+        time_service = TimePreferenceService(db, cache, logger)
+        return time_service.get_matching_users(request.current_user.id)
+    except Exception as e:
+        logger.error(f"Get time preference matches error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get matches'}), 500
+
+
+# Restaurant management endpoints
+@app.route('/api/restaurant-auth/register', methods=['POST'])
+@limiter.limit("5 per hour")
+def restaurant_register():
+    """Register a restaurant account"""
+    try:
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.register_restaurant(request.json)
+    except Exception as e:
+        logger.error(f"Restaurant registration error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Registration failed'}), 500
+
+
+@app.route('/api/restaurant-auth/login', methods=['POST'])
+@limiter.limit("10 per minute")
+def restaurant_login():
+    """Restaurant login"""
+    try:
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.restaurant_login(request.json)
+    except Exception as e:
+        logger.error(f"Restaurant login error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Login failed'}), 500
+
+
+@app.route('/api/restaurant-management/matches', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_restaurant_matches():
+    """Get match requests for restaurant (requires restaurant authentication)"""
+    try:
+        # This would need restaurant-specific authentication
+        restaurant_id = request.args.get('restaurant_id')
+        date_filter = request.args.get('date_filter')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_match_requests(int(restaurant_id), date_filter)
+    except Exception as e:
+        logger.error(f"Get restaurant matches error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get matches'}), 500
+
+
+@app.route('/api/restaurant-management/stats', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_restaurant_stats():
+    """Get restaurant statistics"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_restaurant_stats(int(restaurant_id))
+    except Exception as e:
+        logger.error(f"Get restaurant stats error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get statistics'}), 500
+
+
 
 # === ERROR HANDLERS ===
 @app.errorhandler(404)
