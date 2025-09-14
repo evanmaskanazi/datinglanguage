@@ -4,7 +4,7 @@ Service for handling user and restaurant following functionality
 from flask import jsonify
 from sqlalchemy import and_
 from datetime import datetime, timedelta
-from ..models.user import User
+from models.user import User
 from ..models.restaurant import Restaurant
 from .. import db, cache
 
