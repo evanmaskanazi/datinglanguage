@@ -31,6 +31,8 @@ def init_database():
         migrate_restaurant_columns()
         print("Running restaurant owner columns migration...")
         migrate_restaurant_owner_columns()
+        print("Running restaurant tables migration...")
+        migrate_restaurant_tables_columns()
 
         # NOW we can safely import models after migration
         try:
@@ -269,6 +271,42 @@ def migrate_restaurant_owner_columns():
 
     except Exception as e:
         print(f"❌ Restaurant owner migration failed: {e}")
+        db.session.rollback()
+        raise
+
+
+def migrate_restaurant_tables_columns():
+    """Add missing columns to restaurant_tables table"""
+    from sqlalchemy import text
+
+    try:
+        # Check if columns exist first, then add them
+        check_sql = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'restaurant_tables' AND column_name IN ('special_features');
+        """
+
+        result = db.session.execute(text(check_sql)).fetchall()
+        existing_columns = [row[0] for row in result]
+
+        migrations_needed = []
+
+        if 'special_features' not in existing_columns:
+            migrations_needed.append("ALTER TABLE restaurant_tables ADD COLUMN special_features TEXT;")
+
+        for sql in migrations_needed:
+            print(f"Executing migration: {sql}")
+            db.session.execute(text(sql))
+
+        if migrations_needed:
+            db.session.commit()
+            print("✅ Restaurant tables columns migration completed!")
+        else:
+            print("✅ Restaurant tables columns already exist, no migration needed!")
+
+    except Exception as e:
+        print(f"❌ Restaurant tables migration failed: {e}")
         db.session.rollback()
         raise
 
