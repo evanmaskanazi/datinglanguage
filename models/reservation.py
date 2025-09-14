@@ -22,9 +22,9 @@ class Reservation(db.Model):
     special_requests = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
+    # Fixed relationships - using back_populates to match Restaurant model
     match = db.relationship('Match', backref='reservation')
-    restaurant = db.relationship('Restaurant', backref='reservations')
+    restaurant = db.relationship('Restaurant', back_populates='reservations')
     table = db.relationship('RestaurantTable', backref='reservations')
     feedbacks = db.relationship('DateFeedback', backref='reservation')
     payments = db.relationship('Payment', backref='reservation')
