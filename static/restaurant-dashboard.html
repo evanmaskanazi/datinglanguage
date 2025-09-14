@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Dashboard - Table for Two</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #3498db;
+            --dark-gray: #2c3e50;
+            --light-gray: #ecf0f1;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-gray);
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .restaurant-name {
+            font-size: 1.2rem;
+            color: var(--dark-gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .matches-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .date-filter {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .date-filter select {
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .match-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .match-info h4 {
+            margin-bottom: 0.25rem;
+        }
+
+        .match-details {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .match-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .match-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .match-status.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .match-status.completed {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .match-time {
+            text-align: right;
+            font-size: 0.875rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">Table for Two - Restaurant Dashboard</div>
+        <div class="restaurant-name" id="restaurantName">Loading...</div>
+    </header>
+
+    <div class="container">
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalRequests">0</h3>
+                <p>Total Match Requests</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="confirmedMatches">0</h3>
+                <p>Confirmed Matches</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="recentRequests">0</h3>
+                <p>Recent Requests (30 days)</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="followers">0</h3>
+                <p>Followers</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="successRate">0%</h3>
+                <p>Success Rate</p>
+            </div>
+        </div>
+
+        <!-- Match Requests -->
+        <div class="matches-section">
+            <h2>Match Requests</h2>
+            
+            <div class="date-filter">
+                <label>Filter by:</label>
+                <select id="dateFilter" onchange="loadMatches()">
+                    <option value="">All time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This week</option>
+                </select>
+            </div>
+
+            <div id="matchesList">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading match requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRestaurant = null;
+
+        // Initialize dashboard
+        async function initRestaurantDashboard() {
+            // For demo purposes, we'll use a mock restaurant ID
+            // In production, this would come from authentication
+            const restaurantId = new URLSearchParams(window.location.search).get('restaurant_id') || '1';
+            
+            try {
+                await loadRestaurantStats(restaurantId);
+                await loadMatches();
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+            }
+        }
+
+        async function loadRestaurantStats(restaurantId) {
+            try {
+                const response = await fetch(`/api/restaurant-management/stats?restaurant_id=${restaurantId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load stats');
+                }
+
+                const stats = await response.json();
+
+                document.getElementById('totalRequests').textContent = stats.total_requests;
+                document.getElementById('confirmedMatches').textContent = stats.confirmed_matches;
+                document.getElementById('recentRequests').textContent = stats.recent_requests;
+                document.getElementById('followers').textContent = stats.followers;
+                document.getElementById('successRate').textContent = `${stats.success_rate}%`;
+
+            } catch (error) {
+                console.error('Load stats error:', error);
+            }
+        }
+
+        async function loadMatches() {
+            const container = document.getElementById('matchesList');
+            const dateFilter = document.getElementById('dateFilter').value;
+            const restaurantId = new URLSearchParams(window.location.search).get('restaurant_id') || '1';
+
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading matches...</p></div>';
+
+            try {
+                let url = `/api/restaurant-management/matches?restaurant_id=${restaurantId}`;
+                if (dateFilter) {
+                    url += `&date_filter=${dateFilter}`;
+                }
+
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load matches');
+                }
+
+                const matches = await response.json();
+
+                if (matches.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📅</div>
+                            <h3>No match requests</h3>
+                            <p>Match requests will appear here when users book tables at your restaurant.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = matches.map(match => `
+                    <div class="match-item">
+                        <div class="match-info">
+                            <h4>Match #${match.id}</h4>
+                            <div class="match-details">
+                                ${match.user1 ? match.user1.email : 'Unknown'} & ${match.user2 ? match.user2.email : 'Unknown'}
+                                <br>Table ${match.table_id || 'TBD'}
+                            </div>
+                        </div>
+                        <div class="match-status ${match.status.toLowerCase()}">
+                            ${match.status}
+                        </div>
+                        <div class="match-time">
+                            ${match.datetime ? new Date(match.datetime).toLocaleString() : 'Time TBD'}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Load matches error:', error);
+                container.innerHTML = '<p>Error loading matches. Please try again later.</p>';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initRestaurantDashboard);
+    </script>
+</body>
+</html>
