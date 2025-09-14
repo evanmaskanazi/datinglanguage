@@ -716,6 +716,131 @@
         .toast.info {
             border-left: 4px solid var(--secondary-color);
         }
+
+
+  /* Desired Times Styles */
+        .time-preference-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preference-info {
+            flex: 1;
+        }
+
+        .preference-date {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .preference-time {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .preference-matches {
+            color: var(--success-color);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .remove-preference-btn {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .remove-preference-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Restaurant Following Styles */
+        .restaurant-follow-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .restaurant-follow-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .restaurant-follow-card.following {
+            border-color: var(--success-color);
+            background: #f8fff8;
+        }
+
+        .restaurant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .restaurant-info h4 {
+            margin-bottom: 0.25rem;
+            font-size: 1.125rem;
+        }
+
+        .restaurant-cuisine {
+            color: #666;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .follow-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .follow-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .follow-btn.following {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .follow-btn.following:hover {
+            background: #229954;
+            border-color: #229954;
+        }
+
+        .follower-count {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
     </style>
 </head>
 <body>
@@ -759,6 +884,10 @@
                     <span class="sidebar-icon">📅</span>
                     <span>Upcoming Dates</span>
                 </a>
+                <a href="#" class="sidebar-link" onclick="showTab('desired-times')">
+                    <span class="sidebar-icon">⏰</span>
+                    <span>Desired Times</span>
+                </a>
                 <a href="#" class="sidebar-link" onclick="showTab('history')">
                     <span class="sidebar-icon">📜</span>
                     <span>Date History</span>
@@ -766,6 +895,10 @@
                 <a href="#" class="sidebar-link" onclick="showTab('profile')">
                     <span class="sidebar-icon">👤</span>
                     <span>My Profile</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('restaurants')">
+                    <span class="sidebar-icon">🏪</span>
+                    <span>Restaurants</span>
                 </a>
                 <a href="#" class="sidebar-link" onclick="showTab('settings')">
                     <span class="sidebar-icon">⚙️</span>
@@ -913,6 +1046,67 @@
                     <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
                 </div>
             </div>
+
+<!-- Desired Times Tab -->
+            <div id="desired-times" class="tab-content">
+                <h1 class="page-title">My Desired Times</h1>
+                <p style="margin-bottom: 2rem; color: #666;">Select up to 10 time slots when you'd like to meet someone. Other users who follow you can see these preferences and request matches.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem; margin-bottom: 2rem;">
+                    <!-- Calendar -->
+                    <div>
+                        <h3>Select Date</h3>
+                        <input type="date" id="desiredDate" class="date-input" style="width: 100%; margin-bottom: 1rem;">
+                        <div id="selectedDateDisplay" style="font-weight: bold; margin-bottom: 1rem;"></div>
+                    </div>
+
+                    <!-- Time Selection -->
+                    <div>
+                        <h3>Select Time</h3>
+                        <div id="timeSelection" class="time-slots" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="time-slot" onclick="selectDesiredTime('12:00')">12:00</div>
+                            <div class="time-slot" onclick="selectDesiredTime('12:30')">12:30</div>
+                            <div class="time-slot" onclick="selectDesiredTime('13:00')">13:00</div>
+                            <div class="time-slot" onclick="selectDesiredTime('13:30')">13:30</div>
+                            <div class="time-slot" onclick="selectDesiredTime('18:00')">18:00</div>
+                            <div class="time-slot" onclick="selectDesiredTime('18:30')">18:30</div>
+                            <div class="time-slot" onclick="selectDesiredTime('19:00')">19:00</div>
+                            <div class="time-slot" onclick="selectDesiredTime('19:30')">19:30</div>
+                            <div class="time-slot" onclick="selectDesiredTime('20:00')">20:00</div>
+                            <div class="time-slot" onclick="selectDesiredTime('20:30')">20:30</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addDesiredTime()" style="width: 100%; margin-top: 1rem;" id="addTimeBtn" disabled>
+                            Add Time Preference
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Current Preferences -->
+                <div>
+                    <h3>Your Time Preferences (<span id="preferenceCount">0</span>/10)</h3>
+                    <div id="desiredTimesList">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading your preferences...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurants Tab -->
+            <div id="restaurants" class="tab-content">
+                <h1 class="page-title">Follow Restaurants</h1>
+                <p style="margin-bottom: 2rem; color: #666;">Follow restaurants to increase compatibility with users who share your taste. Each shared restaurant increases your match score!</p>
+
+                <div id="restaurantFollowList" class="restaurant-grid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading restaurants...</p>
+                    </div>
+                </div>
+            </div>
+
+
         </main>
     </div>
 
@@ -1915,6 +2109,247 @@ function editProfile() {
                 websocket.close();
             } else if (!document.hidden && !websocket) {
                 setupWebSocket();
+            }
+        });
+
+
+// Desired Times functionality
+        let selectedDesiredDate = null;
+        let selectedDesiredTime = null;
+
+        function selectDesiredTime(time) {
+            selectedDesiredTime = time;
+
+            // Update UI
+            document.querySelectorAll('#timeSelection .time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+                if (slot.textContent.trim() === time) {
+                    slot.classList.add('selected');
+                }
+            });
+
+            // Enable add button if date is also selected
+            const addBtn = document.getElementById('addTimeBtn');
+            const dateInput = document.getElementById('desiredDate');
+            if (dateInput.value && selectedDesiredTime) {
+                addBtn.disabled = false;
+            }
+        }
+
+        async function addDesiredTime() {
+            const dateInput = document.getElementById('desiredDate');
+            if (!dateInput.value || !selectedDesiredTime) {
+                showToast('Please select both date and time', 'error');
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch('/api/time-preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': await getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        date: dateInput.value,
+                        time: selectedDesiredTime
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showToast('Time preference added!', 'success');
+                    loadDesiredTimes();
+
+                    // Reset selection
+                    document.querySelectorAll('#timeSelection .time-slot').forEach(slot => {
+                        slot.classList.remove('selected');
+                    });
+                    selectedDesiredTime = null;
+                    document.getElementById('addTimeBtn').disabled = true;
+                } else {
+                    showToast(result.error || 'Failed to add time preference', 'error');
+                }
+            } catch (error) {
+                console.error('Add time preference error:', error);
+                showToast('Failed to add time preference', 'error');
+            }
+        }
+
+        async function loadDesiredTimes() {
+            const container = document.getElementById('desiredTimesList');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading preferences...</p></div>';
+
+            try {
+                const response = await authenticatedFetch('/api/time-preferences?include_matches=true');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load preferences');
+                }
+
+                const preferences = await response.json();
+                document.getElementById('preferenceCount').textContent = preferences.length;
+
+                if (preferences.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏰</div><h3>No time preferences yet</h3><p>Add your desired meeting times above</p></div>';
+                    return;
+                }
+
+                container.innerHTML = preferences.map(pref => `
+                    <div class="time-preference-item">
+                        <div class="preference-info">
+                            <div class="preference-date">${new Date(pref.date).toLocaleDateString()}</div>
+                            <div class="preference-time">${pref.time}</div>
+                            <div class="preference-matches">${pref.potential_matches || 0} potential matches</div>
+                        </div>
+                        <button class="remove-preference-btn" onclick="removeTimePreference(${pref.id})">
+                            Remove
+                        </button>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Load time preferences error:', error);
+                container.innerHTML = '<p>Error loading time preferences</p>';
+            }
+        }
+
+        async function removeTimePreference(preferenceId) {
+            if (!confirm('Remove this time preference?')) return;
+
+            try {
+                const response = await authenticatedFetch(`/api/time-preferences/${preferenceId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-Token': await getCSRFToken()
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('Time preference removed', 'success');
+                    loadDesiredTimes();
+                } else {
+                    showToast('Failed to remove time preference', 'error');
+                }
+            } catch (error) {
+                console.error('Remove time preference error:', error);
+                showToast('Failed to remove time preference', 'error');
+            }
+        }
+
+        // Restaurant following functionality
+        async function loadRestaurantsForFollowing() {
+            const container = document.getElementById('restaurantFollowList');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading restaurants...</p></div>';
+
+            try {
+                const response = await authenticatedFetch('/api/restaurants/all');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurants');
+                }
+
+                const restaurants = await response.json();
+
+                if (restaurants.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏪</div><h3>No restaurants available</h3></div>';
+                    return;
+                }
+
+                container.innerHTML = restaurants.map(restaurant => `
+                    <div class="restaurant-follow-card ${restaurant.is_following ? 'following' : ''}">
+                        <div class="restaurant-header">
+                            <div class="restaurant-info">
+                                <h4>${escapeHtml(restaurant.name)}</h4>
+                                <div class="restaurant-cuisine">${escapeHtml(restaurant.cuisine_type)} • ${restaurant.price_range}</div>
+                                <div class="restaurant-rating">
+                                    ${'⭐'.repeat(Math.round(restaurant.rating))}
+                                    <span>${restaurant.rating}</span>
+                                </div>
+                            </div>
+                            <button class="follow-btn ${restaurant.is_following ? 'following' : ''}"
+                                    onclick="toggleRestaurantFollow(${restaurant.id}, this)">
+                                ${restaurant.is_following ? 'Following' : 'Follow'}
+                            </button>
+                        </div>
+                        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(restaurant.address)}</p>
+                        <div class="follower-count">${restaurant.follower_count} followers</div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Load restaurants error:', error);
+                container.innerHTML = '<p>Error loading restaurants</p>';
+            }
+        }
+
+        async function toggleRestaurantFollow(restaurantId, button) {
+            const isFollowing = button.classList.contains('following');
+            const endpoint = isFollowing ? '/api/restaurants/unfollow' : '/api/restaurants/follow';
+
+            try {
+                const response = await authenticatedFetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': await getCSRFToken()
+                    },
+                    body: JSON.stringify({ restaurant_id: restaurantId })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Update UI
+                    if (isFollowing) {
+                        button.classList.remove('following');
+                        button.textContent = 'Follow';
+                        button.closest('.restaurant-follow-card').classList.remove('following');
+                    } else {
+                        button.classList.add('following');
+                        button.textContent = 'Following';
+                        button.closest('.restaurant-follow-card').classList.add('following');
+                    }
+                    showToast(result.message, 'success');
+                } else {
+                    showToast(result.error || 'Failed to update follow status', 'error');
+                }
+            } catch (error) {
+                console.error('Toggle follow error:', error);
+                showToast('Failed to update follow status', 'error');
+            }
+        }
+
+        // Update showTab function to handle new tabs
+        const originalShowTab = showTab;
+        showTab = function(tabName) {
+            originalShowTab(tabName);
+
+            if (tabName === 'desired-times') {
+                loadDesiredTimes();
+                // Set today as default date
+                document.getElementById('desiredDate').valueAsDate = new Date();
+            } else if (tabName === 'restaurants') {
+                loadRestaurantsForFollowing();
+            }
+        };
+
+        // Handle date selection for desired times
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('desiredDate');
+            if (dateInput) {
+                dateInput.addEventListener('change', function() {
+                    selectedDesiredDate = this.value;
+                    document.getElementById('selectedDateDisplay').textContent =
+                        this.value ? new Date(this.value).toLocaleDateString() : '';
+
+                    // Enable add button if time is also selected
+                    const addBtn = document.getElementById('addTimeBtn');
+                    if (selectedDesiredDate && selectedDesiredTime) {
+                        addBtn.disabled = false;
+                    }
+                });
             }
         });
 
