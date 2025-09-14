@@ -29,7 +29,7 @@ class Restaurant(db.Model):
     
     # Original relationships
     tables = db.relationship('RestaurantTable', backref='restaurant', lazy='dynamic', cascade='all, delete-orphan')
-    reservations = db.relationship('Reservation', backref='restaurant', lazy='dynamic')
+    reservations = db.relationship('Reservation', back_populates='restaurant', lazy='dynamic')
     
     @hybrid_property
     def available_tables_count(self):
