@@ -3,9 +3,9 @@ Service for restaurant account management
 """
 from flask import jsonify
 from datetime import datetime, timedelta
-from ..models.restaurant import Restaurant
-from ..models.match import Match
-from ..models.reservation import Reservation
+from models.restaurant import Restaurant
+from models.match import Match
+from models.reservation import Reservation
 from .. import db, bcrypt
 
 class RestaurantManagementService:
