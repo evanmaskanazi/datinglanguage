@@ -5,8 +5,8 @@ from flask import jsonify
 from sqlalchemy import and_
 from datetime import datetime, timedelta
 from models.user import User
-from ..models.restaurant import Restaurant
-from .. import db, cache
+from models.restaurant import Restaurant
+from dating_backend import db, bcrypt
 
 class FollowingService:
     def __init__(self, db_session, cache_manager, logger):
