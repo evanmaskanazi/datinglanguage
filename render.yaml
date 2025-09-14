@@ -1,16 +1,19 @@
 services:
   # Main Web Service
   - type: web
-    name: table-for-two
-    runtime: docker
+    name: datinglanguage
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python verify_imports.py
+    startCommand: python init_db.py && gunicorn dating_backend:app --bind 0.0.0.0:$PORT --workers 2 --worker-class gevent
     plan: starter
-    dockerfilePath: ./Dockerfile
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
       - key: PRODUCTION
         value: "true"
       - key: DATABASE_URL
         fromDatabase:
-          name: table-for-two-db
+          name: datinglanguage-db
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
@@ -20,7 +23,7 @@ services:
         value: "1"
       - key: REDIS_URL
         fromService:
-          name: table-for-two-redis
+          name: datinglanguage-redis
           property: connectionString
       - key: STRIPE_SECRET_KEY
         sync: false
@@ -37,7 +40,7 @@ services:
       - key: SMTP_PORT
         value: "587"
       - key: APP_BASE_URL
-        value: "https://tablefortwo.com"
+        value: "https://datinglanguage.onrender.com"
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
@@ -46,15 +49,21 @@ services:
         sync: false
       - key: FIELD_ENCRYPTION_KEY
         generateValue: true
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: YELP_API_KEY
+        sync: false
 
   # Celery Worker
   - type: worker
-    name: table-for-two-celery
-    runtime: docker
+    name: datinglanguage-celery
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: ./startup_celery.sh
     plan: starter
-    dockerfilePath: ./Dockerfile
-    dockerCommand: ./startup_celery.sh
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: C_FORCE_ROOT
@@ -63,11 +72,11 @@ services:
         value: "true"
       - key: DATABASE_URL
         fromDatabase:
-          name: table-for-two-db
+          name: datinglanguage-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: table-for-two-redis
+          name: datinglanguage-redis
           property: connectionString
       - key: SECRET_KEY
         sync: false
@@ -79,40 +88,68 @@ services:
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false
 
   # Celery Beat Scheduler
   - type: worker
-    name: table-for-two-celery-beat
-    runtime: docker
+    name: datinglanguage-celery-beat
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: celery -A celery_app beat --loglevel=INFO
     plan: starter
-    dockerfilePath: ./Dockerfile
-    dockerCommand: celery -A celery_app beat --loglevel=INFO
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: PRODUCTION
         value: "true"
       - key: DATABASE_URL
         fromDatabase:
-          name: table-for-two-db
+          name: datinglanguage-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: table-for-two-redis
+          name: datinglanguage-redis
           property: connectionString
       - key: SECRET_KEY
         sync: false
       - key: FLASK_APP
         value: "dating_backend.py"
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false
+
+  # Redis instance
+  - type: redis
+    name: datinglanguage-redis
+    plan: starter
+
+  # Background Service for Monitoring/Health Checks
+  - type: worker
+    name: datinglanguage-monitor
+    env: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python -c "import time; [time.sleep(300) for _ in iter(int, 1)]"
+    plan: starter
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PRODUCTION
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: datinglanguage-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: datinglanguage-redis
+          property: connectionString
 
 databases:
-  - name: table-for-two-db
-    databaseName: table_for_two
-    user: tablefortwo_user
-    plan: starter  # 1GB storage
-
-# Redis instance
-services:
-  - type: redis
-    name: table-for-two-redis
-    plan: starter  # 100MB memory
+  - name: datinglanguage-db
+    databaseName: datinglanguage
+    user: datinglanguage_user
+    plan: starter
