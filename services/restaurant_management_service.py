@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from models.restaurant import Restaurant
 from models.match import Match
 from models.reservation import Reservation
-from .. import db, bcrypt
+from dating_backend import db, bcrypt
 
 class RestaurantManagementService:
     def __init__(self, db_session, logger):
