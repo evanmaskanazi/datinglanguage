@@ -298,13 +298,10 @@
         </div>
 
         <div class="social-login">
-            <a href="/auth/google" class="social-btn">
-                <span>🔍</span> Google
-            </a>
-            <a href="/auth/facebook" class="social-btn">
-                <span>📘</span> Facebook
-            </a>
-        </div>
+    <a href="/auth/google" class="social-btn" style="margin: 0 auto; max-width: 200px;">
+        <span>🔍</span> Continue with Google
+    </a>
+</div>
 
         <div class="form-footer">
             Don't have an account? <a href="/signup.html">Sign up</a>
@@ -430,7 +427,7 @@
 
                 const data = await response.json();
 
-          
+
     // Store the JWT token and user data
    if (response.ok) {
     showAlert('Login successful!', 'success');
