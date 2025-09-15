@@ -179,6 +179,32 @@ bcrypt = Bcrypt(app)
 CORS(app, supports_credentials=True)
 csrf = CSRFProtect(app)
 
+
+
+# OAuth configuration
+from authlib.integrations.flask_client import OAuth
+
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+    client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
+
+facebook = oauth.register(
+    name='facebook',
+    client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
+    client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
+    access_token_url='https://graph.facebook.com/oauth/access_token',
+    authorize_url='https://www.facebook.com/dialog/oauth',
+    api_base_url='https://graph.facebook.com/',
+    client_kwargs={'scope': 'email'}
+)
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -1264,6 +1290,72 @@ def reset_password():
         logger.error(f"Reset password error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to reset password'}), 500
 
+
+# OAuth endpoints
+@app.route('/auth/google')
+def google_login():
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/google/callback')
+def google_callback():
+    token = google.authorize_access_token()
+    user_info = token['userinfo']
+
+    # Check if user exists or create new user
+    user = User.query.filter_by(email=user_info['email']).first()
+    if not user:
+        user = User(
+            email=user_info['email'],
+            password_hash=bcrypt.generate_password_hash('oauth_user').decode('utf-8'),
+            is_verified=True,
+            role='user'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user, remember=True)
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    session['user_role'] = user.role
+    session.permanent = True
+
+    return redirect('/dashboard.html')
+
+
+@app.route('/auth/facebook')
+def facebook_login():
+    redirect_uri = url_for('facebook_callback', _external=True)
+    return facebook.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/facebook/callback')
+def facebook_callback():
+    token = facebook.authorize_access_token()
+    resp = facebook.get('me?fields=id,name,email', token=token)
+    user_info = resp.json()
+
+    # Check if user exists or create new user
+    user = User.query.filter_by(email=user_info['email']).first()
+    if not user:
+        user = User(
+            email=user_info['email'],
+            password_hash=bcrypt.generate_password_hash('oauth_user').decode('utf-8'),
+            is_verified=True,
+            role='user'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user, remember=True)
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    session['user_role'] = user.role
+    session.permanent = True
+
+    return redirect('/dashboard.html')
+
 # === STATIC FILES ===
 @app.route('/')
 def index():
@@ -1279,6 +1371,11 @@ def login_page():
 def dashboard():
     """Serve the dashboard"""
     return send_file('static/dashboard.html')
+
+@app.route('/restaurants.html')
+def restaurants_page():
+    """Serve the restaurant portal page"""
+    return send_file('static/restaurants.html')
 
 @app.route('/signup.html')
 def signup_page():
