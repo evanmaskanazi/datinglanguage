@@ -195,15 +195,15 @@ google = oauth.register(
     }
 )
 
-facebook = oauth.register(
-    name='facebook',
-    client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
-    client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
-    access_token_url='https://graph.facebook.com/oauth/access_token',
-    authorize_url='https://www.facebook.com/dialog/oauth',
-    api_base_url='https://graph.facebook.com/',
-    client_kwargs={'scope': 'email'}
-)
+#facebook = oauth.register(
+ #   name='facebook',
+  #  client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
+   # client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
+    #access_token_url='https://graph.facebook.com/oauth/access_token',
+    #authorize_url='https://www.facebook.com/dialog/oauth',
+    #api_base_url='https://graph.facebook.com/',
+    #client_kwargs={'scope': 'email'}
+#)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
