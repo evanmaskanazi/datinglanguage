@@ -298,12 +298,12 @@
         </div>
 
         <div class="social-login">
-            <button class="social-btn" onclick="socialLogin('google')">
+            <a href="/auth/google" class="social-btn">
                 <span>🔍</span> Google
-            </button>
-            <button class="social-btn" onclick="socialLogin('facebook')">
+            </a>
+            <a href="/auth/facebook" class="social-btn">
                 <span>📘</span> Facebook
-            </button>
+            </a>
         </div>
 
         <div class="form-footer">
@@ -446,11 +446,6 @@
                 setLoading(false);
             }
         });
-
-        // Social login placeholder
-        function socialLogin(provider) {
-            showAlert(`${provider} login coming soon!`, 'info');
-        }
 
         // Security: Prevent clickjacking
         if (window.top !== window.self) {
