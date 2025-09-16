@@ -1772,6 +1772,172 @@ def get_restaurant_stats():
 csrf.exempt(restaurant_register)
 csrf.exempt(restaurant_login)
 
+
+# Add these endpoints to dating_backend.py after your existing restaurant management endpoints
+
+@app.route('/api/restaurant-management/bookings', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_restaurant_bookings():
+    """Get all bookings for a restaurant"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+        date_filter = request.args.get('date_filter')
+        status_filter = request.args.get('status')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+
+        # Use the existing get_match_requests method (it handles bookings)
+        return restaurant_service.get_match_requests(int(restaurant_id), date_filter)
+    except Exception as e:
+        logger.error(f"Get restaurant bookings error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get bookings'}), 500
+
+
+@app.route('/api/restaurant-management/bookings/<int:booking_id>/status', methods=['PUT'])
+@limiter.limit("50 per hour")
+def update_booking_status():
+    """Update booking status"""
+    try:
+        booking_id = request.view_args['booking_id']
+        restaurant_id = request.json.get('restaurant_id')
+        new_status = request.json.get('status')
+
+        if not restaurant_id or not new_status:
+            return jsonify({'error': 'Restaurant ID and status required'}), 400
+
+        valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Status must be one of: {valid_statuses}'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.update_booking_status(int(restaurant_id), booking_id, new_status)
+    except Exception as e:
+        logger.error(f"Update booking status error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to update booking'}), 500
+
+
+@app.route('/api/restaurant-management/analytics', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_restaurant_analytics():
+    """Get detailed analytics for restaurant"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+        period = request.args.get('period', 'week')  # week, month, year
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_analytics_data(int(restaurant_id), period)
+    except Exception as e:
+        logger.error(f"Get restaurant analytics error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get analytics'}), 500
+
+
+@app.route('/api/restaurant-management/settings', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_restaurant_management_settings():
+    """Get restaurant settings"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_restaurant_settings(int(restaurant_id))
+    except Exception as e:
+        logger.error(f"Get restaurant settings error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get settings'}), 500
+
+
+@app.route('/api/restaurant-management/settings', methods=['PUT'])
+@limiter.limit("20 per hour")
+def update_restaurant_management_settings():
+    """Update restaurant settings"""
+    try:
+        restaurant_id = request.json.get('restaurant_id')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.update_restaurant_settings(int(restaurant_id), request.json)
+    except Exception as e:
+        logger.error(f"Update restaurant settings error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to update settings'}), 500
+
+
+@app.route('/api/restaurant-management/sample-data', methods=['POST'])
+@limiter.limit("10 per hour")
+def create_sample_restaurant_data():
+    """Create sample bookings for testing (development only)"""
+    try:
+        if os.environ.get('PRODUCTION'):
+            return jsonify({'error': 'Not available in production'}), 403
+
+        restaurant_id = request.json.get('restaurant_id')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        from models.user import User
+        restaurant_service = RestaurantManagementService(db, logger)
+
+        # Get some test users
+        users = User.query.limit(4).all()
+        if len(users) < 2:
+            return jsonify({'error': 'Need at least 2 users in database'}), 400
+
+        # Create sample bookings
+        sample_bookings = [
+            {
+                'user1_id': users[0].id,
+                'user2_id': users[1].id,
+                'datetime': (datetime.utcnow() + timedelta(days=1)).isoformat(),
+            },
+            {
+                'user1_id': users[0].id,
+                'user2_id': users[1].id if len(users) > 1 else users[0].id,
+                'datetime': (datetime.utcnow() + timedelta(days=2)).isoformat(),
+            }
+        ]
+
+        created_bookings = []
+        for booking_data in sample_bookings:
+            result = restaurant_service.create_sample_booking(
+                int(restaurant_id),
+                booking_data['user1_id'],
+                booking_data['user2_id'],
+                booking_data['datetime']
+            )
+            if result[1] == 200:
+                created_bookings.append(result[0].get_json())
+
+        return jsonify({
+            'message': f'Created {len(created_bookings)} sample bookings',
+            'bookings': created_bookings
+        })
+    except Exception as e:
+        logger.error(f"Create sample data error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to create sample data'}), 500
+
+
+
+
+
+
+
+
 # === ERROR HANDLERS ===
 @app.errorhandler(404)
 def not_found(error):

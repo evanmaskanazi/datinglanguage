@@ -33,6 +33,8 @@ def init_database():
         migrate_restaurant_owner_columns()
         print("Running restaurant tables migration...")
         migrate_restaurant_tables_columns()
+        print("Running restaurant management tables migration...")
+        migrate_restaurant_management_tables()
 
         # NOW we can safely import models after migration
         try:
@@ -313,6 +315,91 @@ def migrate_restaurant_tables_columns():
         print(f"❌ Restaurant tables migration failed: {e}")
         db.session.rollback()
         raise
+
+
+# Add this function to init_db.py
+
+def migrate_restaurant_management_tables():
+    """Create restaurant management tables"""
+    from sqlalchemy import text
+
+    try:
+        # Create restaurant_analytics table
+        analytics_sql = """
+        CREATE TABLE IF NOT EXISTS restaurant_analytics (
+            id SERIAL PRIMARY KEY,
+            restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
+            date DATE NOT NULL,
+            total_matches INTEGER DEFAULT 0,
+            confirmed_matches INTEGER DEFAULT 0,
+            completed_dates INTEGER DEFAULT 0,
+            revenue DECIMAL(10,2) DEFAULT 0.00,
+            average_rating DECIMAL(3,2) DEFAULT 0.00,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+
+        # Create restaurant_bookings table
+        bookings_sql = """
+        CREATE TABLE IF NOT EXISTS restaurant_bookings (
+            id SERIAL PRIMARY KEY,
+            restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
+            match_id INTEGER REFERENCES matches(id),
+            table_id INTEGER REFERENCES restaurant_tables(id),
+            user1_id INTEGER NOT NULL REFERENCES users(id),
+            user2_id INTEGER NOT NULL REFERENCES users(id),
+            booking_datetime TIMESTAMP NOT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            party_size INTEGER DEFAULT 2,
+            special_requests TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+
+        # Create restaurant_settings table
+        settings_sql = """
+        CREATE TABLE IF NOT EXISTS restaurant_settings (
+            id SERIAL PRIMARY KEY,
+            restaurant_id INTEGER NOT NULL UNIQUE REFERENCES restaurants(id),
+            notification_email VARCHAR(255),
+            auto_accept_bookings BOOLEAN DEFAULT FALSE,
+            max_advance_days INTEGER DEFAULT 30,
+            min_advance_hours INTEGER DEFAULT 2,
+            special_instructions TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+
+        # Execute table creations
+        db.session.execute(text(analytics_sql))
+        db.session.execute(text(bookings_sql))
+        db.session.execute(text(settings_sql))
+
+        # Create indexes for better performance
+        index_sql = [
+            "CREATE INDEX IF NOT EXISTS idx_restaurant_analytics_restaurant_date ON restaurant_analytics(restaurant_id, date);",
+            "CREATE INDEX IF NOT EXISTS idx_restaurant_bookings_restaurant_status ON restaurant_bookings(restaurant_id, status);",
+            "CREATE INDEX IF NOT EXISTS idx_restaurant_bookings_datetime ON restaurant_bookings(booking_datetime);"
+        ]
+
+        for sql in index_sql:
+            db.session.execute(text(sql))
+
+        db.session.commit()
+        print("✅ Restaurant management tables created successfully!")
+
+    except Exception as e:
+        print(f"❌ Restaurant management tables migration failed: {e}")
+        db.session.rollback()
+        raise
+
+
+# Add this call to your init_database() function in init_db.py:
+# Add this line with your other migration calls:
+# migrate_restaurant_management_tables()
+
 
 
 def add_restaurants():
