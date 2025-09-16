@@ -1758,9 +1758,7 @@ def get_restaurant_matches():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_match_requests(int(restaurant_id), date_filter)
+        return restaurant_management_service.get_match_requests(int(restaurant_id), date_filter)
     except Exception as e:
         logger.error(f"Get restaurant matches error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get matches'}), 500
@@ -1795,9 +1793,7 @@ def get_comprehensive_analytics():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_comprehensive_analytics(int(restaurant_id), period)
+        return restaurant_management_service.get_comprehensive_analytics(int(restaurant_id), period)
     except Exception as e:
         logger.error(f"Get comprehensive analytics error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get comprehensive analytics'}), 500
@@ -1813,9 +1809,7 @@ def get_customer_demographics():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_customer_demographics(int(restaurant_id))
+        return restaurant_management_service.get_customer_demographics(int(restaurant_id))
     except Exception as e:
         logger.error(f"Get demographics error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get demographics'}), 500
@@ -1832,9 +1826,7 @@ def get_revenue_analytics():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_revenue_analytics(int(restaurant_id), period)
+        return restaurant_management_service.get_revenue_analytics(int(restaurant_id), period)
     except Exception as e:
         logger.error(f"Get revenue analytics error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get revenue analytics'}), 500
@@ -1983,9 +1975,7 @@ def update_booking_status():
         if new_status not in valid_statuses:
             return jsonify({'error': f'Status must be one of: {valid_statuses}'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.update_booking_status(int(restaurant_id), booking_id, new_status)
+        return restaurant_management_service.update_booking_status(int(restaurant_id), booking_id, new_status)
     except Exception as e:
         logger.error(f"Update booking status error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to update booking'}), 500
@@ -2002,9 +1992,7 @@ def get_restaurant_analytics():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_analytics_data(int(restaurant_id), period)
+        return restaurant_management_service.get_analytics_data(int(restaurant_id), period)
     except Exception as e:
         logger.error(f"Get restaurant analytics error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get analytics'}), 500
@@ -2036,9 +2024,7 @@ def update_restaurant_management_settings():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.update_restaurant_settings(int(restaurant_id), request.json)
+        return restaurant_management_service.update_restaurant_settings(int(restaurant_id), request.json)
     except Exception as e:
         logger.error(f"Update restaurant settings error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to update settings'}), 500
