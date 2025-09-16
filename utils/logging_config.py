@@ -44,3 +44,11 @@ def log_user_action(logger, user_id, action, details=None):
     if details:
         log_msg += f" | Details: {details}"
     logger.info(log_msg)
+
+# ADD THIS MISSING FUNCTION:
+def log_audit(logger, user_id, action, details=None):
+    """Log audit events with special formatting"""
+    audit_msg = f"AUDIT: User {user_id} | Action: {action}"
+    if details:
+        audit_msg += f" | Details: {details}"
+    logger.info(audit_msg)
