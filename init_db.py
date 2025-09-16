@@ -35,6 +35,8 @@ def init_database():
         migrate_restaurant_tables_columns()
         print("Running restaurant management tables migration...")
         migrate_restaurant_management_tables()
+        print("Running date feedback table migration...")
+        migrate_date_feedback_table()
 
         # NOW we can safely import models after migration
         try:
@@ -399,6 +401,74 @@ def migrate_restaurant_management_tables():
 # Add this call to your init_database() function in init_db.py:
 # Add this line with your other migration calls:
 # migrate_restaurant_management_tables()
+
+
+def migrate_date_feedback_table():
+    """Create enhanced date feedback table"""
+    from sqlalchemy import text
+
+    try:
+        # Create enhanced date_feedback table
+        feedback_sql = """
+        CREATE TABLE IF NOT EXISTS date_feedback (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            booking_id INTEGER REFERENCES restaurant_bookings(id),
+            reservation_id INTEGER REFERENCES reservations(id),
+            match_user_id INTEGER NOT NULL REFERENCES users(id),
+            restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
+
+            -- Original rating fields
+            rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            showed_up BOOLEAN,
+            would_meet_again BOOLEAN,
+            chemistry_level INTEGER CHECK (chemistry_level >= 1 AND chemistry_level <= 5),
+            conversation_quality INTEGER CHECK (conversation_quality >= 1 AND conversation_quality <= 5),
+            overall_experience INTEGER CHECK (overall_experience >= 1 AND overall_experience <= 5),
+            comments TEXT,
+
+            -- Enhanced restaurant rating fields
+            restaurant_rating INTEGER CHECK (restaurant_rating >= 1 AND restaurant_rating <= 5),
+            food_quality INTEGER CHECK (food_quality >= 1 AND food_quality <= 5),
+            service_quality INTEGER CHECK (service_quality >= 1 AND service_quality <= 5),
+            ambiance_rating INTEGER CHECK (ambiance_rating >= 1 AND ambiance_rating <= 5),
+            value_for_money INTEGER CHECK (value_for_money >= 1 AND value_for_money <= 5),
+            restaurant_review TEXT,
+
+            -- Date success fields
+            date_success BOOLEAN,
+            recommend_restaurant BOOLEAN,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            -- Unique constraints to prevent duplicate feedback
+            CONSTRAINT unique_user_booking_feedback UNIQUE (user_id, booking_id),
+            CONSTRAINT unique_user_reservation_feedback UNIQUE (user_id, reservation_id)
+        );
+        """
+
+        db.session.execute(text(feedback_sql))
+
+        # Create indexes for better performance
+        index_sql = [
+            "CREATE INDEX IF NOT EXISTS idx_date_feedback_restaurant ON date_feedback(restaurant_id);",
+            "CREATE INDEX IF NOT EXISTS idx_date_feedback_user ON date_feedback(user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_date_feedback_booking ON date_feedback(booking_id);",
+            "CREATE INDEX IF NOT EXISTS idx_date_feedback_created_at ON date_feedback(created_at);"
+        ]
+
+        for sql in index_sql:
+            db.session.execute(text(sql))
+
+        db.session.commit()
+        print("✅ Enhanced date feedback table created successfully!")
+
+    except Exception as e:
+        print(f"❌ Date feedback table migration failed: {e}")
+        db.session.rollback()
+        raise
+
 
 
 

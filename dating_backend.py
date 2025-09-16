@@ -1767,6 +1767,164 @@ def get_restaurant_stats():
         return jsonify({'error': 'Failed to get statistics'}), 500
 
 
+# Add these endpoints AFTER get_restaurant_stats endpoint (around line 1770)
+
+@app.route('/api/restaurant-management/analytics/comprehensive', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_comprehensive_analytics():
+    """Get comprehensive analytics with charts data"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+        period = request.args.get('period', 'week')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_comprehensive_analytics(int(restaurant_id), period)
+    except Exception as e:
+        logger.error(f"Get comprehensive analytics error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get comprehensive analytics'}), 500
+
+
+@app.route('/api/restaurant-management/demographics', methods=['GET'])
+@limiter.limit("50 per hour")
+def get_customer_demographics():
+    """Get customer demographics"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_customer_demographics(int(restaurant_id))
+    except Exception as e:
+        logger.error(f"Get demographics error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get demographics'}), 500
+
+
+@app.route('/api/restaurant-management/revenue', methods=['GET'])
+@limiter.limit("50 per hour")
+def get_revenue_analytics():
+    """Get revenue analytics"""
+    try:
+        restaurant_id = request.args.get('restaurant_id')
+        period = request.args.get('period', 'month')
+
+        if not restaurant_id:
+            return jsonify({'error': 'Restaurant ID required'}), 400
+
+        from services.restaurant_management_service import RestaurantManagementService
+        restaurant_service = RestaurantManagementService(db, logger)
+        return restaurant_service.get_revenue_analytics(int(restaurant_id), period)
+    except Exception as e:
+        logger.error(f"Get revenue analytics error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get revenue analytics'}), 500
+
+
+# Booking creation endpoint for when users make restaurant bookings
+@app.route('/api/bookings/create', methods=['POST'])
+@require_auth()
+@limiter.limit("10 per hour")
+def create_restaurant_booking():
+    """Create a restaurant booking from user interface"""
+    try:
+        data = request.json
+
+        # Validate required fields
+        required_fields = ['restaurant_id', 'match_user_id', 'booking_datetime']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} is required'}), 400
+
+        # Create booking entry
+        from models.restaurant_management import RestaurantBooking
+        booking = RestaurantBooking(
+            restaurant_id=int(data['restaurant_id']),
+            user1_id=request.current_user.id,
+            user2_id=int(data['match_user_id']),
+            booking_datetime=datetime.fromisoformat(data['booking_datetime']),
+            status='pending',
+            party_size=data.get('party_size', 2),
+            special_requests=data.get('special_requests', '')
+        )
+
+        db.session.add(booking)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'booking_id': booking.id,
+            'message': 'Booking request sent to restaurant'
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Create booking error: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create booking'}), 500
+
+
+@app.route('/api/bookings/<int:booking_id>/rate', methods=['POST'])
+@require_auth()
+@limiter.limit("20 per hour")
+def rate_restaurant_booking():
+    """Rate a completed restaurant booking"""
+    try:
+        booking = RestaurantBooking.query.get(booking_id)
+        if not booking:
+            return jsonify({'error': 'Booking not found'}), 404
+
+        # Check if user was part of this booking
+        if request.current_user.id not in [booking.user1_id, booking.user2_id]:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        if booking.status != 'completed':
+            return jsonify({'error': 'Can only rate completed bookings'}), 400
+
+        data = request.json
+        rating = data.get('rating')
+        review = data.get('review', '')
+
+        if not rating or rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+
+        # Create or update restaurant rating
+        from models.feedback import DateFeedback
+        feedback = DateFeedback(
+            booking_id=booking_id,
+            user_id=request.current_user.id,
+            restaurant_id=booking.restaurant_id,
+            rating=rating,
+            review=review
+        )
+
+        db.session.add(feedback)
+
+        # Update restaurant average rating
+        restaurant = Restaurant.query.get(booking.restaurant_id)
+        if restaurant:
+            # Calculate new average rating
+            all_ratings = DateFeedback.query.filter_by(restaurant_id=restaurant.id).all()
+            avg_rating = sum(r.rating for r in all_ratings) / len(all_ratings) if all_ratings else rating
+            restaurant.rating = round(avg_rating, 1)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Rating submitted successfully'
+        })
+
+    except Exception as e:
+        logger.error(f"Rate booking error: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': 'Failed to submit rating'}), 500
+
+
+
 
 # Add the CSRF exemption HERE (after the route definitions)
 csrf.exempt(restaurant_register)
