@@ -1,6 +1,7 @@
 """Restaurant management models for analytics and booking management"""
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, Decimal, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy.types import Numeric
 from sqlalchemy.orm import relationship
 from dating_backend import db
 
@@ -14,8 +15,8 @@ class RestaurantAnalytics(db.Model):
     total_matches = db.Column(db.Integer, default=0)
     confirmed_matches = db.Column(db.Integer, default=0)
     completed_dates = db.Column(db.Integer, default=0)
-    revenue = db.Column(db.Decimal(10, 2), default=0.00)
-    average_rating = db.Column(db.Decimal(3, 2), default=0.00)
+    revenue = db.Column(Numeric(10, 2), default=0.00)
+    average_rating = db.Column(Numeric(3, 2), default=0.00)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     restaurant = relationship("Restaurant", backref="analytics")
