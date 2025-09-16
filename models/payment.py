@@ -13,12 +13,12 @@ class PaymentStatus(Enum):
     REFUNDED = 'refunded'
 
 class Payment(db.Model):
-    __tablename__ = 'payments'  # Fixed: added double underscore
+    __tablename__ = 'payments'  # Fixed: proper double underscore syntax
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'))
-    booking_id = db.Column(db.Integer, db.ForeignKey('restaurant_bookings.id'))  # Added this
+    booking_id = db.Column(db.Integer, db.ForeignKey('restaurant_bookings.id'))
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(3), default='USD')
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING)
@@ -29,8 +29,8 @@ class Payment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
     
-    # Relationships
-    user = db.relationship("User", backref="payments")
+    # Fixed relationship with unique backref to avoid conflicts
+    payment_user = db.relationship("User", backref="user_payments")
     
     def to_dict(self):
         return {
@@ -46,3 +46,6 @@ class Payment(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
+    
+    def __repr__(self):
+        return f'<Payment {self.id}: ${self.amount} ({self.status.value})>'
