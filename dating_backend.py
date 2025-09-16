@@ -1763,6 +1763,10 @@ def get_restaurant_stats():
 
 
 
+# Add the CSRF exemption HERE (after the route definitions)
+csrf.exempt(restaurant_register)
+csrf.exempt(restaurant_login)
+
 # === ERROR HANDLERS ===
 @app.errorhandler(404)
 def not_found(error):
