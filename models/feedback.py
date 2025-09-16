@@ -42,13 +42,13 @@ class DateFeedback(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    user = relationship("User", foreign_keys=[user_id], backref="given_feedback")
-    match_user = relationship("User", foreign_keys=[match_user_id], backref="received_feedback")
-    restaurant = relationship("Restaurant", backref="user_feedback")
+    # FIXED RELATIONSHIPS - Using unique backref names to avoid conflicts
+    feedback_giver = relationship("User", foreign_keys=[user_id], backref="feedback_given")
+    feedback_receiver = relationship("User", foreign_keys=[match_user_id], backref="feedback_received")
+    feedback_restaurant = relationship("Restaurant", backref="date_feedback_entries")
     
-    # Handle both booking_id and reservation_id
-    booking = relationship("RestaurantBooking", backref="feedback", foreign_keys=[booking_id])
+    # Handle both booking_id and reservation_id with unique backref names
+    feedback_booking = relationship("RestaurantBooking", foreign_keys=[booking_id], backref="date_feedback_entry")
     
     # Create unique constraint to prevent duplicate feedback
     __table_args__ = (
@@ -116,3 +116,32 @@ class DateFeedback(db.Model):
             return None
         
         return overall_score >= 4.0 and self.recommend_restaurant is True
+    
+    def get_feedback_summary(self):
+        """Get a summary of the feedback for display"""
+        summary = {
+            'overall_score': self.get_overall_restaurant_score(),
+            'is_positive': self.is_positive_review(),
+            'would_return': self.would_meet_again,
+            'showed_up': self.showed_up,
+            'date_success': self.date_success,
+            'recommend_restaurant': self.recommend_restaurant
+        }
+        
+        return summary
+    
+    def validate_ratings(self):
+        """Validate that all ratings are within acceptable ranges"""
+        rating_fields = [
+            'rating', 'chemistry_level', 'conversation_quality', 
+            'overall_experience', 'restaurant_rating', 'food_quality',
+            'service_quality', 'ambiance_rating', 'value_for_money'
+        ]
+        
+        errors = []
+        for field in rating_fields:
+            value = getattr(self, field)
+            if value is not None and (value < 1 or value > 5):
+                errors.append(f"{field} must be between 1 and 5")
+        
+        return errors
