@@ -11,11 +11,12 @@ class PaymentStatus(Enum):
     REFUNDED = 'refunded'
 
 class Payment(db.Model):
-    __tablename__ = 'payments'
+    __tablename__ = 'payments'  # Fixed: was **tablename**
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id'))
+    booking_id = db.Column(db.Integer, db.ForeignKey('restaurant_bookings.id'))  # Added this
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(3), default='USD')
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING)
