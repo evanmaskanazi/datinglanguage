@@ -73,24 +73,17 @@
             padding: 0 2rem;
         }
 
-        .welcome-section {
+        .section {
             background: white;
-            padding: 2rem;
             border-radius: 12px;
-            margin-bottom: 2rem;
+            padding: 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 6px;
             margin-bottom: 2rem;
         }
 
-        .alert-info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
+        .section h2 {
+            margin-bottom: 1.5rem;
+            color: var(--dark-gray);
         }
 
         .stats-grid {
@@ -119,87 +112,173 @@
             font-size: 0.875rem;
         }
 
-        .section {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-        }
-
-        .section h2 {
+        .tabs {
+            display: flex;
             margin-bottom: 1.5rem;
-            color: var(--dark-gray);
+            border-bottom: 2px solid #eee;
         }
 
-        .date-filter {
-            margin-bottom: 2rem;
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filters {
             display: flex;
             gap: 1rem;
+            margin-bottom: 1.5rem;
             align-items: center;
         }
 
-        .date-filter select {
+        .filters select, .filters input {
             padding: 0.5rem;
             border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 6px;
         }
 
-        .match-item {
+        .booking-item {
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
             display: grid;
-            grid-template-columns: 1fr auto auto;
+            grid-template-columns: 1fr auto auto auto;
             gap: 1rem;
             align-items: center;
         }
 
-        .match-info h4 {
+        .booking-info h4 {
             margin-bottom: 0.25rem;
         }
 
-        .match-details {
+        .booking-details {
             font-size: 0.875rem;
             color: #666;
         }
 
-        .match-status {
+        .booking-status {
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.875rem;
             font-weight: 500;
         }
 
-        .match-status.pending {
+        .booking-status.pending {
             background: #fff3cd;
             color: #856404;
         }
 
-        .match-status.confirmed {
+        .booking-status.confirmed {
             background: #d4edda;
             color: #155724;
         }
 
-        .match-status.completed {
+        .booking-status.completed {
             background: #e2e3e5;
             color: #383d41;
         }
 
-        .match-time {
-            text-align: right;
+        .booking-status.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .booking-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
             font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
         }
 
         .loading {
             text-align: center;
-            padding: 3rem;
+            padding: 2rem;
         }
 
         .loading-spinner {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 3px solid #f3f3f3;
             border-top: 3px solid var(--primary-color);
             border-radius: 50%;
@@ -212,69 +291,32 @@
             100% { transform: rotate(360deg); }
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
+        .alert {
             padding: 1rem;
             border-radius: 6px;
-            margin: 1rem 0;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .feature-icon {
-            font-size: 3rem;
             margin-bottom: 1rem;
         }
 
-        .feature-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .feature-description {
-            color: #666;
-            margin-bottom: 1.5rem;
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .btn {
-            background: var(--primary-color);
+        .sample-data-btn {
+            background: var(--warning-color);
             color: white;
+            padding: 0.5rem 1rem;
             border: none;
-            padding: 0.75rem 1.5rem;
             border-radius: 6px;
             cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 768px) {
@@ -291,6 +333,15 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+
+            .booking-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .booking-actions {
+                justify-self: start;
+            }
         }
     </style>
 </head>
@@ -304,15 +355,7 @@
     </header>
 
     <div class="container">
-        <div class="welcome-section">
-            <h1>Welcome to Your Restaurant Dashboard</h1>
-            <p>Manage your restaurant's presence on Table for Two and connect with potential diners.</p>
-        </div>
-
-        <div class="alert alert-info">
-            <strong>Dashboard Status</strong><br>
-            Your restaurant is now registered and visible to users. Advanced analytics and management features are being developed.
-        </div>
+        <div id="alertMessage" class="alert" style="display: none;"></div>
 
         <!-- Statistics -->
         <div class="stats-grid">
@@ -334,116 +377,155 @@
             </div>
         </div>
 
-        <!-- Match Requests -->
+        <button class="sample-data-btn" onclick="createSampleData()">Create Sample Bookings (Testing)</button>
+
+        <!-- Main Content Tabs -->
         <div class="section">
-            <h2>Recent Match Requests</h2>
-            
-            <div class="date-filter">
-                <label>Filter by:</label>
-                <select id="dateFilter" onchange="loadMatches()">
-                    <option value="">All time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This week</option>
-                </select>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('bookings')">Match Requests</button>
+                <button class="tab-btn" onclick="showTab('analytics')">Analytics & Reports</button>
+                <button class="tab-btn" onclick="showTab('settings')">Restaurant Profile</button>
             </div>
 
-            <div id="matchesList">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading match requests...</p>
+            <!-- Bookings Tab -->
+            <div id="bookings-tab" class="tab-content active">
+                <h2>Recent Match Requests</h2>
+                
+                <div class="filters">
+                    <label>Filter by:</label>
+                    <select id="dateFilter" onchange="loadBookings()">
+                        <option value="">All time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This week</option>
+                    </select>
+                    <select id="statusFilter" onchange="loadBookings()">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div id="bookingsList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading bookings...</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Coming Soon Features -->
-        <div class="section">
-            <h2>Coming Soon Features</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">Analytics & Reports</div>
-                    <div class="feature-description">
-                        Track performance with detailed analytics and booking reports.
-                    </div>
-                    <button class="btn" disabled>Coming Soon</button>
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <h2>Analytics & Reports</h2>
+                
+                <div class="filters">
+                    <label>Period:</label>
+                    <select id="analyticsPeriod" onchange="loadAnalytics()">
+                        <option value="week">Last 7 days</option>
+                        <option value="month">Last 30 days</option>
+                        <option value="year">Last year</option>
+                    </select>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">📅</div>
-                    <div class="feature-title">Reservation Management</div>
-                    <div class="feature-description">
-                        Manage table bookings and view upcoming reservations.
-                    </div>
-                    <button class="btn" disabled>Coming Soon</button>
+                <div class="chart-container">
+                    <canvas id="analyticsChart"></canvas>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">🍽️</div>
-                    <div class="feature-title">Menu & Profile</div>
-                    <div class="feature-description">
-                        Update your restaurant profile and manage menu offerings.
+                <div id="analyticsData">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading analytics...</p>
                     </div>
-                    <button class="btn" disabled>Coming Soon</button>
                 </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <h2>Restaurant Profile & Settings</h2>
+
+                <form id="settingsForm" onsubmit="saveSettings(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Restaurant Name</label>
+                            <input type="text" id="restaurantNameInput" name="restaurant_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cuisine Type</label>
+                            <select id="cuisineTypeInput" name="cuisine_type" required>
+                                <option value="Italian">Italian</option>
+                                <option value="French">French</option>
+                                <option value="Asian">Asian</option>
+                                <option value="Mediterranean">Mediterranean</option>
+                                <option value="American">American</option>
+                                <option value="Mexican">Mexican</option>
+                                <option value="Indian">Indian</option>
+                                <option value="Chinese">Chinese</option>
+                                <option value="Japanese">Japanese</option>
+                                <option value="Thai">Thai</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="addressInput" name="address" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price Range</label>
+                            <select id="priceRangeInput" name="price_range">
+                                <option value="1">$ - Budget</option>
+                                <option value="2">$$ - Moderate</option>
+                                <option value="3">$$$ - Expensive</option>
+                                <option value="4">$$$$ - Very Expensive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Notification Email</label>
+                            <input type="email" id="notificationEmailInput" name="notification_email">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoAcceptInput" name="auto_accept_bookings">
+                                Auto-accept bookings
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Special Instructions</label>
+                        <textarea id="specialInstructionsInput" name="special_instructions" placeholder="Special instructions for diners (dietary accommodations, dress code, etc.)"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" style="background: var(--primary-color); color: white;">Save Settings</button>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
-        let currentRestaurant = null;
+        let currentRestaurantId = '1'; // This should come from authentication
 
         // Initialize dashboard
         async function initRestaurantDashboard() {
             try {
-                // Check if restaurant is logged in by trying to access session info
-                // Since we don't have a specific endpoint, we'll attempt to load data
-                
-                // For now, show a basic dashboard since the backend management endpoints 
-                // may not be fully implemented yet
-                showBasicDashboard();
-                
-                // Try to load stats (this may fail if endpoints aren't ready)
                 await loadRestaurantStats();
-                await loadMatches();
+                await loadBookings();
+                await loadSettings();
+                
+                document.getElementById('restaurantName').textContent = 'Restaurant Owner';
                 
             } catch (error) {
                 console.error('Dashboard initialization error:', error);
-                showBasicDashboard();
+                showAlert('Failed to load dashboard data', 'error');
             }
         }
 
-        function showBasicDashboard() {
-            // Show basic restaurant dashboard without backend data
-            document.getElementById('restaurantName').textContent = 'Restaurant Owner';
-            
-            // Set basic stats
-            document.getElementById('totalRequests').textContent = '0';
-            document.getElementById('confirmedMatches').textContent = '0';
-            document.getElementById('recentRequests').textContent = '0';
-            document.getElementById('successRate').textContent = '0%';
-            
-            // Show empty state for matches
-            const container = document.getElementById('matchesList');
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📅</div>
-                    <h3>No match requests yet</h3>
-                    <p>Match requests will appear here when users book tables at your restaurant through the dating platform.</p>
-                </div>
-            `;
-        }
-
         async function loadRestaurantStats() {
-            // This would normally get the restaurant ID from session
-            // For now, we'll use a placeholder
-            const restaurantId = '1'; // This should come from authentication
-            
             try {
-                const response = await fetch(`/api/restaurant-management/stats?restaurant_id=${restaurantId}`);
+                const response = await fetch(`/api/restaurant-management/stats?restaurant_id=${currentRestaurantId}`);
                 
                 if (!response.ok) {
-                    // If endpoint not available, just show basic dashboard
-                    return;
+                    throw new Error('Failed to load stats');
                 }
 
                 const stats = await response.json();
@@ -452,84 +534,303 @@
                 document.getElementById('confirmedMatches').textContent = stats.confirmed_matches || '0';
                 document.getElementById('recentRequests').textContent = stats.recent_requests || '0';
                 document.getElementById('successRate').textContent = `${stats.success_rate || 0}%`;
+                
+                if (stats.restaurant_name) {
+                    document.getElementById('restaurantName').textContent = stats.restaurant_name;
+                }
 
             } catch (error) {
-                console.log('Stats not available yet:', error);
-                // Keep showing basic dashboard
+                console.error('Load stats error:', error);
+                // Set default values
+                document.getElementById('totalRequests').textContent = '0';
+                document.getElementById('confirmedMatches').textContent = '0';
+                document.getElementById('recentRequests').textContent = '0';
+                document.getElementById('successRate').textContent = '0%';
             }
         }
 
-        async function loadMatches() {
-            const container = document.getElementById('matchesList');
+        async function loadBookings() {
+            const container = document.getElementById('bookingsList');
             const dateFilter = document.getElementById('dateFilter').value;
-            const restaurantId = '1'; // This should come from authentication
+            const statusFilter = document.getElementById('statusFilter').value;
 
             try {
-                let url = `/api/restaurant-management/matches?restaurant_id=${restaurantId}`;
-                if (dateFilter) {
-                    url += `&date_filter=${dateFilter}`;
-                }
+                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading bookings...</p></div>';
+
+                let url = `/api/restaurant-management/bookings?restaurant_id=${currentRestaurantId}`;
+                if (dateFilter) url += `&date_filter=${dateFilter}`;
+                if (statusFilter) url += `&status=${statusFilter}`;
 
                 const response = await fetch(url);
                 
                 if (!response.ok) {
-                    // If endpoint not available, show message
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🔧</div>
-                            <h3>Feature Coming Soon</h3>
-                            <p>Match request management is being developed. Your restaurant is active and accepting bookings.</p>
-                        </div>
-                    `;
-                    return;
+                    throw new Error('Failed to load bookings');
                 }
 
-                const matches = await response.json();
+                const bookings = await response.json();
 
-                if (matches.length === 0) {
+                if (bookings.length === 0) {
                     container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📅</div>
-                            <h3>No match requests</h3>
+                        <div style="text-align: center; padding: 3rem; color: #666;">
+                            <h3>No match requests found</h3>
                             <p>Match requests will appear here when users book tables at your restaurant.</p>
                         </div>
                     `;
                     return;
                 }
 
-                container.innerHTML = matches.map(match => `
-                    <div class="match-item">
-                        <div class="match-info">
-                            <h4>Match Request #${match.id}</h4>
-                            <div class="match-details">
-                                ${match.user1_email || 'User'} & ${match.user2_email || 'User'}
-                                <br>Table: ${match.table_id || 'To be assigned'}
+                container.innerHTML = bookings.map(booking => `
+                    <div class="booking-item">
+                        <div class="booking-info">
+                            <h4>Booking #${booking.id}</h4>
+                            <div class="booking-details">
+                                Diners: ${booking.user1_email} & ${booking.user2_email}<br>
+                                Date: ${booking.requested_datetime ? new Date(booking.requested_datetime).toLocaleString() : 'Not specified'}<br>
+                                Party size: ${booking.party_size || 2}
+                                ${booking.special_requests ? `<br>Special requests: ${booking.special_requests}` : ''}
                             </div>
                         </div>
-                        <div class="match-status ${(match.status || 'pending').toLowerCase()}">
-                            ${match.status || 'Pending'}
+                        <div class="booking-status ${(booking.status || 'pending').toLowerCase()}">
+                            ${booking.status || 'Pending'}
                         </div>
-                        <div class="match-time">
-                            ${match.requested_datetime ? new Date(match.requested_datetime).toLocaleString() : 'Time TBD'}
+                        <div class="booking-actions">
+                            ${booking.status === 'pending' ? `
+                                <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'confirmed')">
+                                    Confirm
+                                </button>
+                                <button class="btn btn-cancel" onclick="updateBookingStatus(${booking.id}, 'cancelled')">
+                                    Cancel
+                                </button>
+                            ` : ''}
+                            ${booking.status === 'confirmed' ? `
+                                <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'completed')">
+                                    Mark Complete
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div style="text-align: right; font-size: 0.875rem; color: #666;">
+                            ${new Date(booking.created_at).toLocaleDateString()}
                         </div>
                     </div>
                 `).join('');
 
             } catch (error) {
-                console.log('Matches not available yet:', error);
+                console.error('Load bookings error:', error);
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🔧</div>
-                        <h3>Feature Coming Soon</h3>
-                        <p>Match request management is being developed. Your restaurant is active and accepting bookings.</p>
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <h3>Unable to load bookings</h3>
+                        <p>There was an error loading your booking requests. Please try again.</p>
+                        <button class="btn" onclick="loadBookings()" style="background: var(--primary-color); color: white; margin-top: 1rem;">
+                            Retry
+                        </button>
                     </div>
                 `;
             }
         }
 
+        async function updateBookingStatus(bookingId, newStatus) {
+            try {
+                const response = await fetch(`/api/restaurant-management/bookings/${bookingId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        restaurant_id: currentRestaurantId,
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(`Booking ${newStatus} successfully!`, 'success');
+                    await loadBookings(); // Refresh the list
+                    await loadRestaurantStats(); // Update stats
+                } else {
+                    showAlert(result.error || 'Failed to update booking', 'error');
+                }
+
+            } catch (error) {
+                console.error('Update booking status error:', error);
+                showAlert('Failed to update booking status', 'error');
+            }
+        }
+
+        async function loadAnalytics() {
+            const container = document.getElementById('analyticsData');
+            const period = document.getElementById('analyticsPeriod').value;
+
+            try {
+                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading analytics...</p></div>';
+
+                const response = await fetch(`/api/restaurant-management/analytics?restaurant_id=${currentRestaurantId}&period=${period}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load analytics');
+                }
+
+                const analytics = await response.json();
+
+                // Display analytics summary
+                container.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>${analytics.summary.total_period_bookings}</h3>
+                            <p>Total Bookings (${period})</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${analytics.summary.confirmed_rate}%</h3>
+                            <p>Confirmation Rate</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${analytics.summary.completion_rate}%</h3>
+                            <p>Completion Rate</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${analytics.summary.cancellation_rate}%</h3>
+                            <p>Cancellation Rate</p>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Load analytics error:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #666;">
+                        <h3>Analytics Coming Soon</h3>
+                        <p>Detailed analytics and reporting features are being developed.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch(`/api/restaurant-management/settings?restaurant_id=${currentRestaurantId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load settings');
+                }
+
+                const settings = await response.json();
+
+                // Populate form
+                document.getElementById('restaurantNameInput').value = settings.restaurant_name || '';
+                document.getElementById('cuisineTypeInput').value = settings.cuisine_type || '';
+                document.getElementById('addressInput').value = settings.address || '';
+                document.getElementById('priceRangeInput').value = settings.price_range || '2';
+                document.getElementById('notificationEmailInput').value = settings.notification_email || '';
+                document.getElementById('autoAcceptInput').checked = settings.auto_accept_bookings || false;
+                document.getElementById('specialInstructionsInput').value = settings.special_instructions || '';
+
+            } catch (error) {
+                console.error('Load settings error:', error);
+                showAlert('Failed to load restaurant settings', 'error');
+            }
+        }
+
+        async function saveSettings(event) {
+            event.preventDefault();
+
+            try {
+                const formData = new FormData(event.target);
+                const settingsData = {
+                    restaurant_id: currentRestaurantId
+                };
+
+                // Convert form data to object
+                for (let [key, value] of formData.entries()) {
+                    if (key === 'auto_accept_bookings') {
+                        settingsData[key] = value === 'on';
+                    } else {
+                        settingsData[key] = value;
+                    }
+                }
+
+                const response = await fetch('/api/restaurant-management/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settingsData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Settings saved successfully!', 'success');
+                    document.getElementById('restaurantName').textContent = settingsData.restaurant_name;
+                } else {
+                    showAlert(result.error || 'Failed to save settings', 'error');
+                }
+
+            } catch (error) {
+                console.error('Save settings error:', error);
+                showAlert('Failed to save settings', 'error');
+            }
+        }
+
+        async function createSampleData() {
+            try {
+                const response = await fetch('/api/restaurant-management/sample-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        restaurant_id: currentRestaurantId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Sample bookings created successfully!', 'success');
+                    await loadBookings();
+                    await loadRestaurantStats();
+                } else {
+                    showAlert(result.error || 'Failed to create sample data', 'error');
+                }
+
+            } catch (error) {
+                console.error('Create sample data error:', error);
+                showAlert('Failed to create sample data', 'error');
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        function showAlert(message, type = 'error') {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.display = 'block';
+
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                // Clear session and redirect
                 window.location.href = '/restaurants.html';
             }
         }
