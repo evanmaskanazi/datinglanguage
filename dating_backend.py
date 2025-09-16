@@ -1721,31 +1721,7 @@ def get_time_preference_matches():
         return jsonify({'error': 'Failed to get matches'}), 500
 
 
-# Restaurant management endpoints
-@app.route('/api/restaurant-auth/register', methods=['POST'])
-@limiter.limit("5 per hour")
-def restaurant_register():
-    """Register a restaurant account"""
-    try:
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.register_restaurant(request.json)
-    except Exception as e:
-        logger.error(f"Restaurant registration error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Registration failed'}), 500
 
-
-@app.route('/api/restaurant-auth/login', methods=['POST'])
-@limiter.limit("10 per minute")
-def restaurant_login():
-    """Restaurant login"""
-    try:
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.restaurant_login(request.json)
-    except Exception as e:
-        logger.error(f"Restaurant login error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Login failed'}), 500
 
 
 @app.route('/api/restaurant-management/matches', methods=['GET'])
