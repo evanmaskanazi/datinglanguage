@@ -1356,6 +1356,88 @@ def facebook_callback():
 
     return redirect('/dashboard.html')
 
+
+# Restaurant authentication endpoints
+@app.route('/api/restaurant-auth/register', methods=['POST'])
+@limiter.limit("5 per hour")
+def restaurant_register():
+    """Register a restaurant account"""
+    try:
+        data = request.json
+
+        # Validate required fields
+        required_fields = ['name', 'email', 'password', 'address', 'cuisine_type']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} is required'}), 400
+
+        # Check if restaurant email already exists
+        existing = Restaurant.query.filter_by(owner_email=data['email']).first()
+        if existing:
+            return jsonify({'error': 'Restaurant with this email already exists'}), 400
+
+        # Create restaurant
+        restaurant = Restaurant(
+            name=data['name'],
+            owner_email=data['email'],
+            owner_password_hash=bcrypt.generate_password_hash(data['password']).decode('utf-8'),
+            address=data['address'],
+            cuisine_type=data['cuisine_type'],
+            is_partner=True,
+            is_active=True,
+            rating=0.0,
+            price_range=2
+        )
+
+        db.session.add(restaurant)
+        db.session.commit()
+
+        return jsonify({'message': 'Restaurant registered successfully', 'id': restaurant.id}), 201
+
+    except Exception as e:
+        logger.error(f"Restaurant registration error: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': 'Registration failed'}), 500
+
+
+@app.route('/api/restaurant-auth/login', methods=['POST'])
+@limiter.limit("10 per minute")
+def restaurant_login():
+    """Restaurant login"""
+    try:
+        data = request.json
+        email = data.get('email', '').lower().strip()
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({'error': 'Email and password required'}), 400
+
+        # Find restaurant by owner email
+        restaurant = Restaurant.query.filter_by(owner_email=email).first()
+
+        if not restaurant or not bcrypt.check_password_hash(restaurant.owner_password_hash, password):
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Set session for restaurant owner
+        session['restaurant_id'] = restaurant.id
+        session['restaurant_email'] = restaurant.owner_email
+        session.permanent = True
+
+        return jsonify({
+            'success': True,
+            'restaurant': {
+                'id': restaurant.id,
+                'name': restaurant.name,
+                'email': restaurant.owner_email
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Restaurant login error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Login failed'}), 500
+
+
+
 # === STATIC FILES ===
 @app.route('/')
 def index():
