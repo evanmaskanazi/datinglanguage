@@ -8,8 +8,9 @@ from models.match import Match
 from models.user import User
 
 class RestaurantManagementService:
-    def __init__(self, db, logger):
+    def __init__(self, db, email_manager, logger):
         self.db = db
+        self.email_manager = email_manager
         self.logger = logger
 
     def get_restaurant_stats(self, restaurant_id):
@@ -123,9 +124,16 @@ class RestaurantManagementService:
             if not booking:
                 return jsonify({'error': 'Booking not found'}), 404
 
+            old_status = booking.status
             booking.status = new_status
             booking.updated_at = datetime.utcnow()
             self.db.session.commit()
+
+            # Send email notifications when status changes
+            if new_status == 'confirmed' and old_status != 'confirmed':
+                self._send_booking_confirmation_email(booking)
+            elif new_status == 'cancelled':
+                self._send_booking_cancellation_email(booking)
 
             return jsonify({
                 'message': f'Booking status updated to {new_status}',
@@ -136,6 +144,36 @@ class RestaurantManagementService:
             self.logger.error(f"Update booking status error: {str(e)}", exc_info=True)
             self.db.session.rollback()
             return jsonify({'error': 'Failed to update booking'}), 500
+
+    def _send_booking_confirmation_email(self, booking):
+        """Send booking confirmation email to users"""
+        try:
+            user1 = User.query.get(booking.user1_id)
+            user2 = User.query.get(booking.user2_id)
+            restaurant = Restaurant.query.get(booking.restaurant_id)
+            
+            if user1 and user2 and restaurant:
+                # Send to both users
+                for user in [user1, user2]:
+                    self.email_manager.send_booking_confirmation(user, booking, restaurant)
+                    
+        except Exception as e:
+            self.logger.error(f"Failed to send booking confirmation email: {str(e)}")
+
+    def _send_booking_cancellation_email(self, booking):
+        """Send booking cancellation email to users"""
+        try:
+            user1 = User.query.get(booking.user1_id)
+            user2 = User.query.get(booking.user2_id)
+            restaurant = Restaurant.query.get(booking.restaurant_id)
+            
+            if user1 and user2 and restaurant:
+                # Send to both users
+                for user in [user1, user2]:
+                    self.email_manager.send_booking_cancellation(user, booking, restaurant)
+                    
+        except Exception as e:
+            self.logger.error(f"Failed to send booking cancellation email: {str(e)}")
 
     def get_restaurant_settings(self, restaurant_id):
         """Get restaurant settings"""
