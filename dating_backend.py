@@ -253,6 +253,66 @@ from models.profile import UserProfile, UserPreferences
 from models.feedback import DateFeedback
 from models.payment import Payment, PaymentStatus
 
+# Standard library imports
+import os
+import secrets
+import json
+import uuid
+import html
+import bleach
+import redis
+import smtplib
+import jwt
+import logging
+import traceback
+import re
+from pathlib import Path
+from datetime import datetime, timedelta, date
+from functools import wraps
+from urllib.parse import urlencode
+import requests
+
+# Flask and related imports
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, make_response
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_cors import CORS
+from flask_mail import Mail, Message
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from sqlalchemy import func, and_, or_, text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.types import Numeric
+
+# Core model imports (in correct order)
+from models.user import User
+from models.restaurant import Restaurant
+from models.restaurant_table import RestaurantTable
+from models.match import Match
+from models.reservation import Reservation
+
+# New model imports (CRITICAL ORDER)
+from models.restaurant_management import RestaurantBooking, RestaurantAnalytics, RestaurantSettings
+from models.feedback import DateFeedback
+
+# Service imports
+from services.matching_service import MatchingService
+from services.restaurant_service import RestaurantService
+from services.restaurant_management_service import RestaurantManagementService
+from services.email_service import EmailService
+
+# Utils imports
+from utils.validators import validate_email, validate_password
+from utils.security import sanitize_input, generate_csrf_token
+from utils.helpers import format_datetime, calculate_age
+
+
+
 # === WEBSOCKET SETUP ===
 from services.websocket_service import WebSocketService
 
