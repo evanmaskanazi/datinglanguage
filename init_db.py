@@ -408,7 +408,11 @@ def migrate_date_feedback_table():
     from sqlalchemy import text
 
     try:
-        # Create enhanced date_feedback table
+        # Drop the table if it exists to recreate it properly
+        drop_sql = "DROP TABLE IF EXISTS date_feedback CASCADE;"
+        db.session.execute(text(drop_sql))
+
+        # Create enhanced date_feedback table with correct columns
         feedback_sql = """
         CREATE TABLE IF NOT EXISTS date_feedback (
             id SERIAL PRIMARY KEY,
@@ -440,17 +444,13 @@ def migrate_date_feedback_table():
             recommend_restaurant BOOLEAN,
 
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-            -- Unique constraints to prevent duplicate feedback
-            CONSTRAINT unique_user_booking_feedback UNIQUE (user_id, booking_id),
-            CONSTRAINT unique_user_reservation_feedback UNIQUE (user_id, reservation_id)
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
 
         db.session.execute(text(feedback_sql))
 
-        # Create indexes for better performance
+        # Create indexes for better performance AFTER table creation
         index_sql = [
             "CREATE INDEX IF NOT EXISTS idx_date_feedback_restaurant ON date_feedback(restaurant_id);",
             "CREATE INDEX IF NOT EXISTS idx_date_feedback_user ON date_feedback(user_id);",
