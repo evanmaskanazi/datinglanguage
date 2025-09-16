@@ -1,22 +1,46 @@
+"""
+Logging configuration for the dating app
+"""
 import logging
 import os
+from datetime import datetime
 
-def setup_logger(name):
-    """Setup logger with proper formatting"""
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+def setup_logger(name, level=None):
+    """Setup logger with consistent formatting"""
+    if level is None:
+        level = logging.DEBUG if os.environ.get('FLASK_ENV') == 'development' else logging.INFO
     
-    # Console handler
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    
+    # Prevent duplicate handlers
+    if logger.handlers:
+        return logger
+    
+    # Create console handler
     handler = logging.StreamHandler()
+    handler.setLevel(level)
+    
+    # Create formatter
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     handler.setFormatter(formatter)
+    
     logger.addHandler(handler)
     
     return logger
 
-def log_audit(action, user_id=None, details=None):
-    """Log audit trail"""
-    # TODO: Implement audit logging to database
-    pass
+def log_error(logger, error, context=None):
+    """Log error with context"""
+    error_msg = f"Error: {str(error)}"
+    if context:
+        error_msg += f" | Context: {context}"
+    logger.error(error_msg)
+
+def log_user_action(logger, user_id, action, details=None):
+    """Log user actions for audit trail"""
+    log_msg = f"User {user_id} performed: {action}"
+    if details:
+        log_msg += f" | Details: {details}"
+    logger.info(log_msg)
