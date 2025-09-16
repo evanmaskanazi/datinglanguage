@@ -319,6 +319,65 @@
             margin-bottom: 1rem;
         }
 
+        /* New Analytics Styles */
+        .charts-container {
+            margin-top: 2rem;
+        }
+
+        .chart-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .chart-section h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+        }
+
+        .insights-list {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .insight-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+            color: #666;
+        }
+
+        .insight-item:last-child {
+            border-bottom: none;
+        }
+
+        .insight-item:before {
+            content: "💡";
+            margin-right: 0.5rem;
+        }
+
+        .trend {
+            font-weight: 500;
+        }
+
+        .trend.positive {
+            color: var(--success-color);
+        }
+
+        .trend.negative {
+            color: var(--primary-color);
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -341,6 +400,10 @@
 
             .booking-actions {
                 justify-self: start;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -415,27 +478,99 @@
                 </div>
             </div>
 
-            <!-- Analytics Tab -->
+            <!-- Enhanced Analytics Tab -->
             <div id="analytics-tab" class="tab-content">
                 <h2>Analytics & Reports</h2>
                 
                 <div class="filters">
                     <label>Period:</label>
-                    <select id="analyticsPeriod" onchange="loadAnalytics()">
+                    <select id="analyticsPeriod" onchange="loadComprehensiveAnalytics()">
                         <option value="week">Last 7 days</option>
                         <option value="month">Last 30 days</option>
                         <option value="year">Last year</option>
                     </select>
+                    <button class="btn" onclick="exportAnalytics()" style="background: var(--secondary-color); color: white; margin-left: 1rem;">
+                        Export Report
+                    </button>
                 </div>
 
-                <div class="chart-container">
-                    <canvas id="analyticsChart"></canvas>
+                <!-- Summary Cards -->
+                <div class="stats-grid" id="analyticsStats">
+                    <div class="stat-card">
+                        <h3 id="totalBookingsAnalytics">-</h3>
+                        <p>Total Bookings</p>
+                        <small id="weekChangeAnalytics" class="trend"></small>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="successRateAnalytics">-</h3>
+                        <p>Success Rate</p>
+                        <small>Completed / Total</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="avgDailyBookings">-</h3>
+                        <p>Avg Daily Bookings</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="estimatedRevenue">-</h3>
+                        <p>Est. Revenue</p>
+                        <small>Based on price range</small>
+                    </div>
                 </div>
 
-                <div id="analyticsData">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading analytics...</p>
+                <!-- Charts Section -->
+                <div class="charts-container">
+                    <!-- Booking Trends Chart -->
+                    <div class="chart-section">
+                        <h3>Booking Trends</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="bookingTrendsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Status Distribution and Peak Hours -->
+                    <div class="charts-row">
+                        <div class="chart-section">
+                            <h3>Booking Status Distribution</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="statusPieChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-section">
+                            <h3>Peak Booking Hours</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="peakHoursChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights Section -->
+                <div class="insights-section" style="margin-top: 2rem;">
+                    <h3>Insights & Recommendations</h3>
+                    <div id="analyticsInsights" class="insights-list">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Generating insights...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demographics Section -->
+                <div class="demographics-section" style="margin-top: 2rem;">
+                    <h3>Customer Analytics</h3>
+                    <div class="stats-grid" id="demographicsStats">
+                        <div class="stat-card">
+                            <h3 id="uniqueCustomers">-</h3>
+                            <p>Unique Customers</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="repeatCustomers">-</h3>
+                            <p>Repeat Customers</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="avgPartySize">-</h3>
+                            <p>Avg Party Size</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -502,8 +637,16 @@
         </div>
     </div>
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
     <script>
         let currentRestaurantId = '1'; // This should come from authentication
+        
+        // Global chart variables
+        let bookingTrendsChart = null;
+        let statusPieChart = null;
+        let peakHoursChart = null;
 
         // Initialize dashboard
         async function initRestaurantDashboard() {
@@ -628,6 +771,226 @@
             }
         }
 
+        async function loadComprehensiveAnalytics() {
+            const period = document.getElementById('analyticsPeriod').value;
+            
+            try {
+                // Load comprehensive analytics
+                const analyticsResponse = await fetch(`/api/restaurant-management/analytics/comprehensive?restaurant_id=${currentRestaurantId}&period=${period}`);
+                
+                if (!analyticsResponse.ok) {
+                    throw new Error('Failed to load comprehensive analytics');
+                }
+
+                const analyticsData = await analyticsResponse.json();
+                updateAnalyticsDisplay(analyticsData);
+                
+                // Load demographics
+                const demographicsResponse = await fetch(`/api/restaurant-management/demographics?restaurant_id=${currentRestaurantId}`);
+                if (demographicsResponse.ok) {
+                    const demographicsData = await demographicsResponse.json();
+                    updateDemographicsDisplay(demographicsData);
+                }
+                
+                // Load revenue data
+                const revenueResponse = await fetch(`/api/restaurant-management/revenue?restaurant_id=${currentRestaurantId}&period=${period}`);
+                if (revenueResponse.ok) {
+                    const revenueData = await revenueResponse.json();
+                    updateRevenueDisplay(revenueData);
+                }
+
+            } catch (error) {
+                console.error('Load comprehensive analytics error:', error);
+                document.getElementById('analyticsStats').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                        <h3>Analytics Coming Soon</h3>
+                        <p>Detailed analytics and reporting features are being developed.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateAnalyticsDisplay(data) {
+            // Update summary stats
+            document.getElementById('totalBookingsAnalytics').textContent = data.summary.total_bookings || '0';
+            document.getElementById('successRateAnalytics').textContent = `${data.summary.success_rate || 0}%`;
+            document.getElementById('avgDailyBookings').textContent = data.summary.average_daily || '0';
+            
+            // Update trend indicator
+            const weekChangeElement = document.getElementById('weekChangeAnalytics');
+            if (data.summary.week_change !== undefined) {
+                const change = data.summary.week_change;
+                weekChangeElement.textContent = change >= 0 ? `+${change}%` : `${change}%`;
+                weekChangeElement.className = `trend ${change >= 0 ? 'positive' : 'negative'}`;
+            }
+            
+            // Update charts
+            updateBookingTrendsChart(data.charts.daily_trends);
+            updateStatusPieChart(data.charts.status_distribution);
+            updatePeakHoursChart(data.charts.peak_hours);
+            
+            // Update insights
+            updateInsightsDisplay(data.insights);
+        }
+
+        function updateBookingTrendsChart(dailyData) {
+            const ctx = document.getElementById('bookingTrendsChart').getContext('2d');
+            
+            if (bookingTrendsChart) {
+                bookingTrendsChart.destroy();
+            }
+            
+            bookingTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dailyData.map(d => new Date(d.date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})),
+                    datasets: [
+                        {
+                            label: 'Total Bookings',
+                            data: dailyData.map(d => d.total),
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Completed',
+                            data: dailyData.map(d => d.completed),
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStatusPieChart(statusData) {
+            const ctx = document.getElementById('statusPieChart').getContext('2d');
+            
+            if (statusPieChart) {
+                statusPieChart.destroy();
+            }
+            
+            const colors = {
+                'pending': '#f39c12',
+                'confirmed': '#3498db', 
+                'completed': '#27ae60',
+                'cancelled': '#e74c3c'
+            };
+            
+            statusPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+                    datasets: [{
+                        data: statusData.map(d => d.count),
+                        backgroundColor: statusData.map(d => colors[d.status] || '#666'),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePeakHoursChart(peakHoursData) {
+            const ctx = document.getElementById('peakHoursChart').getContext('2d');
+            
+            if (peakHoursChart) {
+                peakHoursChart.destroy();
+            }
+            
+            peakHoursChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: peakHoursData.map(d => d.hour),
+                    datasets: [{
+                        label: 'Bookings',
+                        data: peakHoursData.map(d => d.bookings),
+                        backgroundColor: '#3498db',
+                        borderColor: '#2980b9',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateInsightsDisplay(insights) {
+            const container = document.getElementById('analyticsInsights');
+            
+            if (insights && insights.length > 0) {
+                container.innerHTML = insights.map(insight => 
+                    `<div class="insight-item">${insight}</div>`
+                ).join('');
+            } else {
+                container.innerHTML = '<div class="insight-item">No insights available yet. More data needed for analysis.</div>';
+            }
+        }
+
+        function updateDemographicsDisplay(data) {
+            document.getElementById('uniqueCustomers').textContent = data.total_unique_customers || '0';
+            document.getElementById('repeatCustomers').textContent = data.repeat_customers || '0';
+            document.getElementById('avgPartySize').textContent = data.average_party_size ? data.average_party_size.toFixed(1) : '2.0';
+        }
+
+        function updateRevenueDisplay(data) {
+            if (data.total_estimated_revenue) {
+                document.getElementById('estimatedRevenue').textContent = `$${data.total_estimated_revenue.toFixed(0)}`;
+            }
+        }
+
+        function exportAnalytics() {
+            // Simple CSV export functionality
+            const period = document.getElementById('analyticsPeriod').value;
+            const csvContent = `Restaurant Analytics Report - ${period}\n` +
+                              `Generated: ${new Date().toLocaleDateString()}\n\n` +
+                              `Total Bookings,${document.getElementById('totalBookingsAnalytics').textContent}\n` +
+                              `Success Rate,${document.getElementById('successRateAnalytics').textContent}\n` +
+                              `Average Daily Bookings,${document.getElementById('avgDailyBookings').textContent}\n`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `restaurant-analytics-${period}-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
         async function updateBookingStatus(bookingId, newStatus) {
             try {
                 const response = await fetch(`/api/restaurant-management/bookings/${bookingId}/status`, {
@@ -654,54 +1017,6 @@
             } catch (error) {
                 console.error('Update booking status error:', error);
                 showAlert('Failed to update booking status', 'error');
-            }
-        }
-
-        async function loadAnalytics() {
-            const container = document.getElementById('analyticsData');
-            const period = document.getElementById('analyticsPeriod').value;
-
-            try {
-                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading analytics...</p></div>';
-
-                const response = await fetch(`/api/restaurant-management/analytics?restaurant_id=${currentRestaurantId}&period=${period}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load analytics');
-                }
-
-                const analytics = await response.json();
-
-                // Display analytics summary
-                container.innerHTML = `
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h3>${analytics.summary.total_period_bookings}</h3>
-                            <p>Total Bookings (${period})</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>${analytics.summary.confirmed_rate}%</h3>
-                            <p>Confirmation Rate</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>${analytics.summary.completion_rate}%</h3>
-                            <p>Completion Rate</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>${analytics.summary.cancellation_rate}%</h3>
-                            <p>Cancellation Rate</p>
-                        </div>
-                    </div>
-                `;
-
-            } catch (error) {
-                console.error('Load analytics error:', error);
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 2rem; color: #666;">
-                        <h3>Analytics Coming Soon</h3>
-                        <p>Detailed analytics and reporting features are being developed.</p>
-                    </div>
-                `;
             }
         }
 
@@ -814,7 +1129,7 @@
 
             // Load data for specific tabs
             if (tabName === 'analytics') {
-                loadAnalytics();
+                loadComprehensiveAnalytics();
             }
         }
 
