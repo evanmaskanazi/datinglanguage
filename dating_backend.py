@@ -291,8 +291,6 @@ from sqlalchemy.types import Numeric
 
 # Core model imports (in correct order)
 from models.user import User
-from models.restaurant import Restaurant
-from models.restaurant_table import RestaurantTable
 from models.match import Match
 from models.reservation import Reservation
 
