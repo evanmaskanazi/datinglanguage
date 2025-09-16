@@ -228,10 +228,10 @@
             <h2>Restaurant Login</h2>
             <form id="restaurantLoginForm">
                 <div class="form-group">
-                    <input type="email" class="form-input" placeholder="Restaurant Email" required id="loginEmail">
+                    <input type="email" name="email" class="form-input" placeholder="Restaurant Email" required id="loginEmail">
                 </div>
                 <div class="form-group">
-                    <input type="password" class="form-input" placeholder="Password" required id="loginPassword">
+                    <input type="password" name="password" class="form-input" placeholder="Password" required id="loginPassword">
                 </div>
                 <button type="submit" class="btn">Login</button>
             </form>
@@ -241,19 +241,19 @@
             <h2>Register Your Restaurant</h2>
             <form id="restaurantRegisterForm">
                 <div class="form-group">
-                    <input type="text" class="form-input" placeholder="Restaurant Name" required id="restaurantName">
+                    <input type="text" name="name" class="form-input" placeholder="Restaurant Name" required id="restaurantName">
                 </div>
                 <div class="form-group">
-                    <input type="email" class="form-input" placeholder="Email" required id="registerEmail">
+                    <input type="email" name="email" class="form-input" placeholder="Email" required id="registerEmail">
                 </div>
                 <div class="form-group">
-                    <input type="password" class="form-input" placeholder="Password" required id="registerPassword">
+                    <input type="password" name="password" class="form-input" placeholder="Password" required id="registerPassword">
                 </div>
                 <div class="form-group">
-                    <input type="text" class="form-input" placeholder="Address" required id="restaurantAddress">
+                    <input type="text" name="address" class="form-input" placeholder="Address" required id="restaurantAddress">
                 </div>
                 <div class="form-group">
-                    <select class="form-input" required id="cuisineType">
+                    <select name="cuisine_type" class="form-input" required id="cuisineType">
                         <option value="">Select Cuisine Type</option>
                         <option value="Italian">Italian</option>
                         <option value="French">French</option>
@@ -262,6 +262,11 @@
                         <option value="American">American</option>
                         <option value="Mexican">Mexican</option>
                         <option value="Indian">Indian</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Thai">Thai</option>
+                        <option value="Seafood">Seafood</option>
+                        <option value="Vegetarian">Vegetarian</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
@@ -321,8 +326,11 @@
         document.getElementById('restaurantLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const formData = new FormData(e.target);
+            const loginData = {
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
 
             try {
                 const response = await fetch('/api/restaurant-auth/login', {
@@ -330,7 +338,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify(loginData)
                 });
 
                 const data = await response.json();
@@ -345,6 +353,7 @@
                     showAlert(data.error || 'Login failed');
                 }
             } catch (error) {
+                console.error('Login error:', error);
                 showAlert('Network error. Please try again.');
             }
         });
@@ -353,13 +362,23 @@
         document.getElementById('restaurantRegisterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = {
-                name: document.getElementById('restaurantName').value,
-                email: document.getElementById('registerEmail').value,
-                password: document.getElementById('registerPassword').value,
-                address: document.getElementById('restaurantAddress').value,
-                cuisine_type: document.getElementById('cuisineType').value
+            const formData = new FormData(e.target);
+            const registrationData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                address: formData.get('address'),
+                cuisine_type: formData.get('cuisine_type')
             };
+
+            // Validate all fields are present
+            const requiredFields = ['name', 'email', 'password', 'address', 'cuisine_type'];
+            const missingFields = requiredFields.filter(field => !registrationData[field]);
+            
+            if (missingFields.length > 0) {
+                showAlert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                return;
+            }
 
             try {
                 const response = await fetch('/api/restaurant-auth/register', {
@@ -367,22 +386,23 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(registrationData)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    showAlert('Registration successful! Please check your email for verification.', 'success');
+                    showAlert('Registration successful! You can now log in.', 'success');
                     // Switch to login form
                     setTimeout(() => {
                         showLogin();
-                        document.getElementById('loginEmail').value = formData.email;
+                        document.getElementById('loginEmail').value = registrationData.email;
                     }, 2000);
                 } else {
                     showAlert(data.error || 'Registration failed');
                 }
             } catch (error) {
+                console.error('Registration error:', error);
                 showAlert('Network error. Please try again.');
             }
         });
