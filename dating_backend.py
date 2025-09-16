@@ -1776,9 +1776,7 @@ def get_restaurant_stats():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_restaurant_stats(int(restaurant_id))
+        return restaurant_management_service.get_restaurant_stats(int(restaurant_id))
     except Exception as e:
         logger.error(f"Get restaurant stats error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get statistics'}), 500
@@ -1962,11 +1960,8 @@ def get_restaurant_bookings():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-
         # Use the existing get_match_requests method (it handles bookings)
-        return restaurant_service.get_match_requests(int(restaurant_id), date_filter)
+        return restaurant_management_service.get_match_requests(int(restaurant_id), date_filter)
     except Exception as e:
         logger.error(f"Get restaurant bookings error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get bookings'}), 500
@@ -2025,9 +2020,7 @@ def get_restaurant_management_settings():
         if not restaurant_id:
             return jsonify({'error': 'Restaurant ID required'}), 400
 
-        from services.restaurant_management_service import RestaurantManagementService
-        restaurant_service = RestaurantManagementService(db, logger)
-        return restaurant_service.get_restaurant_settings(int(restaurant_id))
+        return restaurant_management_service.get_restaurant_settings(int(restaurant_id))
     except Exception as e:
         logger.error(f"Get restaurant settings error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get settings'}), 500
