@@ -37,6 +37,11 @@ def init_database():
         migrate_restaurant_management_tables()
         print("Running date feedback table migration...")
         migrate_date_feedback_table()
+        # Create test restaurant account for login testing
+        try:
+            create_test_restaurant_account()
+        except Exception as e:
+            print(f"Error creating test restaurant account: {e}")
 
         # NOW we can safely import models after migration
         try:
@@ -470,7 +475,46 @@ def migrate_date_feedback_table():
         raise
 
 
+def create_test_restaurant_account():
+    """Create a test restaurant account for login testing"""
+    try:
+        from models.restaurant import Restaurant
 
+        # Check if test restaurant exists
+        test_restaurant = Restaurant.query.filter_by(owner_email='restaurant@test.com').first()
+
+        if not test_restaurant:
+            print("Creating test restaurant account...")
+
+            test_restaurant = Restaurant(
+                name='Test Restaurant',
+                cuisine_type='International',
+                address='123 Test Street, Tel Aviv',
+                phone='+972-50-123-4567',
+                price_range=2,
+                rating=4.2,
+                ambiance='casual',
+                is_active=True,
+                is_partner=True,
+                owner_email='restaurant@test.com',
+                source='internal'
+            )
+
+            # Use the Restaurant model's set_password method
+            test_restaurant.set_password('RestaurantPass123!')
+
+            db.session.add(test_restaurant)
+            db.session.commit()
+
+            print("✅ Test restaurant account created:")
+            print(f"   Email: restaurant@test.com")
+            print(f"   Password: RestaurantPass123!")
+        else:
+            print("✅ Test restaurant account already exists")
+
+    except Exception as e:
+        print(f"❌ Failed to create test restaurant account: {e}")
+        db.session.rollback()
 
 def add_restaurants():
     """Add restaurants from both test data and API sources"""

@@ -19,6 +19,8 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from threading import Thread
 from io import BytesIO
+from urllib.parse import urlencode
+import requests
 
 # Flask imports
 from flask import (Flask, request, jsonify, send_file, session,
@@ -33,14 +35,19 @@ from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_mail import Mail, Message
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from markupsafe import escape
 
 # Database imports
 from sqlalchemy import text, and_, or_, func
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.types import Numeric
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-import secrets
 
 # Email imports
 from email.mime.text import MIMEText
@@ -49,12 +56,11 @@ from email.mime.multipart import MIMEMultipart
 # Cryptography
 from cryptography.fernet import Fernet
 
+# OAuth configuration
+from authlib.integrations.flask_client import OAuth
+
 # === LOGGING CONFIGURATION ===
 from utils.logging_config import setup_logger, log_audit
-
-# Add this right after your imports
-from functools import wraps
-
 
 def require_auth(roles=None):
     def decorator(f):
@@ -176,13 +182,9 @@ app.config['MAIL_PASSWORD'] = os.environ.get('SYSTEM_EMAIL_PASSWORD')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
+mail = Mail(app)
 CORS(app, supports_credentials=True)
 csrf = CSRFProtect(app)
-
-
-
-# OAuth configuration
-from authlib.integrations.flask_client import OAuth
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -195,15 +197,6 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
     jwks_uri='https://www.googleapis.com/oauth2/v3/certs'
 )
-#facebook = oauth.register(
- #   name='facebook',
-  #  client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
-   # client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
-    #access_token_url='https://graph.facebook.com/oauth/access_token',
-    #authorize_url='https://www.facebook.com/dialog/oauth',
-    #api_base_url='https://graph.facebook.com/',
-    #client_kwargs={'scope': 'email'}
-#)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -244,7 +237,7 @@ from utils.email_manager import EmailManager
 cache = CacheManager(redis_client)
 email_manager = EmailManager(app)
 
-# === DATABASE MODELS ===
+# === DATABASE MODELS (Import in correct order) ===
 from models.user import User
 from models.restaurant import Restaurant, RestaurantTable
 from models.match import Match, MatchStatus
@@ -252,64 +245,19 @@ from models.reservation import Reservation, ReservationStatus
 from models.profile import UserProfile, UserPreferences
 from models.feedback import DateFeedback
 from models.payment import Payment, PaymentStatus
-
-# Standard library imports
-import os
-import secrets
-import json
-import uuid
-import html
-import bleach
-import redis
-import smtplib
-import jwt
-import logging
-import traceback
-import re
-from pathlib import Path
-from datetime import datetime, timedelta, date
-from functools import wraps
-from urllib.parse import urlencode
-import requests
-
-# Flask and related imports
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, make_response
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_wtf.csrf import CSRFProtect
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_cors import CORS
-from flask_mail import Mail, Message
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from sqlalchemy import func, and_, or_, text
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.types import Numeric
-
-# Core model imports (in correct order)
-from models.user import User
-from models.match import Match
-from models.reservation import Reservation
-
-# New model imports (CRITICAL ORDER)
 from models.restaurant_management import RestaurantBooking, RestaurantAnalytics, RestaurantSettings
-from models.feedback import DateFeedback
 
-# Service imports
+# === SERVICE IMPORTS ===
 from services.matching_service import MatchingService
 from services.restaurant_service import RestaurantService
 from services.restaurant_management_service import RestaurantManagementService
 from services.email_service import EmailService
+from services.auth_service import AuthService
 
-# Utils imports
+# === UTILS IMPORTS ===
 from utils.validators import validate_email, validate_password
 from utils.security import sanitize_input, generate_csrf_token
 from utils.helpers import format_datetime, calculate_age
-
-
 
 # === WEBSOCKET SETUP ===
 from services.websocket_service import WebSocketService
@@ -321,6 +269,13 @@ socketio = websocket_service.socketio
 # === RESTAURANT API SERVICE ===
 from services.restaurant_api_service import RestaurantAPIService
 restaurant_api = RestaurantAPIService(logger)
+
+# === INITIALIZE SERVICES ===
+matching_service = MatchingService(db, cache, logger)
+restaurant_service = RestaurantService(db, cache, logger)
+restaurant_management_service = RestaurantManagementService(db, email_manager, logger)
+email_service = EmailService(app, logger)
+auth_service = AuthService(db, bcrypt, logger)
 
 # === REQUEST HANDLERS ===
 @app.before_request
@@ -996,7 +951,7 @@ def get_matches():
     """Get user's matches"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         return matching_service.get_user_matches(request.current_user.id)
     except Exception as e:
         logger.error(f"Get matches error: {str(e)}", exc_info=True)
@@ -1008,7 +963,7 @@ def get_match_suggestions():
     """Get suggested matches for a time slot"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         return matching_service.get_suggestions(request.current_user.id, request.json)
     except Exception as e:
         logger.error(f"Get suggestions error: {str(e)}", exc_info=True)
@@ -1020,7 +975,7 @@ def browse_matches():
     """Browse potential matches for available tables"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         return matching_service.browse_matches(request.current_user.id, request.args)
     except Exception as e:
         logger.error(f"Browse matches error: {str(e)}", exc_info=True)
@@ -1033,7 +988,7 @@ def request_match():
     """Request a match with another user"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         result = matching_service.request_match(request.current_user.id, request.json)
 
         # Send WebSocket notification for new match
@@ -1054,7 +1009,7 @@ def accept_match(match_id):
     """Accept a match request"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         return matching_service.respond_to_match(request.current_user.id, match_id, {'accept': True})
     except Exception as e:
         logger.error(f"Accept match error: {str(e)}", exc_info=True)
@@ -1066,7 +1021,7 @@ def decline_match(match_id):
     """Decline a match request"""
     try:
         from services.matching_service import MatchingService
-        matching_service = MatchingService(db, cache, logger)
+
         return matching_service.respond_to_match(request.current_user.id, match_id, {'accept': False})
     except Exception as e:
         logger.error(f"Decline match error: {str(e)}", exc_info=True)
@@ -1473,7 +1428,11 @@ def restaurant_login():
         # Find restaurant by owner email
         restaurant = Restaurant.query.filter_by(owner_email=email).first()
 
-        if not restaurant or not bcrypt.check_password_hash(restaurant.owner_password_hash, password):
+        if not restaurant:
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Use the Restaurant model's check_password method
+        if not restaurant.check_password(password):
             return jsonify({'error': 'Invalid credentials'}), 401
 
         # Set session for restaurant owner
