@@ -17,17 +17,17 @@ class Restaurant(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # NEW: API integration fields
+    # API integration fields
     external_id = db.Column(db.String(255))
     source = db.Column(db.String(50), default='internal')
     image_url = db.Column(db.String(500))
     
-    # NEW: Restaurant owner account info
+    # Restaurant owner account info
     owner_email = db.Column(db.String(255))
     owner_password_hash = db.Column(db.String(255))
-    is_partner = db.Column(db.Boolean, default=False)  # Partner restaurants have accounts
+    is_partner = db.Column(db.Boolean, default=False)
     
-    # Fixed relationships - using back_populates instead of conflicting backrefs
+    # Fixed relationships
     tables = db.relationship('RestaurantTable', backref='restaurant', lazy='dynamic', cascade='all, delete-orphan')
     reservations = db.relationship('Reservation', back_populates='restaurant', lazy='dynamic')
     
@@ -37,16 +37,18 @@ class Restaurant(db.Model):
         return self.tables.filter_by(is_available=True).count()
     
     def set_password(self, password):
-        """Set password for restaurant owner account"""
-        from werkzeug.security import generate_password_hash
-        self.owner_password_hash = generate_password_hash(password)
+        """Set password for restaurant owner account using bcrypt"""
+        from flask_bcrypt import Bcrypt
+        bcrypt = Bcrypt()
+        self.owner_password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
     def check_password(self, password):
-        """Check password for restaurant owner account"""
-        from werkzeug.security import check_password_hash
+        """Check password for restaurant owner account using bcrypt"""
+        from flask_bcrypt import Bcrypt
         if not self.owner_password_hash:
             return False
-        return check_password_hash(self.owner_password_hash, password)
+        bcrypt = Bcrypt()
+        return bcrypt.check_password_hash(self.owner_password_hash, password)
     
     def get_match_requests(self, date_range=None):
         """Get match requests for this restaurant"""
