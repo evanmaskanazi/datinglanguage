@@ -1459,6 +1459,11 @@ def restaurants_page():
     """Serve the restaurant portal page"""
     return send_file('static/restaurants.html')
 
+@app.route('/restaurant-dashboard.html')
+def restaurant_dashboard():
+    """Serve the restaurant dashboard"""
+    return send_file('static/restaurant-dashboard.html')
+
 @app.route('/signup.html')
 def signup_page():
     """Serve the signup page"""
