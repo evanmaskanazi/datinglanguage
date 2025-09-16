@@ -291,6 +291,24 @@
     </div>
     
     <script>
+        // Global variable to cache CSRF token
+        let csrfToken = null;
+
+        // Function to get CSRF token
+        async function getCSRFToken() {
+            if (csrfToken) return csrfToken;
+            
+            try {
+                const response = await fetch('/api/csrf-token');
+                const data = await response.json();
+                csrfToken = data.csrf_token;
+                return csrfToken;
+            } catch (error) {
+                console.error('Failed to get CSRF token:', error);
+                return null;
+            }
+        }
+
         function showLogin() {
             // Remove active class from all tabs and forms
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -333,11 +351,20 @@
             };
 
             try {
+                // Get CSRF token
+                const token = await getCSRFToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                // Add CSRF token if available
+                if (token) {
+                    headers['X-CSRFToken'] = token;
+                }
+
                 const response = await fetch('/api/restaurant-auth/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify(loginData)
                 });
 
@@ -381,11 +408,20 @@
             }
 
             try {
+                // Get CSRF token
+                const token = await getCSRFToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                // Add CSRF token if available
+                if (token) {
+                    headers['X-CSRFToken'] = token;
+                }
+
                 const response = await fetch('/api/restaurant-auth/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify(registrationData)
                 });
 
@@ -405,6 +441,11 @@
                 console.error('Registration error:', error);
                 showAlert('Network error. Please try again.');
             }
+        });
+
+        // Pre-load CSRF token when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            getCSRFToken();
         });
     </script>
 </body>
