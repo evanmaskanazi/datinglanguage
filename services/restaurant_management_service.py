@@ -300,6 +300,246 @@ class RestaurantManagementService:
             self.db.session.rollback()
             return jsonify({'error': 'Failed to create booking'}), 500
 
+    def get_comprehensive_analytics(self, restaurant_id, period='week'):
+        """Get comprehensive analytics with charts data"""
+        try:
+            restaurant = Restaurant.query.get(restaurant_id)
+            if not restaurant:
+                return jsonify({'error': 'Restaurant not found'}), 404
+
+            # Determine date range
+            today = date.today()
+            if period == 'week':
+                start_date = today - timedelta(days=7)
+                date_format = '%a'  # Day abbreviation
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+                date_format = '%m/%d'  # Month/day
+            else:  # year
+                start_date = today - timedelta(days=365)
+                date_format = '%b'  # Month abbreviation
+
+            # Get bookings in period
+            bookings = RestaurantBooking.query.filter(
+                RestaurantBooking.restaurant_id == restaurant_id,
+                RestaurantBooking.created_at >= start_date
+            ).all()
+
+            # Daily booking trends
+            daily_stats = {}
+            current_date = start_date
+            while current_date <= today:
+                day_bookings = [b for b in bookings if b.created_at.date() == current_date]
+                daily_stats[current_date.strftime(date_format)] = {
+                    'date': current_date.isoformat(),
+                    'total': len(day_bookings),
+                    'confirmed': len([b for b in day_bookings if b.status == 'confirmed']),
+                    'completed': len([b for b in day_bookings if b.status == 'completed']),
+                    'cancelled': len([b for b in day_bookings if b.status == 'cancelled'])
+                }
+                if period == 'week':
+                    current_date += timedelta(days=1)
+                elif period == 'month':
+                    current_date += timedelta(days=1)
+                else:  # year - group by month
+                    current_date += timedelta(days=30)
+
+            # Status distribution for pie chart
+            status_counts = {
+                'pending': len([b for b in bookings if b.status == 'pending']),
+                'confirmed': len([b for b in bookings if b.status == 'confirmed']),
+                'completed': len([b for b in bookings if b.status == 'completed']),
+                'cancelled': len([b for b in bookings if b.status == 'cancelled'])
+            }
+
+            # Peak hours analysis
+            hour_counts = {}
+            for booking in bookings:
+                if booking.booking_datetime:
+                    hour = booking.booking_datetime.hour
+                    if hour not in hour_counts:
+                        hour_counts[hour] = 0
+                    hour_counts[hour] += 1
+
+            peak_hours = [{'hour': f'{h}:00', 'bookings': count} 
+                         for h, count in sorted(hour_counts.items())]
+
+            # Success metrics
+            total_bookings = len(bookings)
+            completed_bookings = status_counts['completed']
+            success_rate = (completed_bookings / total_bookings * 100) if total_bookings > 0 else 0
+
+            # Weekly vs Previous week comparison
+            if period == 'week':
+                prev_week_start = start_date - timedelta(days=7)
+                prev_week_bookings = RestaurantBooking.query.filter(
+                    RestaurantBooking.restaurant_id == restaurant_id,
+                    RestaurantBooking.created_at >= prev_week_start,
+                    RestaurantBooking.created_at < start_date
+                ).count()
+                
+                current_week_bookings = len(bookings)
+                week_change = ((current_week_bookings - prev_week_bookings) / prev_week_bookings * 100) if prev_week_bookings > 0 else 0
+            else:
+                week_change = 0
+
+            return jsonify({
+                'period': period,
+                'summary': {
+                    'total_bookings': total_bookings,
+                    'completed_bookings': completed_bookings,
+                    'success_rate': round(success_rate, 1),
+                    'week_change': round(week_change, 1),
+                    'average_daily': round(total_bookings / 7 if period == 'week' else total_bookings / 30, 1)
+                },
+                'charts': {
+                    'daily_trends': list(daily_stats.values()),
+                    'status_distribution': [
+                        {'status': status, 'count': count, 'percentage': round(count/total_bookings*100, 1) if total_bookings > 0 else 0}
+                        for status, count in status_counts.items() if count > 0
+                    ],
+                    'peak_hours': peak_hours
+                },
+                'insights': self._generate_insights(bookings, restaurant, period)
+            })
+
+        except Exception as e:
+            self.logger.error(f"Get comprehensive analytics error: {str(e)}", exc_info=True)
+            return jsonify({'error': 'Failed to get analytics'}), 500
+
+    def _generate_insights(self, bookings, restaurant, period):
+        """Generate actionable insights from booking data"""
+        insights = []
+        
+        if not bookings:
+            return ["No booking data available for this period."]
+
+        # Success rate insight
+        completed = len([b for b in bookings if b.status == 'completed'])
+        total = len(bookings)
+        success_rate = (completed / total * 100) if total > 0 else 0
+        
+        if success_rate > 80:
+            insights.append(f"Excellent! {success_rate:.1f}% of your bookings are completed successfully.")
+        elif success_rate > 60:
+            insights.append(f"Good performance with {success_rate:.1f}% completion rate. Consider improving customer experience.")
+        else:
+            insights.append(f"Completion rate of {success_rate:.1f}% could be improved. Review cancellation reasons.")
+
+        # Peak time insight
+        hours = {}
+        for booking in bookings:
+            if booking.booking_datetime:
+                hour = booking.booking_datetime.hour
+                hours[hour] = hours.get(hour, 0) + 1
+        
+        if hours:
+            peak_hour = max(hours.items(), key=lambda x: x[1])[0]
+            peak_period = "evening" if peak_hour >= 18 else "afternoon" if peak_hour >= 12 else "morning"
+            insights.append(f"Most popular booking time is {peak_hour}:00 ({peak_period}). Consider special offers during slower periods.")
+
+        # Trend insight
+        if len(bookings) > 5:
+            insights.append("You're gaining traction! Keep up the excellent service to attract more couples.")
+        elif len(bookings) > 0:
+            insights.append("You're getting started with date bookings. Consider updating your restaurant profile to attract more couples.")
+
+        return insights
+
+    def get_customer_demographics(self, restaurant_id):
+        """Get customer demographic analysis"""
+        try:
+            bookings = RestaurantBooking.query.filter_by(restaurant_id=restaurant_id).all()
+            
+            # Get user data for demographics
+            user_ids = set()
+            for booking in bookings:
+                user_ids.add(booking.user1_id)
+                user_ids.add(booking.user2_id)
+            
+            users = User.query.filter(User.id.in_(user_ids)).all()
+            
+            # Analyze demographics (simplified - you'd need age/location data in user profiles)
+            demographics = {
+                'total_unique_customers': len(user_ids),
+                'repeat_customers': self._count_repeat_customers(bookings),
+                'booking_frequency': {
+                    'once': 0,
+                    'few_times': 0,
+                    'regular': 0
+                },
+                'popular_days': self._analyze_popular_days(bookings),
+                'average_party_size': sum(b.party_size for b in bookings) / len(bookings) if bookings else 2
+            }
+            
+            return jsonify(demographics)
+            
+        except Exception as e:
+            self.logger.error(f"Get demographics error: {str(e)}", exc_info=True)
+            return jsonify({'error': 'Failed to get demographics'}), 500
+
+    def _count_repeat_customers(self, bookings):
+        """Count how many customers have booked multiple times"""
+        user_counts = {}
+        for booking in bookings:
+            user_counts[booking.user1_id] = user_counts.get(booking.user1_id, 0) + 1
+            user_counts[booking.user2_id] = user_counts.get(booking.user2_id, 0) + 1
+        
+        repeat_customers = sum(1 for count in user_counts.values() if count > 1)
+        return repeat_customers
+
+    def _analyze_popular_days(self, bookings):
+        """Analyze which days of the week are most popular"""
+        day_counts = {}
+        for booking in bookings:
+            if booking.booking_datetime:
+                day_name = booking.booking_datetime.strftime('%A')
+                day_counts[day_name] = day_counts.get(day_name, 0) + 1
+        
+        return sorted(day_counts.items(), key=lambda x: x[1], reverse=True)
+
+    def get_revenue_analytics(self, restaurant_id, period='month'):
+        """Get revenue analytics (simplified - would need integration with POS system)"""
+        try:
+            restaurant = Restaurant.query.get(restaurant_id)
+            if not restaurant:
+                return jsonify({'error': 'Restaurant not found'}), 404
+
+            # For demonstration, we'll estimate revenue based on bookings and price range
+            price_multipliers = {1: 25, 2: 45, 3: 75, 4: 120}  # Average per person
+            avg_per_person = price_multipliers.get(restaurant.price_range, 50)
+
+            if period == 'week':
+                start_date = date.today() - timedelta(days=7)
+            elif period == 'month':
+                start_date = date.today() - timedelta(days=30)
+            else:
+                start_date = date.today() - timedelta(days=365)
+
+            bookings = RestaurantBooking.query.filter(
+                RestaurantBooking.restaurant_id == restaurant_id,
+                RestaurantBooking.status == 'completed',
+                RestaurantBooking.created_at >= start_date
+            ).all()
+
+            # Calculate estimated revenue
+            total_revenue = sum(booking.party_size * avg_per_person for booking in bookings)
+            total_bookings = len(bookings)
+            avg_revenue_per_booking = total_revenue / total_bookings if total_bookings > 0 else 0
+
+            return jsonify({
+                'period': period,
+                'total_estimated_revenue': total_revenue,
+                'total_bookings': total_bookings,
+                'average_per_booking': round(avg_revenue_per_booking, 2),
+                'average_per_person': avg_per_person,
+                'note': 'Revenue estimates based on your price range and completed bookings'
+            })
+
+        except Exception as e:
+            self.logger.error(f"Get revenue analytics error: {str(e)}", exc_info=True)
+            return jsonify({'error': 'Failed to get revenue analytics'}), 500
+
     # Legacy methods for backward compatibility (updated to use new models)
     def register_restaurant(self, restaurant_data):
         """Register a new restaurant account (legacy method)"""
