@@ -42,12 +42,12 @@ class DateFeedback(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # FIXED RELATIONSHIPS - Using unique backref names to avoid conflicts
+    # FIXED RELATIONSHIPS - Using string references to avoid import order issues
     feedback_giver = relationship("User", foreign_keys=[user_id], backref="feedback_given")
     feedback_receiver = relationship("User", foreign_keys=[match_user_id], backref="feedback_received")
     feedback_restaurant = relationship("Restaurant", backref="date_feedback_entries")
     
-    # Handle both booking_id and reservation_id with unique backref names
+    # Use string reference for RestaurantBooking to avoid import order issues
     feedback_booking = relationship("RestaurantBooking", foreign_keys=[booking_id], backref="date_feedback_entry")
     
     # Create unique constraint to prevent duplicate feedback
