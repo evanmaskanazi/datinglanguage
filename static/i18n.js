@@ -236,12 +236,17 @@
     };
     
     // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
+   // Initialize when DOM is ready
+    if (document.readyState === 'complete') {
+        // Page fully loaded, initialize immediately
+        window.i18n.init();
+    } else if (document.readyState === 'interactive') {
+        // DOM ready but resources still loading
+        setTimeout(() => window.i18n.init(), 0);
+    } else {
+        // Wait for DOM
         document.addEventListener('DOMContentLoaded', () => {
             window.i18n.init();
         });
-    } else {
-        // DOM already loaded
-        window.i18n.init();
     }
 })();
