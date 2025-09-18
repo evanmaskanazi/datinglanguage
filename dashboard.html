@@ -1274,26 +1274,16 @@
     });
 
         function initializeTranslation() {
-    const switcher = document.createElement('div');
-    switcher.id = 'languageSwitcher';
-    switcher.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 2000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
-            switcher.innerHTML = `
-                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
-                    <option value="en">English</option>
-                    <option value="he">עברית</option>
-                    <option value="ar">العربية</option>
-                    <option value="ru">Русский</option>
-                </select>
-            `;
-            document.body.appendChild(switcher);
-
-            // Restore saved language
-            const savedLanguage = localStorage.getItem('selectedLanguage');
-            if (savedLanguage && savedLanguage !== 'en') {
-                document.getElementById('languageSelect').value = savedLanguage;
-                changeLanguage(savedLanguage);
-            }
+    // Language selector is now in the header HTML, so we just need to restore saved language
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    if (savedLanguage && savedLanguage !== 'en') {
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+            languageSelect.value = savedLanguage;
+            changeLanguage(savedLanguage);
         }
+    }
+}
 
         function changeLanguage(lang) {
             // Save language preference
