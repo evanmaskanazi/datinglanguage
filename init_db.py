@@ -37,6 +37,8 @@ def init_database():
         migrate_restaurant_management_tables()
         print("Running date feedback table migration...")
         migrate_date_feedback_table()
+        print("Running time preferences table migration...")
+        migrate_time_preferences_table()
         # Create test restaurant account for login testing
         try:
             create_test_restaurant_account()
@@ -473,6 +475,48 @@ def migrate_date_feedback_table():
         print(f"❌ Date feedback table migration failed: {e}")
         db.session.rollback()
         raise
+
+
+# ADD THE NEW FUNCTION HERE (line ~430)
+def migrate_time_preferences_table():
+    """Create time preferences table"""
+    from sqlalchemy import text
+
+    try:
+        # Create the time preferences table
+        create_sql = """
+        CREATE TABLE IF NOT EXISTS user_time_preferences (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            preferred_date DATE NOT NULL,
+            preferred_time VARCHAR(10) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            -- Add unique constraint to prevent duplicates
+            UNIQUE(user_id, preferred_date, preferred_time)
+        );
+        """
+
+        db.session.execute(text(create_sql))
+
+        # Create indexes for better performance
+        index_sql = [
+            "CREATE INDEX IF NOT EXISTS idx_time_preferences_user ON user_time_preferences(user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_time_preferences_date ON user_time_preferences(preferred_date);",
+            "CREATE INDEX IF NOT EXISTS idx_time_preferences_time ON user_time_preferences(preferred_time);"
+        ]
+
+        for sql in index_sql:
+            db.session.execute(text(sql))
+
+        db.session.commit()
+        print("✅ Time preferences table created successfully!")
+
+    except Exception as e:
+        print(f"❌ Time preferences table migration failed: {e}")
+        db.session.rollback()
+        raise
+
 
 
 def create_test_restaurant_account():
