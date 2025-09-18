@@ -718,8 +718,7 @@
             border-left: 4px solid var(--secondary-color);
         }
 
-
-  /* Desired Times Styles */
+        /* Desired Times Styles */
         .time-preference-item {
             background: white;
             border: 1px solid #e0e0e0;
@@ -752,7 +751,7 @@
         }
 
         .remove-preference-btn {
-            background: var(--error-color);
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 4px;
@@ -842,6 +841,46 @@
             margin-top: 0.5rem;
         }
 
+        /* Custom RTL Support */
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="rtl"] .header-content {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .sidebar-nav {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .restaurant-card {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input {
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input[type="email"],
+        [dir="rtl"] .form-input[type="password"] {
+            text-align: left;
+            direction: ltr;
+        }
+
+        [dir="rtl"] .logo {
+            text-align: right;
+        }
+
+        [dir="rtl"] .nav-links {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .hero-container {
+            direction: rtl;
+        }
     </style>
 </head>
 <body>
@@ -854,12 +893,12 @@
                 <a href="#" class="nav-link" onclick="showTab('matches')">My Matches</a>
                 <a href="#" class="nav-link" onclick="showTab('dates')">Upcoming Dates</a>
                 <div class="user-menu">
-    <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">JD</div>
-    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-    <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; padding: 0.5rem;">
-        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem 1rem; color: var(--dark-gray); text-decoration: none;">Logout</a>
-    </div>
-</div>
+                    <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">JD</div>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; padding: 0.5rem;">
+                        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem 1rem; color: var(--dark-gray); text-decoration: none;">Logout</a>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
@@ -870,7 +909,7 @@
         <aside class="sidebar">
             <nav class="sidebar-nav">
                 <a href="#" class="sidebar-link active" onclick="showTab('overview')">
-                    <span class="sidebar-icon">🏠</span>
+                    <span class="sidebar-icon">📊</span>
                     <span>Overview</span>
                 </a>
                 <a href="#" class="sidebar-link" onclick="showTab('browse')">
@@ -1048,7 +1087,7 @@
                 </div>
             </div>
 
-<!-- Desired Times Tab -->
+            <!-- Desired Times Tab -->
             <div id="desired-times" class="tab-content">
                 <h1 class="page-title">My Desired Times</h1>
                 <p style="margin-bottom: 2rem; color: #666;">Select up to 10 time slots when you'd like to meet someone. Other users who follow you can see these preferences and request matches.</p>
@@ -1106,8 +1145,6 @@
                     </div>
                 </div>
             </div>
-
-
         </main>
     </div>
 
@@ -1135,34 +1172,21 @@
                 </div>
             </div>
 
-            <div class="matches-section">
-    <h3>Suggested Matches</h3>
-    <div id="suggestedMatches" class="matches-grid">
-        <!-- Matches will be populated here -->
-    </div>
-</div>
-
-<!-- Add the booking form here -->
-<div class="booking-form" style="display: none; margin-top: 2rem;" id="bookingForm">
-    <h3>Book Restaurant Date</h3>
-    <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Date & Time:</label>
-        <input type="datetime-local" id="dateTimeInput" required class="date-input" style="width: 100%; margin-top: 0.5rem;">
-    </div>
-    <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Special Requests:</label>
-        <textarea id="specialRequestsInput" placeholder="Any special dietary requirements or preferences..." class="date-input" style="width: 100%; height: 80px; margin-top: 0.5rem; resize: vertical;"></textarea>
-    </div>
-    <button onclick="bookRestaurantDate(selectedRestaurantId, selectedMatchUserId)" class="btn btn-primary" style="width: 100%;">
-        Send Booking Request
-    </button>
-</div>
-
-<div style="margin-top: 2rem; text-align: right;">
-    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="confirmMatch()">Request Match</button>
-</div>
-
+            <!-- Add the booking form here -->
+            <div class="booking-form" style="display: none; margin-top: 2rem;" id="bookingForm">
+                <h3>Book Restaurant Date</h3>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Date & Time:</label>
+                    <input type="datetime-local" id="dateTimeInput" required class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Special Requests:</label>
+                    <textarea id="specialRequestsInput" placeholder="Any special dietary requirements or preferences..." class="date-input" style="width: 100%; height: 80px; margin-top: 0.5rem; resize: vertical;"></textarea>
+                </div>
+                <button onclick="bookRestaurantDate(selectedRestaurantId, selectedMatchUserId)" class="btn btn-primary" style="width: 100%;">
+                    Send Booking Request
+                </button>
+            </div>
 
             <div style="margin-top: 2rem; text-align: right;">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1174,31 +1198,141 @@
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 
     <script>
-        // Check for auth token on page load
+        // Initialize translation system and dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTranslation();
+            initDashboard();
+        });
 
+        function initializeTranslation() {
+            const switcher = document.createElement('div');
+            switcher.id = 'languageSwitcher';
+            switcher.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+            switcher.innerHTML = `
+                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+                    <option value="en">English</option>
+                    <option value="he">עברית</option>
+                    <option value="ar">العربية</option>
+                    <option value="ru">Русский</option>
+                </select>
+            `;
+            document.body.appendChild(switcher);
 
-// Function to make authenticated API calls
-async function authenticatedFetch(url, options = {}) {
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        credentials: 'include'
-    });
+            // Restore saved language
+            const savedLanguage = localStorage.getItem('selectedLanguage');
+            if (savedLanguage && savedLanguage !== 'en') {
+                document.getElementById('languageSelect').value = savedLanguage;
+                changeLanguage(savedLanguage);
+            }
+        }
 
-    // If unauthorized, redirect to login
-    if (response.status === 401) {
-        window.location.href = '/login.html';
-        return;
-    }
+        function changeLanguage(lang) {
+            // Save language preference
+            localStorage.setItem('selectedLanguage', lang);
 
-    return response;
-}
+            const translations = {
+                'he': {
+                    'Welcome back': 'ברוכים השבים',
+                    'Browse Tables': 'עיין בשולחנות',
+                    'My Matches': 'ההתאמות שלי',
+                    'Upcoming Dates': 'דייטים קרובים',
+                    'Overview': 'סקירה',
+                    'Total Dates': 'סך דייטים',
+                    'Active Matches': 'התאמות פעילות',
+                    'Success Rate': 'אחוז הצלחה',
+                    'Desired Times': 'זמנים רצויים',
+                    'Date History': 'היסטוריית דייטים',
+                    'My Profile': 'הפרופיל שלי',
+                    'Restaurants': 'מסעדות',
+                    'Settings': 'הגדרות',
+                    'Logout': 'התנתק'
+                },
+                'ar': {
+                    'Welcome back': 'مرحباً بعودتك',
+                    'Browse Tables': 'تصفح الطاولات',
+                    'My Matches': 'مطابقاتي',
+                    'Upcoming Dates': 'المواعيد القادمة',
+                    'Overview': 'نظرة عامة',
+                    'Total Dates': 'إجمالي المواعيد',
+                    'Active Matches': 'المطابقات النشطة',
+                    'Success Rate': 'معدل النجاح',
+                    'Desired Times': 'الأوقات المرغوبة',
+                    'Date History': 'تاريخ المواعيد',
+                    'My Profile': 'ملفي الشخصي',
+                    'Restaurants': 'المطاعم',
+                    'Settings': 'الإعدادات',
+                    'Logout': 'تسجيل الخروج'
+                },
+                'ru': {
+                    'Welcome back': 'Добро пожаловать',
+                    'Browse Tables': 'Обзор столиков',
+                    'My Matches': 'Мои совпадения',
+                    'Upcoming Dates': 'Предстоящие свидания',
+                    'Overview': 'Обзор',
+                    'Total Dates': 'Всего свиданий',
+                    'Active Matches': 'Активные совпадения',
+                    'Success Rate': 'Процент успеха',
+                    'Desired Times': 'Желаемое время',
+                    'Date History': 'История свиданий',
+                    'My Profile': 'Мой профиль',
+                    'Restaurants': 'Рестораны',
+                    'Settings': 'Настройки',
+                    'Logout': 'Выйти'
+                }
+            };
+
+            if (lang === 'en') {
+                document.body.dir = 'ltr';
+                localStorage.setItem('selectedLanguage', 'en');
+                location.reload();
+                return;
+            }
+
+            const langData = translations[lang];
+            if (langData) {
+                Object.keys(langData).forEach(english => {
+                    document.querySelectorAll('*').forEach(element => {
+                        if (element.children.length === 0 && element.textContent.trim() === english) {
+                            element.textContent = langData[english];
+                        }
+                    });
+                });
+
+                if (lang === 'he' || lang === 'ar') {
+                    document.body.dir = 'rtl';
+                    document.body.style.fontFamily = 'Arial, sans-serif';
+                } else {
+                    document.body.dir = 'ltr';
+                }
+            }
+        }
+
+        // ALL THE EXISTING JAVASCRIPT FROM YOUR ORIGINAL DASHBOARD.HTML GOES HERE
+        // I'm preserving your exact functionality:
+
+        // Function to make authenticated API calls
+        async function authenticatedFetch(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                credentials: 'include'
+            });
+
+            // If unauthorized, redirect to login
+            if (response.status === 401) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            return response;
+        }
+
         // Global variables
         let currentUser = null;
         let selectedRestaurant = null;
@@ -1249,20 +1383,19 @@ async function authenticatedFetch(url, options = {}) {
             }
         }
 
-// Handle restaurant card clicks
-document.addEventListener('click', function(e) {
-    const restaurantCard = e.target.closest('.restaurant-card');
-    if (restaurantCard) {
-        const restaurantId = restaurantCard.getAttribute('data-restaurant-id');
-        openMatchModal(restaurantId);
-    }
-});
-
+        // Handle restaurant card clicks
+        document.addEventListener('click', function(e) {
+            const restaurantCard = e.target.closest('.restaurant-card');
+            if (restaurantCard) {
+                const restaurantId = restaurantCard.getAttribute('data-restaurant-id');
+                openMatchModal(restaurantId);
+            }
+        });
 
         // Load user profile
         async function loadUserProfile() {
             try {
-               const response = await authenticatedFetch('/api/profile');
+                const response = await authenticatedFetch('/api/profile');
 
                 if (!response.ok) {
                     throw new Error('Failed to load profile');
@@ -1297,7 +1430,7 @@ document.addEventListener('click', function(e) {
         // Load dashboard stats
         async function loadStats() {
             try {
-               const response = await authenticatedFetch('/api/user/stats');
+                const response = await authenticatedFetch('/api/user/stats');
 
                 if (response.ok) {
                     const stats = await response.json();
@@ -1321,7 +1454,7 @@ document.addEventListener('click', function(e) {
             const container = document.getElementById('recommendedRestaurants');
 
             try {
-               const response = await authenticatedFetch('/api/restaurants?recommended=true&limit=3');
+                const response = await authenticatedFetch('/api/restaurants?recommended=true&limit=3');
 
                 if (!response.ok) {
                     throw new Error('Failed to load restaurants');
@@ -1351,7 +1484,7 @@ document.addEventListener('click', function(e) {
                 const filters = getActiveFilters();
                 const queryParams = new URLSearchParams(filters);
 
-               const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
+                const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
 
                 if (!response.ok) {
                     throw new Error('Failed to load restaurants');
@@ -1424,7 +1557,7 @@ document.addEventListener('click', function(e) {
             const container = document.getElementById('upcomingDatesList');
 
             try {
-            const response = await authenticatedFetch('/api/dates/upcoming');
+                const response = await authenticatedFetch('/api/dates/upcoming');
 
                 if (!response.ok) {
                     throw new Error('Failed to load dates');
@@ -1446,24 +1579,24 @@ document.addEventListener('click', function(e) {
 
         // Create restaurant card HTML
         function createRestaurantCard(restaurant) {
-    return `
-        <div class="restaurant-card" data-restaurant-id="${restaurant.id}">
-            <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
-            <div class="restaurant-info">
-                <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
-                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
-                <div class="restaurant-meta">
-                    <div class="restaurant-rating">
-                        ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
-                        <span>${restaurant.rating || 0}</span>
+            return `
+                <div class="restaurant-card" data-restaurant-id="${restaurant.id}">
+                    <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
+                        <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                        <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
+                        <div class="restaurant-meta">
+                            <div class="restaurant-rating">
+                                ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
+                                <span>${restaurant.rating || 0}</span>
+                            </div>
+                            <span class="available-slots">${restaurant.available_slots || 0} slots</span>
+                        </div>
                     </div>
-                    <span class="available-slots">${restaurant.available_slots || 0} slots</span>
                 </div>
-            </div>
-        </div>
-    `;
-}
+            `;
+        }
 
         // Create match card HTML
         function createMatchCard(match) {
@@ -1505,61 +1638,60 @@ document.addEventListener('click', function(e) {
             `;
         }
 
-        // Open match modal
-    // Add this function to debug restaurant API responses
-function debugRestaurantAPI(restaurantId) {
-    fetch(`/api/restaurants/${restaurantId}`, { credentials: 'include' })
-        .then(response => response.json())
-        .then(data => {
-            console.log('=== RESTAURANT API DEBUG ===');
-            console.log('Restaurant ID:', restaurantId);
-            console.log('Full API Response:', JSON.stringify(data, null, 2));
-            console.log('All keys:', Object.keys(data));
-            console.log('=== END DEBUG ===');
-        })
-        .catch(error => console.error('Debug API error:', error));
-}
-
-// Open match modal - UPDATED VERSION
-async function openMatchModal(restaurantId) {
-    selectedRestaurant = restaurantId;
-    const modal = document.getElementById('matchModal');
-
-    // DEBUG: Log restaurant API response structure
-    debugRestaurantAPI(restaurantId);
-
-    try {
-        // Load restaurant details
-        const response = await fetch(`/api/restaurants/${restaurantId}`, {
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to load restaurant');
+        // Add this function to debug restaurant API responses
+        function debugRestaurantAPI(restaurantId) {
+            fetch(`/api/restaurants/${restaurantId}`, { credentials: 'include' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('=== RESTAURANT API DEBUG ===');
+                    console.log('Restaurant ID:', restaurantId);
+                    console.log('Full API Response:', JSON.stringify(data, null, 2));
+                    console.log('All keys:', Object.keys(data));
+                    console.log('=== END DEBUG ===');
+                })
+                .catch(error => console.error('Debug API error:', error));
         }
 
-        const restaurant = await response.json();
+        // Open match modal - UPDATED VERSION
+        async function openMatchModal(restaurantId) {
+            selectedRestaurant = restaurantId;
+            const modal = document.getElementById('matchModal');
 
-        // Update modal with restaurant info
-        document.getElementById('modalRestaurantInfo').innerHTML = `
-            <div style="margin-bottom: 1.5rem;">
-                <h3>${escapeHtml(restaurant.name)}</h3>
-                <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                <p>${escapeHtml(restaurant.address)}</p>
-            </div>
-        `;
+            // DEBUG: Log restaurant API response structure
+            debugRestaurantAPI(restaurantId);
 
-        // Load available time slots
-        await loadTimeSlots(restaurantId);
+            try {
+                // Load restaurant details
+                const response = await fetch(`/api/restaurants/${restaurantId}`, {
+                    credentials: 'include'
+                });
 
-        // Show modal
-        modal.classList.add('active');
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurant');
+                }
 
-    } catch (error) {
-        console.error('Error opening modal:', error);
-        showToast('Error loading restaurant details', 'error');
-    }
-}
+                const restaurant = await response.json();
+
+                // Update modal with restaurant info
+                document.getElementById('modalRestaurantInfo').innerHTML = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3>${escapeHtml(restaurant.name)}</h3>
+                        <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                        <p>${escapeHtml(restaurant.address)}</p>
+                    </div>
+                `;
+
+                // Load available time slots
+                await loadTimeSlots(restaurantId);
+
+                // Show modal
+                modal.classList.add('active');
+
+            } catch (error) {
+                console.error('Error opening modal:', error);
+                showToast('Error loading restaurant details', 'error');
+            }
+        }
 
         // Load time slots
         async function loadTimeSlots(restaurantId) {
@@ -1578,11 +1710,11 @@ async function openMatchModal(restaurantId) {
 
                 const slots = await response.json();
 
-               container.innerHTML = slots.map(slot => `
-    <div class="time-slot" onclick="selectTimeSlot('${slot.time}')">
-        ${slot.time}
-    </div>
-`).join('');
+                container.innerHTML = slots.map(slot => `
+                    <div class="time-slot" onclick="selectTimeSlot('${slot.time}')">
+                        ${slot.time}
+                    </div>
+                `).join('');
 
             } catch (error) {
                 console.error('Error loading time slots:', error);
@@ -1664,135 +1796,131 @@ async function openMatchModal(restaurantId) {
             });
         }
 
-        // Confirm match request
-  // Confirm match request
-// Confirm match request
-// Confirm match confirmMatchrequest
-// Updated confirmMatch function with better debugging
-async function confirmMatch() {
-    if (!selectedTime || !selectedMatch) {
-        showToast('Please select a time and a match', 'error');
-        return;
-    }
+        // Updated confirmMatch function with better debugging
+        async function confirmMatch() {
+            if (!selectedTime || !selectedMatch) {
+                showToast('Please select a time and a match', 'error');
+                return;
+            }
 
-    try {
-        // Get current user to prevent self-matches
-        const currentUserResponse = await fetch('/api/profile', {
-            method: 'GET',
-            credentials: 'same-origin'
-        });
+            try {
+                // Get current user to prevent self-matches
+                const currentUserResponse = await fetch('/api/profile', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
 
-        if (!currentUserResponse.ok) {
-            throw new Error('Failed to get current user information');
-        }
-
-        const currentUser = await currentUserResponse.json();
-
-        // Prevent self-matches
-        if (currentUser && currentUser.id === selectedMatch) {
-            showToast('You cannot send a match request to yourself!', 'error');
-            return;
-        }
-
-        // Get the selected date from the date filter
-        const dateFilter = document.getElementById('dateFilter');
-        const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
-
-        // Create proper datetime string
-        const dateTimeString = `${selectedDate}T${selectedTime}:00`;
-
-        // Get restaurant info from selectedRestaurant - fetch it fresh
-        let restaurantName = 'Unknown Restaurant';
-        try {
-            console.log('Fetching restaurant data for ID:', selectedRestaurant);
-            const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}`, {
-                credentials: 'include'
-            });
-
-            if (restaurantResponse.ok) {
-                const restaurantData = await restaurantResponse.json();
-                console.log('Restaurant API response:', restaurantData);
-
-                // Try different possible response structures - COMPREHENSIVE CHECK
-                if (restaurantData.name) {
-                    restaurantName = restaurantData.name;
-                } else if (restaurantData.restaurant && restaurantData.restaurant.name) {
-                    restaurantName = restaurantData.restaurant.name;
-                } else if (restaurantData.data && restaurantData.data.name) {
-                    restaurantName = restaurantData.data.name;
-                } else if (typeof restaurantData === 'string') {
-                    // Sometimes the API returns just a string
-                    restaurantName = restaurantData;
-                } else if (restaurantData.title) {
-                    // Some APIs use 'title' instead of 'name'
-                    restaurantName = restaurantData.title;
-                } else if (restaurantData.business_name) {
-                    // Some APIs use 'business_name'
-                    restaurantName = restaurantData.business_name;
-                } else {
-                    // Log the full structure to debug
-                    console.warn('Restaurant name not found in response structure:', JSON.stringify(restaurantData, null, 2));
-                    // Try to extract any reasonable name field
-                    const possibleNameFields = Object.keys(restaurantData).filter(key =>
-                        key.toLowerCase().includes('name') || key.toLowerCase().includes('title')
-                    );
-                    if (possibleNameFields.length > 0) {
-                        restaurantName = restaurantData[possibleNameFields[0]];
-                        console.log('Found name in field:', possibleNameFields[0], '=', restaurantName);
-                    }
+                if (!currentUserResponse.ok) {
+                    throw new Error('Failed to get current user information');
                 }
 
-                console.log('Extracted restaurant name:', restaurantName);
-            } else {
-                console.error('Restaurant API call failed:', restaurantResponse.status, restaurantResponse.statusText);
+                const currentUser = await currentUserResponse.json();
+
+                // Prevent self-matches
+                if (currentUser && currentUser.id === selectedMatch) {
+                    showToast('You cannot send a match request to yourself!', 'error');
+                    return;
+                }
+
+                // Get the selected date from the date filter
+                const dateFilter = document.getElementById('dateFilter');
+                const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
+
+                // Create proper datetime string
+                const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+
+                // Get restaurant info from selectedRestaurant - fetch it fresh
+                let restaurantName = 'Unknown Restaurant';
+                try {
+                    console.log('Fetching restaurant data for ID:', selectedRestaurant);
+                    const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}`, {
+                        credentials: 'include'
+                    });
+
+                    if (restaurantResponse.ok) {
+                        const restaurantData = await restaurantResponse.json();
+                        console.log('Restaurant API response:', restaurantData);
+
+                        // Try different possible response structures - COMPREHENSIVE CHECK
+                        if (restaurantData.name) {
+                            restaurantName = restaurantData.name;
+                        } else if (restaurantData.restaurant && restaurantData.restaurant.name) {
+                            restaurantName = restaurantData.restaurant.name;
+                        } else if (restaurantData.data && restaurantData.data.name) {
+                            restaurantName = restaurantData.data.name;
+                        } else if (typeof restaurantData === 'string') {
+                            // Sometimes the API returns just a string
+                            restaurantName = restaurantData;
+                        } else if (restaurantData.title) {
+                            // Some APIs use 'title' instead of 'name'
+                            restaurantName = restaurantData.title;
+                        } else if (restaurantData.business_name) {
+                            // Some APIs use 'business_name'
+                            restaurantName = restaurantData.business_name;
+                        } else {
+                            // Log the full structure to debug
+                            console.warn('Restaurant name not found in response structure:', JSON.stringify(restaurantData, null, 2));
+                            // Try to extract any reasonable name field
+                            const possibleNameFields = Object.keys(restaurantData).filter(key =>
+                                key.toLowerCase().includes('name') || key.toLowerCase().includes('title')
+                            );
+                            if (possibleNameFields.length > 0) {
+                                restaurantName = restaurantData[possibleNameFields[0]];
+                                console.log('Found name in field:', possibleNameFields[0], '=', restaurantName);
+                            }
+                        }
+
+                        console.log('Extracted restaurant name:', restaurantName);
+                    } else {
+                        console.error('Restaurant API call failed:', restaurantResponse.status, restaurantResponse.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error fetching restaurant name:', error);
+                }
+
+                const requestData = {
+                    restaurant_id: selectedRestaurant,
+                    match_user_id: selectedMatch,
+                    datetime: dateTimeString,
+                    restaurant_name: restaurantName,
+                    table_id: null,
+                    compatibility: Math.floor(Math.random() * 20) + 80
+                };
+
+                console.log('Sending match request with data:', requestData);
+
+                const response = await fetch('/api/matches/request', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': await getCSRFToken()
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast(result.message || 'Match request sent successfully!', 'success');
+                    closeModal();
+
+                    // Reload matches and stats
+                    await loadMatches();
+                    await loadStats();
+
+                } else {
+                    // Handle specific error messages from backend
+                    const errorMessage = result.error || 'Failed to send match request';
+                    showToast(errorMessage, 'error');
+                    console.error('Match request failed:', result);
+                }
+
+            } catch (error) {
+                console.error('Error requesting match:', error);
+                showToast('Network error. Please try again.', 'error');
             }
-        } catch (error) {
-            console.error('Error fetching restaurant name:', error);
         }
-
-        const requestData = {
-            restaurant_id: selectedRestaurant,
-            match_user_id: selectedMatch,
-            datetime: dateTimeString,
-            restaurant_name: restaurantName,
-            table_id: null,
-            compatibility: Math.floor(Math.random() * 20) + 80
-        };
-
-        console.log('Sending match request with data:', requestData);
-
-        const response = await fetch('/api/matches/request', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': await getCSRFToken()
-            },
-            body: JSON.stringify(requestData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-            showToast(result.message || 'Match request sent successfully!', 'success');
-            closeModal();
-
-            // Reload matches and stats
-            await loadMatches();
-            await loadStats();
-
-        } else {
-            // Handle specific error messages from backend
-            const errorMessage = result.error || 'Failed to send match request';
-            showToast(errorMessage, 'error');
-            console.error('Match request failed:', result);
-        }
-
-    } catch (error) {
-        console.error('Error requesting match:', error);
-        showToast('Network error. Please try again.', 'error');
-    }
-}
 
         // Accept match
         async function acceptMatch(matchId) {
@@ -1862,6 +1990,12 @@ async function confirmMatch() {
                 loadUpcomingDates();
             } else if (tabName === 'history') {
                 loadDateHistory();
+            } else if (tabName === 'desired-times') {
+                loadDesiredTimes();
+                // Set today as default date
+                document.getElementById('desiredDate').valueAsDate = new Date();
+            } else if (tabName === 'restaurants') {
+                loadRestaurantsForFollowing();
             }
         }
 
@@ -1895,89 +2029,88 @@ async function confirmMatch() {
         }
 
         // Edit profile
-        // Edit profile
-function editProfile() {
-    const modal = document.createElement('div');
-    modal.className = 'modal active';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Edit Profile</h2>
-                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
-            </div>
-            <form id="editProfileForm">
-                <div style="margin-bottom: 1rem;">
-                    <label>Name:</label>
-                    <input type="text" id="editName" value="${currentUser.name}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label>Location:</label>
-                    <input type="text" id="editLocation" value="${currentUser.location || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label>Bio:</label>
-                    <textarea id="editBio" class="date-input" style="width: 100%; height: 100px; margin-top: 0.5rem; resize: vertical;">${currentUser.bio || ''}</textarea>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label>Age Range:</label>
-                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                        <input type="number" id="editMinAge" value="${currentUser.preferences?.min_age || 18}" class="date-input" placeholder="Min Age">
-                        <input type="number" id="editMaxAge" value="${currentUser.preferences?.max_age || 99}" class="date-input" placeholder="Max Age">
+        function editProfile() {
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Edit Profile</h2>
+                        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
                     </div>
+                    <form id="editProfileForm">
+                        <div style="margin-bottom: 1rem;">
+                            <label>Name:</label>
+                            <input type="text" id="editName" value="${currentUser.name}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label>Location:</label>
+                            <input type="text" id="editLocation" value="${currentUser.location || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label>Bio:</label>
+                            <textarea id="editBio" class="date-input" style="width: 100%; height: 100px; margin-top: 0.5rem; resize: vertical;">${currentUser.bio || ''}</textarea>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label>Age Range:</label>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                                <input type="number" id="editMinAge" value="${currentUser.preferences?.min_age || 18}" class="date-input" placeholder="Min Age">
+                                <input type="number" id="editMaxAge" value="${currentUser.preferences?.max_age || 99}" class="date-input" placeholder="Max Age">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label>Interests (comma-separated):</label>
+                            <input type="text" id="editInterests" value="${currentUser.preferences?.interests?.join(', ') || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
+                        </div>
+                        <div style="text-align: right; margin-top: 2rem;">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label>Interests (comma-separated):</label>
-                    <input type="text" id="editInterests" value="${currentUser.preferences?.interests?.join(', ') || ''}" class="date-input" style="width: 100%; margin-top: 0.5rem;">
-                </div>
-                <div style="text-align: right; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    `;
+            `;
 
-    document.body.appendChild(modal);
+            document.body.appendChild(modal);
 
-    // Handle form submission
-    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+            // Handle form submission
+            document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-        const profileData = {
-            name: document.getElementById('editName').value,
-            location: document.getElementById('editLocation').value,
-            bio: document.getElementById('editBio').value,
-            preferences: {
-                min_age: parseInt(document.getElementById('editMinAge').value),
-                max_age: parseInt(document.getElementById('editMaxAge').value),
-                interests: document.getElementById('editInterests').value.split(',').map(i => i.trim()).filter(i => i)
-            }
-        };
+                const profileData = {
+                    name: document.getElementById('editName').value,
+                    location: document.getElementById('editLocation').value,
+                    bio: document.getElementById('editBio').value,
+                    preferences: {
+                        min_age: parseInt(document.getElementById('editMinAge').value),
+                        max_age: parseInt(document.getElementById('editMaxAge').value),
+                        interests: document.getElementById('editInterests').value.split(',').map(i => i.trim()).filter(i => i)
+                    }
+                };
 
-        try {
-            const response = await fetch('/api/profile', {
-                method: 'PUT',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': await getCSRFToken()
-                },
-                body: JSON.stringify(profileData)
+                try {
+                    const response = await fetch('/api/profile', {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': await getCSRFToken()
+                        },
+                        body: JSON.stringify(profileData)
+                    });
+
+                    if (response.ok) {
+                        showToast('Profile updated successfully!', 'success');
+                        modal.remove();
+                        loadUserProfile(); // Reload profile data
+                    } else {
+                        showToast('Failed to update profile', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    showToast('Failed to update profile', 'error');
+                }
             });
-
-            if (response.ok) {
-                showToast('Profile updated successfully!', 'success');
-                modal.remove();
-                loadUserProfile(); // Reload profile data
-            } else {
-                showToast('Failed to update profile', 'error');
-            }
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            showToast('Failed to update profile', 'error');
         }
-    });
-}
 
         // Save settings
         async function saveSettings() {
@@ -2012,39 +2145,39 @@ function editProfile() {
 
         // Setup WebSocket for real-time updates
         function setupWebSocket() {
-    if (typeof io === 'undefined') {
-        console.log('Socket.IO not loaded, using polling instead');
-        // Set up periodic polling instead
-        setInterval(async () => {
-            try {
-                await loadStats();
-            } catch (error) {
-                console.log('Polling error:', error);
+            if (typeof io === 'undefined') {
+                console.log('Socket.IO not loaded, using polling instead');
+                // Set up periodic polling instead
+                setInterval(async () => {
+                    try {
+                        await loadStats();
+                    } catch (error) {
+                        console.log('Polling error:', error);
+                    }
+                }, 30000);
+                return;
             }
-        }, 30000);
-        return;
-    }
 
-    websocket = io('/', {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5
-    });
+            websocket = io('/', {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5
+            });
 
-    websocket.on('connect', () => {
-        console.log('WebSocket connected');
-    });
+            websocket.on('connect', () => {
+                console.log('WebSocket connected');
+            });
 
-    websocket.on('new_match', (data) => {
-        showToast('You have a new match!', 'success');
-        loadMatches();
-        loadStats();
-    });
+            websocket.on('new_match', (data) => {
+                showToast('You have a new match!', 'success');
+                loadMatches();
+                loadStats();
+            });
 
-    websocket.on('disconnect', () => {
-        console.log('WebSocket disconnected');
-    });
-}
+            websocket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+            });
+        }
 
         // Handle WebSocket messages
         function handleWebSocketMessage(data) {
@@ -2069,159 +2202,7 @@ function editProfile() {
             }
         }
 
-        // Utility functions
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('default', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-        }
-
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <span>${message}</span>
-                <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; margin-left: 1rem;">✕</button>
-            `;
-
-            document.body.appendChild(toast);
-
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 100);
-
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 5000);
-        }
-    function toggleUserMenu() {
-    const dropdown = document.getElementById('userDropdown');
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-}
-   async function logout() {
-    try {
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'X-CSRF-Token': await getCSRFToken()
-            }
-        });
-    } finally {
-        window.location.href = '/login.html';
-    }
-}
-
-
-
-        // Initialize on page load
-        // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    initializeTranslation();
-    initDashboard();
-});
-
-function initializeTranslation() {
-    const switcher = document.createElement('div');
-    switcher.id = 'languageSwitcher';
-    switcher.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
-    switcher.innerHTML = `
-        <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
-            <option value="en">English</option>
-            <option value="he">עברית</option>
-            <option value="ar">العربية</option>
-            <option value="ru">Русский</option>
-        </select>
-    `;
-    document.body.appendChild(switcher);
-}
-
-function changeLanguage(lang) {
-    const translations = {
-        'he': {
-            'Welcome back': 'ברוכים השבים',
-            'Browse Tables': 'עיין בשולחנות',
-            'My Matches': 'ההתאמות שלי',
-            'Upcoming Dates': 'דייטים קרובים',
-            'Overview': 'סקירה',
-            'Total Dates': 'סך דייטים',
-            'Active Matches': 'התאמות פעילות',
-            'Success Rate': 'אחוז הצלחה'
-        },
-        'ar': {
-            'Welcome back': 'مرحباً بعودتك',
-            'Browse Tables': 'تصفح الطاولات',
-            'My Matches': 'مطابقاتي',
-            'Upcoming Dates': 'المواعيد القادمة',
-            'Overview': 'نظرة عامة',
-            'Total Dates': 'إجمالي المواعيد',
-            'Active Matches': 'المطابقات النشطة',
-            'Success Rate': 'معدل النجاح'
-        },
-        'ru': {
-            'Welcome back': 'Добро пожаловать',
-            'Browse Tables': 'Обзор столиков',
-            'My Matches': 'Мои совпадения',
-            'Upcoming Dates': 'Предстоящие свидания',
-            'Overview': 'Обзор',
-            'Total Dates': 'Всего свиданий',
-            'Active Matches': 'Активные совпадения',
-            'Success Rate': 'Процент успеха'
-        }
-    };
-
-    if (lang === 'en') {
-        document.body.dir = 'ltr';
-        location.reload();
-        return;
-    }
-
-    const langData = translations[lang];
-    if (langData) {
-        Object.keys(langData).forEach(english => {
-            document.querySelectorAll('*').forEach(element => {
-                if (element.children.length === 0 && element.textContent.trim() === english) {
-                    element.textContent = langData[english];
-                }
-            });
-        });
-
-        if (lang === 'he' || lang === 'ar') {
-            document.body.dir = 'rtl';
-            document.body.style.fontFamily = 'Arial, sans-serif';
-        } else {
-            document.body.dir = 'ltr';
-        }
-    }
-}
-
-        // Handle page visibility for WebSocket
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && websocket) {
-                websocket.close();
-            } else if (!document.hidden && !websocket) {
-                setupWebSocket();
-            }
-        });
-
-
-// Desired Times functionality
+        // Desired Times functionality
         let selectedDesiredDate = null;
         let selectedDesiredTime = null;
 
@@ -2429,20 +2410,6 @@ function changeLanguage(lang) {
             }
         }
 
-        // Update showTab function to handle new tabs
-        const originalShowTab = showTab;
-        showTab = function(tabName) {
-            originalShowTab(tabName);
-
-            if (tabName === 'desired-times') {
-                loadDesiredTimes();
-                // Set today as default date
-                document.getElementById('desiredDate').valueAsDate = new Date();
-            } else if (tabName === 'restaurants') {
-                loadRestaurantsForFollowing();
-            }
-        };
-
         // Handle date selection for desired times
         document.addEventListener('DOMContentLoaded', function() {
             const dateInput = document.getElementById('desiredDate');
@@ -2461,155 +2428,173 @@ function changeLanguage(lang) {
             }
         });
 
-
-
-
         // Add this booking function to user dashboard
-async function bookRestaurantDate(restaurantId, matchUserId) {
-    const bookingData = {
-        restaurant_id: restaurantId,
-        match_user_id: matchUserId,
-        booking_datetime: document.getElementById('dateTimeInput').value,
-        party_size: 2,
-        special_requests: document.getElementById('specialRequestsInput').value
-    };
+        async function bookRestaurantDate(restaurantId, matchUserId) {
+            const bookingData = {
+                restaurant_id: restaurantId,
+                match_user_id: matchUserId,
+                booking_datetime: document.getElementById('dateTimeInput').value,
+                party_size: 2,
+                special_requests: document.getElementById('specialRequestsInput').value
+            };
 
-    try {
-        const response = await fetch('/api/bookings/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(bookingData)
-        });
+            try {
+                const response = await fetch('/api/bookings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookingData)
+                });
 
-        const result = await response.json();
+                const result = await response.json();
 
-        if (response.ok) {
-            showAlert('Booking request sent successfully!', 'success');
-        } else {
-            showAlert(result.error || 'Failed to create booking', 'error');
+                if (response.ok) {
+                    showAlert('Booking request sent successfully!', 'success');
+                } else {
+                    showAlert(result.error || 'Failed to create booking', 'error');
+                }
+            } catch (error) {
+                console.error('Booking error:', error);
+                showAlert('Failed to create booking', 'error');
+            }
         }
-    } catch (error) {
-        console.error('Booking error:', error);
-        showAlert('Failed to create booking', 'error');
-    }
-}
 
-// Add this rating function
-async function rateRestaurant(bookingId, rating, review) {
-    try {
-        const response = await fetch(`/api/bookings/${bookingId}/rate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                rating: rating,
-                review: review
-            })
-        });
+        // Add this rating function
+        async function rateRestaurant(bookingId, rating, review) {
+            try {
+                const response = await fetch(`/api/bookings/${bookingId}/rate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rating: rating,
+                        review: review
+                    })
+                });
 
-        const result = await response.json();
+                const result = await response.json();
 
-        if (response.ok) {
-            showAlert('Rating submitted successfully!', 'success');
-        } else {
-            showAlert(result.error || 'Failed to submit rating', 'error');
+                if (response.ok) {
+                    showAlert('Rating submitted successfully!', 'success');
+                } else {
+                    showAlert(result.error || 'Failed to submit rating', 'error');
+                }
+            } catch (error) {
+                console.error('Rating error:', error);
+                showAlert('Failed to submit rating', 'error');
+            }
         }
-    } catch (error) {
-        console.error('Rating error:', error);
-        showAlert('Failed to submit rating', 'error');
-    }
-} // <-- Added missing closing brace
 
-// Add showAlert function if it doesn't exist
-function showAlert(message, type = 'info') {
-    // Simple alert implementation - you can make this fancier
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+        // Add showAlert function if it doesn't exist
+        function showAlert(message, type = 'info') {
+            // Simple alert implementation - you can make this fancier
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
 
-    // Create or update alert element
-    let alertDiv = document.getElementById('userAlert');
-    if (!alertDiv) {
-        alertDiv = document.createElement('div');
-        alertDiv.id = 'userAlert';
-        alertDiv.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 1000;
-            padding: 1rem; border-radius: 6px; max-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        document.body.appendChild(alertDiv);
-    }
+            // Create or update alert element
+            let alertDiv = document.getElementById('userAlert');
+            if (!alertDiv) {
+                alertDiv = document.createElement('div');
+                alertDiv.id = 'userAlert';
+                alertDiv.style.cssText = `
+                    position: fixed; top: 20px; right: 20px; z-index: 1000;
+                    padding: 1rem; border-radius: 6px; max-width: 300px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                `;
+                document.body.appendChild(alertDiv);
+            }
 
-    alertDiv.textContent = message;
-    alertDiv.className = `alert ${alertClass}`;
-    alertDiv.style.display = 'block';
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${alertClass}`;
+            alertDiv.style.display = 'block';
 
-    // Apply colors based on type
-    if (type === 'success') {
-        alertDiv.style.backgroundColor = '#d4edda';
-        alertDiv.style.color = '#155724';
-        alertDiv.style.border = '1px solid #c3e6cb';
-    } else {
-        alertDiv.style.backgroundColor = '#f8d7da';
-        alertDiv.style.color = '#721c24';
-        alertDiv.style.border = '1px solid #f5c6cb';
-    }
+            // Apply colors based on type
+            if (type === 'success') {
+                alertDiv.style.backgroundColor = '#d4edda';
+                alertDiv.style.color = '#155724';
+                alertDiv.style.border = '1px solid #c3e6cb';
+            } else {
+                alertDiv.style.backgroundColor = '#f8d7da';
+                alertDiv.style.color = '#721c24';
+                alertDiv.style.border = '1px solid #f5c6cb';
+            }
 
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        alertDiv.style.display = 'none';
-    }, 5000);
-}
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
 
+        // Utility functions
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
 
-    /* Custom RTL Support */
-[dir="rtl"] {
-    direction: rtl;
-    text-align: right;
-}
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-[dir="rtl"] .header-content {
-    direction: rtl;
-}
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('default', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
 
-[dir="rtl"] .sidebar-nav {
-    direction: rtl;
-}
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; margin-left: 1rem;">✕</button>
+            `;
 
-[dir="rtl"] .restaurant-card {
-    direction: rtl;
-    text-align: right;
-}
+            document.body.appendChild(toast);
 
-[dir="rtl"] .form-input {
-    text-align: right;
-}
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 100);
 
-[dir="rtl"] .form-input[type="email"],
-[dir="rtl"] .form-input[type="password"] {
-    text-align: left;
-    direction: ltr;
-}
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
 
-[dir="rtl"] .logo {
-    text-align: right;
-}
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
 
-[dir="rtl"] .nav-links {
-    flex-direction: row-reverse;
-}
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'X-CSRF-Token': await getCSRFToken()
+                    }
+                });
+            } finally {
+                window.location.href = '/login.html';
+            }
+        }
 
-[dir="rtl"] .hero-container {
-    direction: rtl;
-}
-
-
-
-
-
-
-
+        // Handle page visibility for WebSocket
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && websocket) {
+                websocket.close();
+            } else if (!document.hidden && !websocket) {
+                setupWebSocket();
+            }
+        });
     </script>
 </body>
 </html>
