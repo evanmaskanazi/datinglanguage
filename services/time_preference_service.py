@@ -1,126 +1,94 @@
-"""
-Service for handling user time preferences
-"""
+"""Time preference service for Table for Two"""
+from datetime import datetime, timedelta
 from flask import jsonify
-from datetime import datetime, date, timedelta
+from sqlalchemy import and_, or_
+
+# Use absolute imports
+from dating_backend import db
 from models.time_preference import UserTimePreference
 from models.user import User
-from dating_backend import db, bcrypt
+
 
 class TimePreferenceService:
-    def __init__(self, db_session, cache_manager, logger):
-        self.db = db_session
-        self.cache = cache_manager
+    """Service for managing user time preferences"""
+    
+    def __init__(self, db, cache, logger):
+        self.db = db
+        self.cache = cache
         self.logger = logger
     
-    def add_time_preference(self, user_id, preference_data):
-        """Add a time preference for a user"""
+    def add_time_preference(self, user_id, data):
+        """Add a new time preference for user"""
         try:
-            # Validate input
-            required_fields = ['date', 'time']
-            for field in required_fields:
-                if field not in preference_data:
-                    return jsonify({'error': f'{field} is required'}), 400
+            date_str = data.get('date')
+            time_str = data.get('time')
             
-            user = User.query.get(user_id)
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
+            if not date_str or not time_str:
+                return jsonify({'error': 'Date and time are required'}), 400
             
-            # Check if user already has 10 preferences (limit)
-            current_count = UserTimePreference.query.filter_by(
-                user_id=user_id, is_active=True
-            ).count()
-            
-            if current_count >= 10:
-                return jsonify({'error': 'Maximum 10 time preferences allowed'}), 400
-            
-            # Parse date and time
-            pref_date = datetime.strptime(preference_data['date'], '%Y-%m-%d').date()
-            pref_time = datetime.strptime(preference_data['time'], '%H:%M').time()
+            # Parse date
+            preferred_date = datetime.fromisoformat(date_str).date()
             
             # Check if preference already exists
             existing = UserTimePreference.query.filter_by(
                 user_id=user_id,
-                date=pref_date,
-                time=pref_time,
-                is_active=True
+                preferred_date=preferred_date,
+                preferred_time=time_str
             ).first()
             
             if existing:
-                return jsonify({'error': 'Time preference already exists'}), 400
+                return jsonify({'error': 'This time preference already exists'}), 400
             
             # Create new preference
             preference = UserTimePreference(
                 user_id=user_id,
-                date=pref_date,
-                time=pref_time,
-                restaurant_id=preference_data.get('restaurant_id'),
-                is_active=True
+                preferred_date=preferred_date,
+                preferred_time=time_str
             )
             
             self.db.session.add(preference)
             self.db.session.commit()
             
-            # Clear cache
-            self.cache.delete(f"user_time_preferences_{user_id}")
-            
-            self.logger.info(f"User {user_id} added time preference: {pref_date} {pref_time}")
             return jsonify({
-                'message': 'Time preference added',
-                'id': preference.id
+                'success': True,
+                'preference': preference.to_dict()
             }), 201
             
-        except ValueError as e:
-            return jsonify({'error': 'Invalid date/time format'}), 400
         except Exception as e:
             self.logger.error(f"Add time preference error: {str(e)}")
             self.db.session.rollback()
             return jsonify({'error': 'Failed to add time preference'}), 500
     
     def get_user_preferences(self, user_id, include_matches=False):
-        """Get user's time preferences"""
+        """Get all time preferences for a user"""
         try:
-            cache_key = f"user_time_preferences_{user_id}"
-            cached = self.cache.get(cache_key)
-            if cached and not include_matches:
-                return jsonify(cached)
-            
-            preferences = UserTimePreference.get_user_preferences(user_id)
+            preferences = UserTimePreference.query.filter_by(
+                user_id=user_id
+            ).order_by(UserTimePreference.preferred_date).all()
             
             result = []
             for pref in preferences:
-                pref_data = {
-                    'id': pref.id,
-                    'date': pref.date.isoformat(),
-                    'time': pref.time.strftime('%H:%M'),
-                    'restaurant_id': pref.restaurant_id,
-                    'created_at': pref.created_at.isoformat()
-                }
+                pref_dict = pref.to_dict()
                 
                 if include_matches:
-                    # Find other users with matching preferences
-                    matching_users = UserTimePreference.query.filter_by(
-                        date=pref.date,
-                        time=pref.time,
-                        is_active=True
-                    ).filter(UserTimePreference.user_id != user_id).all()
+                    # Count potential matches for this time slot
+                    matching_users = UserTimePreference.query.filter(
+                        and_(
+                            UserTimePreference.user_id != user_id,
+                            UserTimePreference.preferred_date == pref.preferred_date,
+                            UserTimePreference.preferred_time == pref.preferred_time
+                        )
+                    ).count()
                     
-                    pref_data['potential_matches'] = len(matching_users)
-                    pref_data['matching_users'] = [
-                        {'id': mu.user_id, 'email': mu.user.email} 
-                        for mu in matching_users[:5]  # Limit to 5 for preview
-                    ]
+                    pref_dict['potential_matches'] = matching_users
                 
-                result.append(pref_data)
+                result.append(pref_dict)
             
-            if not include_matches:
-                self.cache.set(cache_key, result, timeout=300)
-            
-            return jsonify(result)
+            return jsonify(result), 200
             
         except Exception as e:
-            self.logger.error(f"Get preferences error: {str(e)}")
-            return jsonify({'error': 'Failed to get preferences'}), 500
+            self.logger.error(f"Get time preferences error: {str(e)}")
+            return jsonify({'error': 'Failed to get time preferences'}), 500
     
     def remove_time_preference(self, user_id, preference_id):
         """Remove a time preference"""
@@ -131,55 +99,51 @@ class TimePreferenceService:
             ).first()
             
             if not preference:
-                return jsonify({'error': 'Time preference not found'}), 404
+                return jsonify({'error': 'Preference not found'}), 404
             
-            preference.is_active = False
+            self.db.session.delete(preference)
             self.db.session.commit()
             
-            # Clear cache
-            self.cache.delete(f"user_time_preferences_{user_id}")
-            
-            return jsonify({'message': 'Time preference removed'}), 200
+            return jsonify({'success': True, 'message': 'Preference removed'}), 200
             
         except Exception as e:
-            self.logger.error(f"Remove preference error: {str(e)}")
+            self.logger.error(f"Remove time preference error: {str(e)}")
             self.db.session.rollback()
             return jsonify({'error': 'Failed to remove preference'}), 500
     
     def get_matching_users(self, user_id):
         """Get users with matching time preferences"""
         try:
-            user = User.query.get(user_id)
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
+            # Get user's preferences
+            user_preferences = UserTimePreference.query.filter_by(
+                user_id=user_id
+            ).all()
             
-            # Get users this user is following
-            following_ids = [u.id for u in user.following]
+            if not user_preferences:
+                return jsonify({'message': 'No time preferences set'}), 200
             
-            if not following_ids:
-                return jsonify([])  # No one to match with
-            
-            matching_data = []
-            user_preferences = UserTimePreference.get_user_preferences(user_id)
-            
+            # Find matching users
+            matches = []
             for pref in user_preferences:
-                matches = UserTimePreference.query.filter_by(
-                    date=pref.date,
-                    time=pref.time,
-                    is_active=True
-                ).filter(UserTimePreference.user_id.in_(following_ids)).all()
+                matching_prefs = UserTimePreference.query.filter(
+                    and_(
+                        UserTimePreference.user_id != user_id,
+                        UserTimePreference.preferred_date == pref.preferred_date,
+                        UserTimePreference.preferred_time == pref.preferred_time
+                    )
+                ).all()
                 
-                for match in matches:
-                    matching_data.append({
-                        'user_id': match.user_id,
-                        'email': match.user.email,
-                        'date': pref.date.isoformat(),
-                        'time': pref.time.strftime('%H:%M'),
-                        'restaurant_id': pref.restaurant_id,
-                        'compatibility_boost': user.get_compatibility_boost(match.user)
-                    })
+                for match_pref in matching_prefs:
+                    user = User.query.get(match_pref.user_id)
+                    if user and user.is_active:
+                        matches.append({
+                            'user_id': user.id,
+                            'user_name': user.email.split('@')[0],
+                            'date': pref.preferred_date.isoformat(),
+                            'time': pref.preferred_time
+                        })
             
-            return jsonify(matching_data)
+            return jsonify({'matches': matches}), 200
             
         except Exception as e:
             self.logger.error(f"Get matching users error: {str(e)}")
