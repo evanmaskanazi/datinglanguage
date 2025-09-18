@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.conveythis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
-    <script src="https://cdn.conveythis.com/javascript/conveythis.js?api_key=pub_b4f4ddeec8a41da8ad98b4b8c5f1e0ad"></script>
+    <!-- ConveyThis removed - using custom translation -->
     <title>Dashboard - Table for Two</title>
 
     <style>
@@ -2131,7 +2131,85 @@ function editProfile() {
 
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initDashboard);
+        // Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTranslation();
+    initDashboard();
+});
+
+function initializeTranslation() {
+    const switcher = document.createElement('div');
+    switcher.id = 'languageSwitcher';
+    switcher.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+    switcher.innerHTML = `
+        <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+            <option value="en">English</option>
+            <option value="he">עברית</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+        </select>
+    `;
+    document.body.appendChild(switcher);
+}
+
+function changeLanguage(lang) {
+    const translations = {
+        'he': {
+            'Welcome back': 'ברוכים השבים',
+            'Browse Tables': 'עיין בשולחנות',
+            'My Matches': 'ההתאמות שלי',
+            'Upcoming Dates': 'דייטים קרובים',
+            'Overview': 'סקירה',
+            'Total Dates': 'סך דייטים',
+            'Active Matches': 'התאמות פעילות',
+            'Success Rate': 'אחוז הצלחה'
+        },
+        'ar': {
+            'Welcome back': 'مرحباً بعودتك',
+            'Browse Tables': 'تصفح الطاولات',
+            'My Matches': 'مطابقاتي',
+            'Upcoming Dates': 'المواعيد القادمة',
+            'Overview': 'نظرة عامة',
+            'Total Dates': 'إجمالي المواعيد',
+            'Active Matches': 'المطابقات النشطة',
+            'Success Rate': 'معدل النجاح'
+        },
+        'ru': {
+            'Welcome back': 'Добро пожаловать',
+            'Browse Tables': 'Обзор столиков',
+            'My Matches': 'Мои совпадения',
+            'Upcoming Dates': 'Предстоящие свидания',
+            'Overview': 'Обзор',
+            'Total Dates': 'Всего свиданий',
+            'Active Matches': 'Активные совпадения',
+            'Success Rate': 'Процент успеха'
+        }
+    };
+
+    if (lang === 'en') {
+        document.body.dir = 'ltr';
+        location.reload();
+        return;
+    }
+
+    const langData = translations[lang];
+    if (langData) {
+        Object.keys(langData).forEach(english => {
+            document.querySelectorAll('*').forEach(element => {
+                if (element.children.length === 0 && element.textContent.trim() === english) {
+                    element.textContent = langData[english];
+                }
+            });
+        });
+
+        if (lang === 'he' || lang === 'ar') {
+            document.body.dir = 'rtl';
+            document.body.style.fontFamily = 'Arial, sans-serif';
+        } else {
+            document.body.dir = 'ltr';
+        }
+    }
+}
 
         // Handle page visibility for WebSocket
         document.addEventListener('visibilitychange', () => {
@@ -2485,10 +2563,33 @@ function showAlert(message, type = 'info') {
 }
 
 
-    /* ConveyThis RTL Support */
+    /* Custom RTL Support */
 [dir="rtl"] {
     direction: rtl;
     text-align: right;
+}
+
+[dir="rtl"] .header-content {
+    direction: rtl;
+}
+
+[dir="rtl"] .sidebar-nav {
+    direction: rtl;
+}
+
+[dir="rtl"] .restaurant-card {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="rtl"] .form-input {
+    text-align: right;
+}
+
+[dir="rtl"] .form-input[type="email"],
+[dir="rtl"] .form-input[type="password"] {
+    text-align: left;
+    direction: ltr;
 }
 
 [dir="rtl"] .logo {
@@ -2502,36 +2603,6 @@ function showAlert(message, type = 'info') {
 [dir="rtl"] .hero-container {
     direction: rtl;
 }
-
-[dir="rtl"] .form-input {
-    text-align: right;
-}
-
-[dir="rtl"] .form-input[type="email"],
-[dir="rtl"] .form-input[type="password"] {
-    text-align: left;
-    direction: ltr;
-}
-
-.conveythis-rtl body {
-    direction: rtl;
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-}
-
-.conveythis-rtl .header-content,
-.conveythis-rtl .nav-container {
-    direction: rtl;
-}
-
-.conveythis-rtl .sidebar-nav {
-    direction: rtl;
-}
-
-.conveythis-rtl .restaurant-card {
-    direction: rtl;
-    text-align: right;
-}
-
 
 
 
