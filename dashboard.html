@@ -3180,17 +3180,17 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
             }
         });
     </script>
-<script>
-console.error('=== INLINE I18N SYSTEM ===');
 
-// Complete inline i18n system
-(function() {
-    'use strict';
 
-    console.error('Initializing inline i18n system...');
+    <script>console.log('CHECKPOINT: About to load i18n');</script>
 
-    // Translation dictionaries (your existing translations from dashboard.html)
-    const translations = {
+   <script>
+console.log('=== DIRECT I18N INIT - NO WRAPPER ===');
+
+// Direct assignment to window.i18n without IIFE
+window.i18n = {
+    currentLang: localStorage.getItem('userLanguage') || 'en',
+    translations: {
         en: {
             nav: {
                 overview: 'Overview',
@@ -3213,79 +3213,7 @@ console.error('=== INLINE I18N SYSTEM ===');
                 upcoming_dates: 'Upcoming Dates',
                 compatibility: 'Avg Compatibility',
                 total_dates: 'Total Dates'
-            },
-            browse: {
-                title: 'Browse Available Tables',
-                subtitle: 'Find your perfect dinner date spot'
-            },
-            filters: {
-                date: 'Date',
-                time: 'Time',
-                cuisine: 'Cuisine',
-                apply: 'Apply Filters'
-            },
-            matches: {
-                title: 'My Matches',
-                subtitle: 'People interested in dining with you'
-            },
-            dates: {
-                title: 'Upcoming Dates',
-                subtitle: 'Your scheduled dinner dates'
-            },
-            history: {
-                title: 'Date History',
-                subtitle: 'Your past dinner dates'
-            },
-            profile: {
-                title: 'My Profile',
-                subtitle: 'Manage your personal information',
-                personal_info: 'Personal Information',
-                edit: 'Edit Profile',
-                name: 'Name',
-                location: 'Location',
-                bio: 'Bio',
-                preferences: 'Dating Preferences',
-                age_range: 'Age Range',
-                interests: 'Interests'
-            },
-            restaurants: {
-                title: 'Restaurant Partners',
-                subtitle: 'Follow your favorite restaurants'
-            },
-            settings: {
-                title: 'Settings',
-                subtitle: 'Manage your account preferences',
-                notifications: 'Notification Preferences',
-                email_notifications: 'Email Notifications',
-                sms_notifications: 'SMS Notifications',
-                privacy: 'Privacy Settings',
-                profile_visibility: 'Profile visible to matches',
-                cancel: 'Cancel',
-                save: 'Save Settings'
-            },
-            modal: {
-                request_match: 'Request a Match',
-                select_time: 'Select Time',
-                suggested_matches: 'Suggested Matches',
-                cancel: 'Cancel',
-                send_request: 'Send Request'
-            },
-            desired_times: {
-                title: 'Desired Meeting Times',
-                subtitle: "Set your preferred times and we'll find matches"
-            },
-            loading: 'Loading...',
-            recent_activity: 'Recent Activity',
-            no_activity: 'No recent activity',
-            start_browsing: 'Start browsing tables to find your perfect match!',
-            add_preference: 'Add Time Preference',
-            select_date: 'Select Date',
-            select_time: 'Select Time',
-            add_time: 'Add Time',
-            selected_date: 'Selected:',
-            your_preferences: 'Your Time Preferences',
-            no_preferences: 'No time preferences set',
-            add_preferences: 'Add your desired meeting times above'
+            }
         },
         he: {
             nav: {
@@ -3309,21 +3237,7 @@ console.error('=== INLINE I18N SYSTEM ===');
                 upcoming_dates: 'פגישות קרובות',
                 compatibility: 'התאמה ממוצעת',
                 total_dates: 'סך הפגישות'
-            },
-            browse: {
-                title: 'דפדוף שולחנות זמינים',
-                subtitle: 'מצא את מקום הפגישה המושלם שלך'
-            },
-            filters: {
-                date: 'תאריך',
-                time: 'שעה',
-                cuisine: 'מטבח',
-                apply: 'החל מסננים'
-            },
-            loading: 'טוען...',
-            recent_activity: 'פעילות אחרונה',
-            no_activity: 'אין פעילות אחרונה',
-            start_browsing: 'התחל לדפדף בשולחנות כדי למצוא את ההתאמה המושלמת שלך!'
+            }
         },
         ar: {
             nav: {
@@ -3341,8 +3255,7 @@ console.error('=== INLINE I18N SYSTEM ===');
             overview: {
                 title: 'مرحباً بعودتك!',
                 subtitle: 'إليك ما يحدث في حياتك العاطفية'
-            },
-            loading: 'جار التحميل...'
+            }
         },
         ru: {
             nav: {
@@ -3360,177 +3273,107 @@ console.error('=== INLINE I18N SYSTEM ===');
             overview: {
                 title: 'С возвращением!',
                 subtitle: 'Вот что происходит в вашей личной жизни'
-            },
-            loading: 'Загрузка...'
+            }
         }
-    };
+    },
 
-    // Create i18n object
-    window.i18n = {
-        currentLang: localStorage.getItem('userLanguage') || 'en',
-        translations: translations,
+    init: function() {
+        console.log('i18n.init() executing');
+        this.createLanguageSwitcher();
+        this.translatePage();
+    },
 
-        init: function() {
-            console.error('i18n initializing with language:', this.currentLang);
-            this.createLanguageSwitcher();
-            this.applyLanguage();
-            this.translatePage();
-        },
+    createLanguageSwitcher: function() {
+        console.log('createLanguageSwitcher executing');
 
-        createLanguageSwitcher: function() {
-            if (document.querySelector('.language-switcher')) {
-                console.error('Language switcher already exists');
-                return;
-            }
+        if (document.querySelector('.language-switcher')) {
+            console.log('Language switcher already exists');
+            return;
+        }
 
-            console.error('Creating language switcher...');
-            const switcher = document.createElement('div');
-            switcher.className = 'language-switcher';
-            switcher.style.cssText = `
-                position: fixed;
-                top: 2rem;
-                right: 2rem;
-                z-index: 1000;
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                padding: 0.5rem;
-                display: flex;
-                gap: 0.5rem;
-            `;
+        const switcher = document.createElement('div');
+        switcher.className = 'language-switcher';
+        switcher.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:red;border:3px solid yellow;padding:10px;border-radius:10px;';
 
-            const languages = [
-                { code: 'en', label: 'EN' },
-                { code: 'he', label: 'HE' },
-                { code: 'ar', label: 'AR' },
-                { code: 'ru', label: 'RU' }
-            ];
+        const buttons = ['EN', 'HE', 'AR', 'RU'];
+        buttons.forEach(lang => {
+            const btn = document.createElement('button');
+            btn.textContent = lang;
+            btn.style.cssText = 'padding:5px 10px;margin:2px;cursor:pointer;background:white;border:1px solid black;';
+            btn.onclick = () => this.changeLanguage(lang.toLowerCase());
+            switcher.appendChild(btn);
+        });
 
-            languages.forEach(lang => {
-                const btn = document.createElement('button');
-                btn.className = 'lang-btn';
-                btn.textContent = lang.label;
-                if (lang.code === this.currentLang) {
-                    btn.classList.add('active');
-                }
-                btn.style.cssText = `
-                    padding: 0.5rem 1rem;
-                    border: none;
-                    background: ${lang.code === this.currentLang ? '#FF6B6B' : 'transparent'};
-                    color: ${lang.code === this.currentLang ? 'white' : '#2D3436'};
-                    cursor: pointer;
-                    border-radius: 8px;
-                    font-weight: 500;
-                    transition: all 0.3s;
-                `;
+        document.body.appendChild(switcher);
+        console.log('Language switcher added to body');
+    },
 
-                btn.onclick = () => this.changeLanguage(lang.code);
-                switcher.appendChild(btn);
-            });
+    changeLanguage: function(lang) {
+        console.log('Changing to:', lang);
+        this.currentLang = lang;
+        localStorage.setItem('userLanguage', lang);
+        this.translatePage();
 
-            document.body.appendChild(switcher);
-            console.error('Language switcher created successfully');
-        },
-
-        changeLanguage: function(lang) {
-            console.error('Changing language to:', lang);
-            this.currentLang = lang;
-            localStorage.setItem('userLanguage', lang);
-
-            // Update button states
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent === lang.toUpperCase()) {
-                    btn.classList.add('active');
-                    btn.style.background = '#FF6B6B';
-                    btn.style.color = 'white';
-                } else {
-                    btn.style.background = 'transparent';
-                    btn.style.color = '#2D3436';
-                }
-            });
-
-            this.applyLanguage();
-            this.translatePage();
-
-            // Trigger custom event
-            window.dispatchEvent(new CustomEvent('languageChanged', {
-                detail: { language: lang }
-            }));
-        },
-
-        applyLanguage: function() {
-            if (this.currentLang === 'he' || this.currentLang === 'ar') {
-                document.body.classList.add('rtl');
-                document.body.style.direction = 'rtl';
+        // Update button styles
+        const buttons = document.querySelectorAll('.language-switcher button');
+        buttons.forEach(btn => {
+            if (btn.textContent.toLowerCase() === lang) {
+                btn.style.background = '#FF6B6B';
+                btn.style.color = 'white';
             } else {
-                document.body.classList.remove('rtl');
-                document.body.style.direction = 'ltr';
+                btn.style.background = 'white';
+                btn.style.color = 'black';
             }
-        },
+        });
+    },
 
-        translatePage: function() {
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const keys = element.getAttribute('data-translate').split('.');
-                let translation = this.translations[this.currentLang];
+    translatePage: function() {
+        console.log('translatePage executing for language:', this.currentLang);
 
-                for (const key of keys) {
-                    if (translation && translation[key]) {
-                        translation = translation[key];
-                    } else {
-                        // Fallback to English if translation missing
-                        translation = this.translations.en;
-                        for (const k of keys) {
-                            if (translation && translation[k]) {
-                                translation = translation[k];
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                if (typeof translation === 'string') {
-                    element.textContent = translation;
-                }
-            });
-        },
-
-        t: function(key) {
-            const keys = key.split('.');
+        document.querySelectorAll('[data-translate]').forEach(element => {
+            const keys = element.getAttribute('data-translate').split('.');
             let translation = this.translations[this.currentLang];
 
-            for (const k of keys) {
-                if (translation && translation[k]) {
-                    translation = translation[k];
+            for (const key of keys) {
+                if (translation && translation[key]) {
+                    translation = translation[key];
                 } else {
-                    return key; // Return key if translation not found
+                    // Fallback to English
+                    translation = this.translations.en;
+                    for (const k of keys) {
+                        if (translation && translation[k]) {
+                            translation = translation[k];
+                        }
+                    }
+                    break;
                 }
             }
 
-            return translation;
-        }
-    };
-
-    console.error('window.i18n created successfully');
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            console.error('DOMContentLoaded - initializing i18n');
-            window.i18n.init();
+            if (typeof translation === 'string') {
+                element.textContent = translation;
+            }
         });
-    } else {
-        console.error('DOM ready - initializing i18n immediately');
-        setTimeout(() => {
-            window.i18n.init();
-        }, 100);
+
+        // Apply RTL if needed
+        if (this.currentLang === 'he' || this.currentLang === 'ar') {
+            document.body.classList.add('rtl');
+            document.body.style.direction = 'rtl';
+        } else {
+            document.body.classList.remove('rtl');
+            document.body.style.direction = 'ltr';
+        }
     }
-})();
+};
+
+// Execute immediately
+console.log('window.i18n created:', !!window.i18n);
+window.i18n.init();
+console.log('i18n initialization complete');
 </script>
 
 
 
-
+<script>console.log('CHECKPOINT: i18n script completed');</script>
 
 
 
