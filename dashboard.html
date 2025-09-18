@@ -6,7 +6,7 @@
     <title>TableForTwo - Dashboard</title>
 
     <!-- Add i18n script for translation support -->
-    <script src="/static/i18n.js"></script>
+    <script src="{{ url_for('static', filename='i18n.js') }}"></script>
 <script>
 // Debug i18n loading
 console.log('i18n loaded:', typeof window.i18n !== 'undefined');
