@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Table for Two - Real connections over real dinners">
-    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.conveythis.com; style-src 'self' 'unsafe-inline';">
-    <script src="https://cdn.conveythis.com/javascript/conveythis.js?api_key=pub_b4f4ddeec8a41da8ad98b4b8c5f1e0ad"></script>
+    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Table for Two - Real Dating, Real Dinners</title>
     
     <style>
@@ -303,6 +302,32 @@
             color: #bdc3c7;
         }
 
+        /* Custom RTL Support */
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="rtl"] .nav-container {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .nav-links {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .hero-container {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .step {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .nav-links {
@@ -486,78 +511,160 @@
     </footer>
 
     <script>
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
+        // Initialize translation system after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTranslation();
+            initializePage();
         });
 
-        // Security: Prevent clickjacking
-        if (window.top !== window.self) {
-            window.top.location = window.self.location;
+        function initializeTranslation() {
+            const switcher = document.createElement('div');
+            switcher.id = 'languageSwitcher';
+            switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1001; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+            switcher.innerHTML = `
+                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+                    <option value="en">English</option>
+                    <option value="he">עברית</option>
+                    <option value="ar">العربية</option>
+                    <option value="ru">Русский</option>
+                </select>
+            `;
+            document.body.appendChild(switcher);
         }
 
-    
-    
-    
-    /* ConveyThis RTL Support */
-[dir="rtl"] {
-    direction: rtl;
-    text-align: right;
-}
+        function changeLanguage(lang) {
+            const translations = {
+                'he': {
+                    'Real Dates. Real People. Real Connections.': 'דייטים אמיתיים. אנשים אמיתיים. קשרים אמיתיים.',
+                    'How It Works': 'איך זה עובד',
+                    'Features': 'תכונות',
+                    'Restaurants': 'מסעדות',
+                    'Log In': 'התחברות',
+                    'Get Started': 'התחל',
+                    'Start Dating': 'התחל לצאת לדייטים',
+                    'Learn More': 'למד עוד',
+                    'How Table for Two Works': 'איך שולחן לשניים עובד',
+                    'Browse Available Tables': 'עיין בשולחנות זמינים',
+                    'Find Your Match': 'מצא את ההתאמה שלך',
+                    'Confirm & Commit': 'אשר והתחייב',
+                    'Meet & Connect': 'פגש והתחבר',
+                    'Why Choose Table for Two?': 'למה לבחור בשולחן לשניים?',
+                    'Quality Matches': 'התאמות איכותיות',
+                    'Curated Restaurants': 'מסעדות נבחרות',
+                    'Safe & Secure': 'בטוח ומאובטח',
+                    'No Endless Chatting': 'בלי צ\'אט אינסופי',
+                    'Feedback System': 'מערכת משוב',
+                    'No Pressure': 'בלי לחץ',
+                    'Ready to Find Your Table for Two?': 'מוכן למצוא את השולחן שלך לשניים?',
+                    'Get Started Free': 'התחל בחינם',
+                    'Company': 'חברה',
+                    'Support': 'תמיכה',
+                    'Legal': 'משפטי',
+                    'Connect': 'התחבר'
+                },
+                'ar': {
+                    'Real Dates. Real People. Real Connections.': 'مواعيد حقيقية. أشخاص حقيقيون. روابط حقيقية.',
+                    'How It Works': 'كيف يعمل',
+                    'Features': 'الميزات',
+                    'Restaurants': 'المطاعم',
+                    'Log In': 'تسجيل الدخول',
+                    'Get Started': 'ابدأ',
+                    'Start Dating': 'ابدأ المواعدة',
+                    'Learn More': 'اعرف المزيد',
+                    'How Table for Two Works': 'كيف يعمل طاولة لاثنين',
+                    'Browse Available Tables': 'تصفح الطاولات المتاحة',
+                    'Find Your Match': 'اعثر على مطابقتك',
+                    'Confirm & Commit': 'أكد والتزم',
+                    'Meet & Connect': 'التقي وتواصل',
+                    'Why Choose Table for Two?': 'لماذا تختار طاولة لاثنين؟',
+                    'Quality Matches': 'مطابقات عالية الجودة',
+                    'Curated Restaurants': 'مطاعم منتقاة',
+                    'Safe & Secure': 'آمن ومحمي',
+                    'No Endless Chatting': 'لا دردشة لا نهائية',
+                    'Feedback System': 'نظام التغذية الراجعة',
+                    'No Pressure': 'بدون ضغط',
+                    'Ready to Find Your Table for Two?': 'مستعد للعثور على طاولتك لاثنين؟',
+                    'Get Started Free': 'ابدأ مجاناً',
+                    'Company': 'الشركة',
+                    'Support': 'الدعم',
+                    'Legal': 'قانوني',
+                    'Connect': 'تواصل'
+                },
+                'ru': {
+                    'Real Dates. Real People. Real Connections.': 'Настоящие свидания. Настоящие люди. Настоящие связи.',
+                    'How It Works': 'Как это работает',
+                    'Features': 'Функции',
+                    'Restaurants': 'Рестораны',
+                    'Log In': 'Войти',
+                    'Get Started': 'Начать',
+                    'Start Dating': 'Начать знакомства',
+                    'Learn More': 'Узнать больше',
+                    'How Table for Two Works': 'Как работает Столик на двоих',
+                    'Browse Available Tables': 'Просмотр доступных столиков',
+                    'Find Your Match': 'Найди свою пару',
+                    'Confirm & Commit': 'Подтверди и обязуйся',
+                    'Meet & Connect': 'Встречайтесь и знакомьтесь',
+                    'Why Choose Table for Two?': 'Почему выбрать Столик на двоих?',
+                    'Quality Matches': 'Качественные пары',
+                    'Curated Restaurants': 'Отобранные рестораны',
+                    'Safe & Secure': 'Безопасно и надежно',
+                    'No Endless Chatting': 'Никакой бесконечной переписки',
+                    'Feedback System': 'Система обратной связи',
+                    'No Pressure': 'Без давления',
+                    'Ready to Find Your Table for Two?': 'Готовы найти свой Столик на двоих?',
+                    'Get Started Free': 'Начать бесплатно',
+                    'Company': 'Компания',
+                    'Support': 'Поддержка',
+                    'Legal': 'Правовая информация',
+                    'Connect': 'Связаться'
+                }
+            };
 
-[dir="rtl"] .logo {
-    text-align: right;
-}
+            if (lang === 'en') {
+                document.body.dir = 'ltr';
+                location.reload();
+                return;
+            }
 
-[dir="rtl"] .nav-links {
-    flex-direction: row-reverse;
-}
+            const langData = translations[lang];
+            if (langData) {
+                Object.keys(langData).forEach(english => {
+                    document.querySelectorAll('*').forEach(element => {
+                        if (element.children.length === 0 && element.textContent.trim() === english) {
+                            element.textContent = langData[english];
+                        }
+                    });
+                });
+                
+                if (lang === 'he' || lang === 'ar') {
+                    document.body.dir = 'rtl';
+                    document.body.style.fontFamily = 'Arial, sans-serif';
+                } else {
+                    document.body.dir = 'ltr';
+                }
+            }
+        }
 
-[dir="rtl"] .hero-container {
-    direction: rtl;
-}
+        function initializePage() {
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
 
-[dir="rtl"] .form-input {
-    text-align: right;
-}
-
-[dir="rtl"] .form-input[type="email"],
-[dir="rtl"] .form-input[type="password"] {
-    text-align: left;
-    direction: ltr;
-}
-
-.conveythis-rtl body {
-    direction: rtl;
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-}
-
-.conveythis-rtl .header-content,
-.conveythis-rtl .nav-container {
-    direction: rtl;
-}
-
-.conveythis-rtl .sidebar-nav {
-    direction: rtl;
-}
-
-.conveythis-rtl .restaurant-card {
-    direction: rtl;
-    text-align: right;
-}
-    
-    
-    
-    
+            // Security: Prevent clickjacking
+            if (window.top !== window.self) {
+                window.top.location = window.self.location;
+            }
+        }
     </script>
 </body>
 </html>
