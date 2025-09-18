@@ -3179,5 +3179,20 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
         });
     </script>
 <script src="/i18n.js"></script>
+
+<script>
+    console.error('Dashboard end script running');
+    console.error('i18n exists?', typeof window.i18n);
+    console.error('Document ready state:', document.readyState);
+
+    // Force initialization after a delay
+    setTimeout(function() {
+        console.error('Delayed check - i18n exists?', typeof window.i18n);
+        if (window.i18n && !document.querySelector('.language-switcher')) {
+            console.error('Force initializing i18n');
+            window.i18n.init();
+        }
+    }, 1000);
+</script>
 </body>
 </html>
