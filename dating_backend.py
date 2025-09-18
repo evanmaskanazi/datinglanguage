@@ -104,9 +104,50 @@ def require_auth(roles=None):
 logger = setup_logger('table_for_two')
 
 # === CONSTANTS ===
+# === CONSTANTS ===
 JWT_SECRET = os.environ.get('SECRET_KEY', 'your-secret-key')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
+
+# Translation service setup
+GOOGLE_TRANSLATE_API_KEY = os.environ.get('GOOGLE_TRANSLATE_API_KEY')
+
+
+def translate_text(text, target_language):
+    """Translate text using Google Translate API"""
+    if not GOOGLE_TRANSLATE_API_KEY or target_language == 'en':
+        return text
+
+    try:
+        import requests
+        url = 'https://translation.googleapis.com/language/translate/v2'
+        params = {
+            'key': GOOGLE_TRANSLATE_API_KEY,
+            'q': text,
+            'target': target_language,
+            'source': 'en'
+        }
+
+        response = requests.post(url, params=params, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data['data']['translations'][0]['translatedText']
+    except Exception as e:
+        logger.warning(f"Translation failed for {text}: {e}")
+
+    return text  # Fallback to original
+
+
+
+
+
+
+
+
+
+
+
+
 
 ALLOWED_ORIGINS = [
     'https://tablefortwo.com',
@@ -341,6 +382,41 @@ def get_csrf_token():
     """Get CSRF token for API requests"""
     return jsonify({'csrf_token': generate_csrf()})
 
+
+# Translation endpoint
+@app.route('/api/translate', methods=['POST'])
+@require_auth()
+@limiter.limit("100 per hour")
+def translate_text_endpoint():
+    """Translate text for restaurant names"""
+    try:
+        data = request.json
+        text = data.get('text')
+        target = data.get('target', 'en')
+
+        if not text:
+            return jsonify({'error': 'Text required'}), 400
+
+        # Map frontend language codes to Google Translate codes
+        lang_map = {
+            'he': 'iw',  # Hebrew
+            'ar': 'ar',  # Arabic
+            'ru': 'ru',  # Russian
+            'en': 'en'  # English
+        }
+
+        google_lang = lang_map.get(target, target)
+        translated = translate_text(text, google_lang)
+
+        return jsonify({'translated': translated})
+
+    except Exception as e:
+        logger.error(f"Translation endpoint error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Translation failed'}), 500
+
+
+
+
 # Authentication endpoints
 @app.route('/api/auth/register', methods=['POST'])
 @limiter.limit("10 per hour")
@@ -458,6 +534,7 @@ def get_restaurants():
         price_range = request.args.get('price_range')
         recommended = request.args.get('recommended', 'false').lower() == 'true'
         limit = int(request.args.get('limit', 50))
+        lang = request.args.get('lang', 'en')  # Get language preference here
 
         restaurants = []
 
@@ -478,10 +555,18 @@ def get_restaurants():
                 restaurant_id=r.id, is_available=True
             ).count()
 
+            # For database restaurants, translate name and cuisine if needed
+            restaurant_name = r.name
+            cuisine_type = r.cuisine_type
+
+            if lang != 'en':
+                restaurant_name = translate_text(r.name, lang)
+                cuisine_type = translate_text(r.cuisine_type, lang)
+
             restaurants.append({
                 'id': r.id,
-                'name': r.name,
-                'cuisine': r.cuisine_type,
+                'name': restaurant_name,
+                'cuisine': cuisine_type,
                 'address': r.address,
                 'price_range': '$' * (r.price_range or 1),
                 'rating': r.rating or 4.0,
@@ -621,10 +706,18 @@ def get_restaurants():
                     except Exception as cache_error:
                         logger.warning(f"Failed to cache restaurant {restaurant_id}: {cache_error}")
 
+                    # For API restaurants, translate name and cuisine if needed
+                    restaurant_name = api_restaurant.get('name', 'Unknown')
+                    cuisine_type = api_restaurant.get('cuisine_type', 'International')
+
+                    if lang != 'en':
+                        restaurant_name = translate_text(restaurant_name, lang)
+                        cuisine_type = translate_text(cuisine_type, lang)
+
                     restaurants.append({
                         'id': restaurant_id,
-                        'name': api_restaurant.get('name', 'Unknown'),
-                        'cuisine': api_restaurant.get('cuisine_type', 'International'),
+                        'name': restaurant_name,
+                        'cuisine': cuisine_type,
                         'address': api_restaurant.get('address', ''),
                         'price_range': '$' * (api_restaurant.get('price_range', 2)),
                         'rating': api_restaurant.get('rating', 4.0),
