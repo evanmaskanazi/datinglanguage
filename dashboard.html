@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.conveythis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <script src="https://cdn.conveythis.com/javascript/conveythis.js?api_key=pub_b4f4ddeec8a41da8ad98b4b8c5f1e0ad"></script>
     <title>Dashboard - Table for Two</title>
 
     <style>
@@ -2482,6 +2483,61 @@ function showAlert(message, type = 'info') {
         alertDiv.style.display = 'none';
     }, 5000);
 }
+
+
+    /* ConveyThis RTL Support */
+[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="rtl"] .logo {
+    text-align: right;
+}
+
+[dir="rtl"] .nav-links {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .hero-container {
+    direction: rtl;
+}
+
+[dir="rtl"] .form-input {
+    text-align: right;
+}
+
+[dir="rtl"] .form-input[type="email"],
+[dir="rtl"] .form-input[type="password"] {
+    text-align: left;
+    direction: ltr;
+}
+
+.conveythis-rtl body {
+    direction: rtl;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+.conveythis-rtl .header-content,
+.conveythis-rtl .nav-container {
+    direction: rtl;
+}
+
+.conveythis-rtl .sidebar-nav {
+    direction: rtl;
+}
+
+.conveythis-rtl .restaurant-card {
+    direction: rtl;
+    text-align: right;
+}
+
+
+
+
+
+
+
 
     </script>
 </body>
