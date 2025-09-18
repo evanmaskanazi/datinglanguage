@@ -376,6 +376,20 @@ def health_check():
         'timestamp': datetime.utcnow().isoformat()
     })
 
+
+# ADD HERE:
+@app.route('/debug/paths')
+def debug_paths():
+    import os
+    return jsonify({
+        'app_root': app.root_path,
+        'static_folder': str(app.static_folder),
+        'static_url_path': app.static_url_path,
+        'i18n_exists': os.path.exists(os.path.join(app.static_folder, 'i18n.js')),
+        'files_in_static': os.listdir(app.static_folder) if os.path.exists(app.static_folder) else []
+    })
+
+
 # CSRF token endpoint
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
@@ -1701,6 +1715,19 @@ def favicon():
     img_io.seek(0)
 
     return send_file(img_io, mimetype='image/x-icon')
+
+
+
+@app.route('/i18n.js')
+def serve_i18n_root():
+    """Serve i18n.js from root"""
+    return send_file('static/i18n.js', mimetype='application/javascript')
+
+@app.route('/static/i18n.js')
+def serve_i18n_static():
+    """Serve i18n.js from static path"""
+    return send_file('static/i18n.js', mimetype='application/javascript')
+
 
 
 # Following endpoints
