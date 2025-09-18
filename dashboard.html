@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<style>
-.language-switcher {
-    position: fixed !important;
-    top: 2rem !important;
-    right: 2rem !important;
-    z-index: 9999 !important;
-    background: red !important; /* Temporary - make it very visible */
-    padding: 1rem !important;
-    border: 3px solid blue !important;
-}
-</style>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2256,7 +2245,8 @@ window.addEventListener('languageChanged', function() {
                 const queryParams = new URLSearchParams(filters);
 
                 // Include language parameter for translation
-const lang = window.i18n ? window.i18n.currentLang : 'en';
+// Include language parameter for translation
+const lang = (window.i18n && window.i18n.currentLang) ? window.i18n.currentLang : 'en';
 const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=${lang}`);
 
                 if (!response.ok) {
@@ -2419,7 +2409,7 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
 
             try {
                 // Load restaurant details
-               const currentLang = window.i18n ? window.i18n.currentLang : 'en';
+               const currentLang = (window.i18n && window.i18n.currentLang) ? window.i18n.currentLang : 'en';
 const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLang}`, {
                     credentials: 'include'
                 });
@@ -3191,76 +3181,351 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
         });
     </script>
 <script>
-console.error('=== SCRIPT LOADING DEBUG ===');
+console.error('=== INLINE I18N SYSTEM ===');
 
-// Check for CSP violations first
-document.addEventListener('securitypolicyviolation', (e) => {
-    console.error('CSP Violation:', e);
-});
+// Complete inline i18n system
+(function() {
+    'use strict';
 
-// Method 1: Dynamic script loading with full error handling
-const script = document.createElement('script');
-script.src = '/i18n.js';
+    console.error('Initializing inline i18n system...');
 
-script.onload = function() {
-    console.error('✓ i18n.js loaded successfully');
-    console.error('window.i18n exists?', !!window.i18n);
-    if (window.i18n) {
-        console.error('Calling i18n.init()');
-        window.i18n.init();
-    }
-};
-
-script.onerror = function(e) {
-    console.error('✗ Failed to load i18n.js');
-    console.error('Error details:', e);
-    console.error('Script src was:', this.src);
-
-    // Try alternative path
-    console.error('Trying /static/i18n.js instead...');
-    const script2 = document.createElement('script');
-    script2.src = '/static/i18n.js';
-    script2.onload = () => console.error('✓ Loaded from /static/');
-    script2.onerror = () => console.error('✗ Also failed from /static/');
-    document.head.appendChild(script2);
-};
-
-document.head.appendChild(script);
-</script>
-
-<script>
-    console.error('Dashboard end script running');
-    console.error('i18n exists?', typeof window.i18n);
-    console.error('Document ready state:', document.readyState);
-
-    // Force initialization after a delay
-    setTimeout(function() {
-        console.error('Delayed check - i18n exists?', typeof window.i18n);
-        if (window.i18n && !document.querySelector('.language-switcher')) {
-            console.error('Force initializing i18n');
-            window.i18n.init();
+    // Translation dictionaries (your existing translations from dashboard.html)
+    const translations = {
+        en: {
+            nav: {
+                overview: 'Overview',
+                browse: 'Browse Tables',
+                matches: 'My Matches',
+                dates: 'Upcoming Dates',
+                desired_times: 'Desired Times',
+                history: 'Date History',
+                profile: 'Profile',
+                restaurants: 'Restaurants',
+                settings: 'Settings',
+                logout: 'Logout'
+            },
+            overview: {
+                title: 'Welcome back!',
+                subtitle: "Here's what's happening with your dating life"
+            },
+            stats: {
+                active_matches: 'Active Matches',
+                upcoming_dates: 'Upcoming Dates',
+                compatibility: 'Avg Compatibility',
+                total_dates: 'Total Dates'
+            },
+            browse: {
+                title: 'Browse Available Tables',
+                subtitle: 'Find your perfect dinner date spot'
+            },
+            filters: {
+                date: 'Date',
+                time: 'Time',
+                cuisine: 'Cuisine',
+                apply: 'Apply Filters'
+            },
+            matches: {
+                title: 'My Matches',
+                subtitle: 'People interested in dining with you'
+            },
+            dates: {
+                title: 'Upcoming Dates',
+                subtitle: 'Your scheduled dinner dates'
+            },
+            history: {
+                title: 'Date History',
+                subtitle: 'Your past dinner dates'
+            },
+            profile: {
+                title: 'My Profile',
+                subtitle: 'Manage your personal information',
+                personal_info: 'Personal Information',
+                edit: 'Edit Profile',
+                name: 'Name',
+                location: 'Location',
+                bio: 'Bio',
+                preferences: 'Dating Preferences',
+                age_range: 'Age Range',
+                interests: 'Interests'
+            },
+            restaurants: {
+                title: 'Restaurant Partners',
+                subtitle: 'Follow your favorite restaurants'
+            },
+            settings: {
+                title: 'Settings',
+                subtitle: 'Manage your account preferences',
+                notifications: 'Notification Preferences',
+                email_notifications: 'Email Notifications',
+                sms_notifications: 'SMS Notifications',
+                privacy: 'Privacy Settings',
+                profile_visibility: 'Profile visible to matches',
+                cancel: 'Cancel',
+                save: 'Save Settings'
+            },
+            modal: {
+                request_match: 'Request a Match',
+                select_time: 'Select Time',
+                suggested_matches: 'Suggested Matches',
+                cancel: 'Cancel',
+                send_request: 'Send Request'
+            },
+            desired_times: {
+                title: 'Desired Meeting Times',
+                subtitle: "Set your preferred times and we'll find matches"
+            },
+            loading: 'Loading...',
+            recent_activity: 'Recent Activity',
+            no_activity: 'No recent activity',
+            start_browsing: 'Start browsing tables to find your perfect match!',
+            add_preference: 'Add Time Preference',
+            select_date: 'Select Date',
+            select_time: 'Select Time',
+            add_time: 'Add Time',
+            selected_date: 'Selected:',
+            your_preferences: 'Your Time Preferences',
+            no_preferences: 'No time preferences set',
+            add_preferences: 'Add your desired meeting times above'
+        },
+        he: {
+            nav: {
+                overview: 'סקירה כללית',
+                browse: 'דפדוף שולחנות',
+                matches: 'ההתאמות שלי',
+                dates: 'פגישות קרובות',
+                desired_times: 'זמנים רצויים',
+                history: 'היסטוריית פגישות',
+                profile: 'פרופיל',
+                restaurants: 'מסעדות',
+                settings: 'הגדרות',
+                logout: 'יציאה'
+            },
+            overview: {
+                title: 'ברוך שובך!',
+                subtitle: 'הנה מה שקורה בחיי הדייטינג שלך'
+            },
+            stats: {
+                active_matches: 'התאמות פעילות',
+                upcoming_dates: 'פגישות קרובות',
+                compatibility: 'התאמה ממוצעת',
+                total_dates: 'סך הפגישות'
+            },
+            browse: {
+                title: 'דפדוף שולחנות זמינים',
+                subtitle: 'מצא את מקום הפגישה המושלם שלך'
+            },
+            filters: {
+                date: 'תאריך',
+                time: 'שעה',
+                cuisine: 'מטבח',
+                apply: 'החל מסננים'
+            },
+            loading: 'טוען...',
+            recent_activity: 'פעילות אחרונה',
+            no_activity: 'אין פעילות אחרונה',
+            start_browsing: 'התחל לדפדף בשולחנות כדי למצוא את ההתאמה המושלמת שלך!'
+        },
+        ar: {
+            nav: {
+                overview: 'نظرة عامة',
+                browse: 'تصفح الطاولات',
+                matches: 'مبارياتي',
+                dates: 'المواعيد القادمة',
+                desired_times: 'الأوقات المرغوبة',
+                history: 'سجل المواعيد',
+                profile: 'الملف الشخصي',
+                restaurants: 'المطاعم',
+                settings: 'الإعدادات',
+                logout: 'تسجيل خروج'
+            },
+            overview: {
+                title: 'مرحباً بعودتك!',
+                subtitle: 'إليك ما يحدث في حياتك العاطفية'
+            },
+            loading: 'جار التحميل...'
+        },
+        ru: {
+            nav: {
+                overview: 'Обзор',
+                browse: 'Просмотр столиков',
+                matches: 'Мои совпадения',
+                dates: 'Предстоящие свидания',
+                desired_times: 'Желаемое время',
+                history: 'История свиданий',
+                profile: 'Профиль',
+                restaurants: 'Рестораны',
+                settings: 'Настройки',
+                logout: 'Выход'
+            },
+            overview: {
+                title: 'С возвращением!',
+                subtitle: 'Вот что происходит в вашей личной жизни'
+            },
+            loading: 'Загрузка...'
         }
-    }, 1000);
-</script>
+    };
 
+    // Create i18n object
+    window.i18n = {
+        currentLang: localStorage.getItem('userLanguage') || 'en',
+        translations: translations,
 
+        init: function() {
+            console.error('i18n initializing with language:', this.currentLang);
+            this.createLanguageSwitcher();
+            this.applyLanguage();
+            this.translatePage();
+        },
 
-<script>
-// Force i18n initialization after everything loads
-window.addEventListener('load', function() {
-    console.error('Window loaded - checking i18n...');
-    if (window.i18n) {
-        console.error('i18n found, checking for language switcher...');
-        if (!document.querySelector('.language-switcher')) {
-            console.error('Language switcher missing - force initializing...');
-            window.i18n.init();
-        } else {
-            console.error('Language switcher already exists');
+        createLanguageSwitcher: function() {
+            if (document.querySelector('.language-switcher')) {
+                console.error('Language switcher already exists');
+                return;
+            }
+
+            console.error('Creating language switcher...');
+            const switcher = document.createElement('div');
+            switcher.className = 'language-switcher';
+            switcher.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                z-index: 1000;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                padding: 0.5rem;
+                display: flex;
+                gap: 0.5rem;
+            `;
+
+            const languages = [
+                { code: 'en', label: 'EN' },
+                { code: 'he', label: 'HE' },
+                { code: 'ar', label: 'AR' },
+                { code: 'ru', label: 'RU' }
+            ];
+
+            languages.forEach(lang => {
+                const btn = document.createElement('button');
+                btn.className = 'lang-btn';
+                btn.textContent = lang.label;
+                if (lang.code === this.currentLang) {
+                    btn.classList.add('active');
+                }
+                btn.style.cssText = `
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    background: ${lang.code === this.currentLang ? '#FF6B6B' : 'transparent'};
+                    color: ${lang.code === this.currentLang ? 'white' : '#2D3436'};
+                    cursor: pointer;
+                    border-radius: 8px;
+                    font-weight: 500;
+                    transition: all 0.3s;
+                `;
+
+                btn.onclick = () => this.changeLanguage(lang.code);
+                switcher.appendChild(btn);
+            });
+
+            document.body.appendChild(switcher);
+            console.error('Language switcher created successfully');
+        },
+
+        changeLanguage: function(lang) {
+            console.error('Changing language to:', lang);
+            this.currentLang = lang;
+            localStorage.setItem('userLanguage', lang);
+
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === lang.toUpperCase()) {
+                    btn.classList.add('active');
+                    btn.style.background = '#FF6B6B';
+                    btn.style.color = 'white';
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.color = '#2D3436';
+                }
+            });
+
+            this.applyLanguage();
+            this.translatePage();
+
+            // Trigger custom event
+            window.dispatchEvent(new CustomEvent('languageChanged', {
+                detail: { language: lang }
+            }));
+        },
+
+        applyLanguage: function() {
+            if (this.currentLang === 'he' || this.currentLang === 'ar') {
+                document.body.classList.add('rtl');
+                document.body.style.direction = 'rtl';
+            } else {
+                document.body.classList.remove('rtl');
+                document.body.style.direction = 'ltr';
+            }
+        },
+
+        translatePage: function() {
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const keys = element.getAttribute('data-translate').split('.');
+                let translation = this.translations[this.currentLang];
+
+                for (const key of keys) {
+                    if (translation && translation[key]) {
+                        translation = translation[key];
+                    } else {
+                        // Fallback to English if translation missing
+                        translation = this.translations.en;
+                        for (const k of keys) {
+                            if (translation && translation[k]) {
+                                translation = translation[k];
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (typeof translation === 'string') {
+                    element.textContent = translation;
+                }
+            });
+        },
+
+        t: function(key) {
+            const keys = key.split('.');
+            let translation = this.translations[this.currentLang];
+
+            for (const k of keys) {
+                if (translation && translation[k]) {
+                    translation = translation[k];
+                } else {
+                    return key; // Return key if translation not found
+                }
+            }
+
+            return translation;
         }
+    };
+
+    console.error('window.i18n created successfully');
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            console.error('DOMContentLoaded - initializing i18n');
+            window.i18n.init();
+        });
     } else {
-        console.error('window.i18n not found!');
+        console.error('DOM ready - initializing i18n immediately');
+        setTimeout(() => {
+            window.i18n.init();
+        }, 100);
     }
-});
+})();
 </script>
 
 
