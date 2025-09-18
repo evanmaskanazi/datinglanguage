@@ -580,6 +580,17 @@ def logout():
         logger.error(f"Logout error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Logout failed'}), 500
 
+
+@app.route('/api/auth/check', methods=['GET'])
+@login_required
+def check_auth():
+    """Check if user is authenticated"""
+    return jsonify({
+        'authenticated': True,
+        'user_id': current_user.id,
+        'email': current_user.email
+    }), 200
+
 # Profile endpoints
 @app.route('/api/profile', methods=['GET'])
 @require_auth()
