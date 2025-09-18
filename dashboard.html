@@ -1236,12 +1236,36 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 
-    <script>
-        // Initialize translation system and dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTranslation();
+   <script>
+    // Initialize translation system and dashboard
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Always initialize translation first
+        initializeTranslation();
+
+        // Check if user is authenticated before initializing dashboard
+        try {
+            const authCheck = await fetch('/api/profile', {
+                credentials: 'include',
+                method: 'HEAD' // Just check status, don't need body
+            });
+
+            if (authCheck.status === 401) {
+                // Not authenticated, redirect after a delay to show translation UI
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 500);
+                return; // Don't initialize dashboard
+            }
+
+            // User is authenticated, initialize dashboard
             initDashboard();
-        });
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 500);
+        }
+    });
 
         function initializeTranslation() {
             const switcher = document.createElement('div');
@@ -1534,6 +1558,7 @@
 
         // Load user profile
       // Load user profile
+// Load user profile
 async function loadUserProfile() {
     try {
         const response = await authenticatedFetch('/api/profile');
@@ -1564,7 +1589,8 @@ async function loadUserProfile() {
 
     } catch (error) {
         console.error('Error loading profile:', error);
-        window.location.href = '/login.html';
+        // Don't redirect here anymore - it's handled by the auth check in DOMContentLoaded
+        // window.location.href = '/login.html';  // <-- This line is removed
     }
 }
 
