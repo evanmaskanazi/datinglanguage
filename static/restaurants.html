@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.conveythis.com; style-src 'self' 'unsafe-inline';">
-    <script src="https://cdn.conveythis.com/javascript/conveythis.js?api_key=pub_b4f4ddeec8a41da8ad98b4b8c5f1e0ad"></script>
+    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Restaurant Partners - Table for Two</title>
     <style>
         * {
@@ -212,6 +211,32 @@
             color: var(--success-color);
             font-weight: bold;
         }
+
+        /* Custom RTL Support */
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input {
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input[type="email"],
+        [dir="rtl"] .form-input[type="password"] {
+            text-align: left;
+            direction: ltr;
+        }
+
+        [dir="rtl"] .features li {
+            padding-right: 1.5rem;
+            padding-left: 0;
+        }
+
+        [dir="rtl"] .features li::before {
+            right: 0;
+            left: auto;
+        }
     </style>
 </head>
 <body>
@@ -293,218 +318,268 @@
     </div>
     
     <script>
-        // Global variable to cache CSRF token
-        let csrfToken = null;
-
-        // Function to get CSRF token
-        async function getCSRFToken() {
-            if (csrfToken) return csrfToken;
-            
-            try {
-                const response = await fetch('/api/csrf-token');
-                const data = await response.json();
-                csrfToken = data.csrf_token;
-                return csrfToken;
-            } catch (error) {
-                console.error('Failed to get CSRF token:', error);
-                return null;
-            }
-        }
-
-        function showLogin() {
-            // Remove active class from all tabs and forms
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            
-            // Add active class to login tab and form
-            event.target.classList.add('active');
-            document.getElementById('login-form').classList.add('active');
-        }
-        
-        function showRegister() {
-            // Remove active class from all tabs and forms
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            
-            // Add active class to register tab and form
-            event.target.classList.add('active');
-            document.getElementById('register-form').classList.add('active');
-        }
-
-        function showAlert(message, type = 'error') {
-            const alertDiv = document.getElementById('alertMessage');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert ${type}`;
-            alertDiv.style.display = 'block';
-
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        // Handle restaurant login
-        document.getElementById('restaurantLoginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const loginData = {
-                email: formData.get('email'),
-                password: formData.get('password')
-            };
-
-            try {
-                // Get CSRF token
-                const token = await getCSRFToken();
-                const headers = {
-                    'Content-Type': 'application/json',
-                };
-                
-                // Add CSRF token if available
-                if (token) {
-                    headers['X-CSRFToken'] = token;
-                }
-
-                const response = await fetch('/api/restaurant-auth/login', {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(loginData)
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showAlert('Login successful!', 'success');
-                    // Redirect to restaurant dashboard (when implemented)
-                    setTimeout(() => {
-                        window.location.href = '/restaurant-dashboard.html';
-                    }, 1000);
-                } else {
-                    showAlert(data.error || 'Login failed');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showAlert('Network error. Please try again.');
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTranslation();
+            initializeRestaurantAuth();
         });
 
-        // Handle restaurant registration
-        document.getElementById('restaurantRegisterForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const registrationData = {
-                name: formData.get('name'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                address: formData.get('address'),
-                cuisine_type: formData.get('cuisine_type')
+        function initializeTranslation() {
+            const switcher = document.createElement('div');
+            switcher.id = 'languageSwitcher';
+            switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+            switcher.innerHTML = `
+                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+                    <option value="en">English</option>
+                    <option value="he">עברית</option>
+                    <option value="ar">العربية</option>
+                    <option value="ru">Русский</option>
+                </select>
+            `;
+            document.body.appendChild(switcher);
+        }
+
+        function changeLanguage(lang) {
+            const translations = {
+                'he': {
+                    'Restaurant Portal': 'פורטל מסעדות',
+                    'Restaurant Partner Portal': 'פורטל שותפי המסעדה',
+                    'Login': 'התחברות',
+                    'Register': 'הרשמה',
+                    'Restaurant Login': 'התחברות מסעדה',
+                    'Restaurant Email': 'אימייל מסעדה',
+                    'Password': 'סיסמה',
+                    'Register Your Restaurant': 'רשום את המסעדה שלך',
+                    'Restaurant Name': 'שם המסעדה',
+                    'Email': 'אימייל',
+                    'Address': 'כתובת',
+                    'Select Cuisine Type': 'בחר סוג מטבח',
+                    'Partner Benefits:': 'יתרונות שותף:',
+                    'Connect with verified diners': 'התחבר עם סועדים מאומתים',
+                    'Manage reservations easily': 'נהל הזמנות בקלות',
+                    'Increase customer engagement': 'הגדל מעורבות לקוחות',
+                    'Access analytics dashboard': 'גישה ללוח בקרה אנליטי',
+                    'Promote special events': 'קדם אירועים מיוחדים',
+                    '← Back to main site': '← חזרה לאתר הראשי'
+                },
+                'ar': {
+                    'Restaurant Portal': 'بوابة المطاعم',
+                    'Restaurant Partner Portal': 'بوابة شركاء المطاعم',
+                    'Login': 'تسجيل الدخول',
+                    'Register': 'تسجيل',
+                    'Restaurant Login': 'تسجيل دخول المطعم',
+                    'Restaurant Email': 'بريد المطعم الإلكتروني',
+                    'Password': 'كلمة المرور',
+                    'Register Your Restaurant': 'سجل مطعمك',
+                    'Restaurant Name': 'اسم المطعم',
+                    'Email': 'البريد الإلكتروني',
+                    'Address': 'العنوان',
+                    'Select Cuisine Type': 'اختر نوع المطبخ',
+                    'Partner Benefits:': 'فوائد الشراكة:',
+                    'Connect with verified diners': 'تواصل مع رواد مؤكدين',
+                    'Manage reservations easily': 'إدارة الحجوزات بسهولة',
+                    'Increase customer engagement': 'زيادة تفاعل العملاء',
+                    'Access analytics dashboard': 'الوصول إلى لوحة التحليلات',
+                    'Promote special events': 'الترويج للأحداث الخاصة',
+                    '← Back to main site': '← العودة إلى الموقع الرئيسي'
+                },
+                'ru': {
+                    'Restaurant Portal': 'Портал ресторанов',
+                    'Restaurant Partner Portal': 'Портал партнеров ресторанов',
+                    'Login': 'Войти',
+                    'Register': 'Регистрация',
+                    'Restaurant Login': 'Вход для ресторана',
+                    'Restaurant Email': 'Email ресторана',
+                    'Password': 'Пароль',
+                    'Register Your Restaurant': 'Зарегистрируйте свой ресторан',
+                    'Restaurant Name': 'Название ресторана',
+                    'Email': 'Email',
+                    'Address': 'Адрес',
+                    'Select Cuisine Type': 'Выберите тип кухни',
+                    'Partner Benefits:': 'Преимущества партнерства:',
+                    'Connect with verified diners': 'Связь с проверенными посетителями',
+                    'Manage reservations easily': 'Легкое управление бронированием',
+                    'Increase customer engagement': 'Увеличение вовлеченности клиентов',
+                    'Access analytics dashboard': 'Доступ к аналитической панели',
+                    'Promote special events': 'Продвижение специальных мероприятий',
+                    '← Back to main site': '← Назад на главный сайт'
+                }
             };
 
-            // Validate all fields are present
-            const requiredFields = ['name', 'email', 'password', 'address', 'cuisine_type'];
-            const missingFields = requiredFields.filter(field => !registrationData[field]);
-            
-            if (missingFields.length > 0) {
-                showAlert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+            if (lang === 'en') {
+                document.body.dir = 'ltr';
+                location.reload();
                 return;
             }
 
-            try {
-                // Get CSRF token
-                const token = await getCSRFToken();
-                const headers = {
-                    'Content-Type': 'application/json',
-                };
-                
-                // Add CSRF token if available
-                if (token) {
-                    headers['X-CSRFToken'] = token;
-                }
-
-                const response = await fetch('/api/restaurant-auth/register', {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(registrationData)
+            const langData = translations[lang];
+            if (langData) {
+                Object.keys(langData).forEach(english => {
+                    document.querySelectorAll('*').forEach(element => {
+                        if (element.children.length === 0 && element.textContent.trim() === english) {
+                            element.textContent = langData[english];
+                        }
+                    });
                 });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showAlert('Registration successful! You can now log in.', 'success');
-                    // Switch to login form
-                    setTimeout(() => {
-                        showLogin();
-                        document.getElementById('loginEmail').value = registrationData.email;
-                    }, 2000);
+                
+                if (lang === 'he' || lang === 'ar') {
+                    document.body.dir = 'rtl';
+                    document.body.style.fontFamily = 'Arial, sans-serif';
                 } else {
-                    showAlert(data.error || 'Registration failed');
+                    document.body.dir = 'ltr';
                 }
-            } catch (error) {
-                console.error('Registration error:', error);
-                showAlert('Network error. Please try again.');
             }
-        });
+        }
 
-        // Pre-load CSRF token when page loads
-        document.addEventListener('DOMContentLoaded', () => {
+        function initializeRestaurantAuth() {
+            let csrfToken = null;
+
+            async function getCSRFToken() {
+                if (csrfToken) return csrfToken;
+                
+                try {
+                    const response = await fetch('/api/csrf-token');
+                    const data = await response.json();
+                    csrfToken = data.csrf_token;
+                    return csrfToken;
+                } catch (error) {
+                    console.error('Failed to get CSRF token:', error);
+                    return null;
+                }
+            }
+
+            function showAlert(message, type = 'error') {
+                const alertDiv = document.getElementById('alertMessage');
+                alertDiv.textContent = message;
+                alertDiv.className = `alert ${type}`;
+                alertDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            // Tab switching
+            window.showLogin = function() {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+                
+                event.target.classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            };
+            
+            window.showRegister = function() {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+                
+                event.target.classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            };
+
+            // Handle restaurant login
+            const loginForm = document.getElementById('restaurantLoginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(e.target);
+                    const loginData = {
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    };
+
+                    try {
+                        const token = await getCSRFToken();
+                        const headers = {
+                            'Content-Type': 'application/json',
+                        };
+                        
+                        if (token) {
+                            headers['X-CSRFToken'] = token;
+                        }
+
+                        const response = await fetch('/api/restaurant-auth/login', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(loginData)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            showAlert('Login successful!', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/restaurant-dashboard.html';
+                            }, 1000);
+                        } else {
+                            showAlert(data.error || 'Login failed');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        showAlert('Network error. Please try again.');
+                    }
+                });
+            }
+
+            // Handle restaurant registration
+            const registerForm = document.getElementById('restaurantRegisterForm');
+            if (registerForm) {
+                registerForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(e.target);
+                    const registrationData = {
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        password: formData.get('password'),
+                        address: formData.get('address'),
+                        cuisine_type: formData.get('cuisine_type')
+                    };
+
+                    const requiredFields = ['name', 'email', 'password', 'address', 'cuisine_type'];
+                    const missingFields = requiredFields.filter(field => !registrationData[field]);
+                    
+                    if (missingFields.length > 0) {
+                        showAlert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                        return;
+                    }
+
+                    try {
+                        const token = await getCSRFToken();
+                        const headers = {
+                            'Content-Type': 'application/json',
+                        };
+                        
+                        if (token) {
+                            headers['X-CSRFToken'] = token;
+                        }
+
+                        const response = await fetch('/api/restaurant-auth/register', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(registrationData)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            showAlert('Registration successful! You can now log in.', 'success');
+                            setTimeout(() => {
+                                showLogin();
+                                document.getElementById('loginEmail').value = registrationData.email;
+                            }, 2000);
+                        } else {
+                            showAlert(data.error || 'Registration failed');
+                        }
+                    } catch (error) {
+                        console.error('Registration error:', error);
+                        showAlert('Network error. Please try again.');
+                    }
+                });
+            }
+
+            // Pre-load CSRF token
             getCSRFToken();
-        });
- 
-    
-    
-    /* ConveyThis RTL Support */
-[dir="rtl"] {
-    direction: rtl;
-    text-align: right;
-}
-
-[dir="rtl"] .logo {
-    text-align: right;
-}
-
-[dir="rtl"] .nav-links {
-    flex-direction: row-reverse;
-}
-
-[dir="rtl"] .hero-container {
-    direction: rtl;
-}
-
-[dir="rtl"] .form-input {
-    text-align: right;
-}
-
-[dir="rtl"] .form-input[type="email"],
-[dir="rtl"] .form-input[type="password"] {
-    text-align: left;
-    direction: ltr;
-}
-
-.conveythis-rtl body {
-    direction: rtl;
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-}
-
-.conveythis-rtl .header-content,
-.conveythis-rtl .nav-container {
-    direction: rtl;
-}
-
-.conveythis-rtl .sidebar-nav {
-    direction: rtl;
-}
-
-.conveythis-rtl .restaurant-card {
-    direction: rtl;
-    text-align: right;
-}
-    
-    
-    
-    
-    
-    
-    
+        }
     </script>
 </body>
 </html>
