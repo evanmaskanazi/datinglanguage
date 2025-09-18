@@ -6,16 +6,7 @@
     <title>TableForTwo - Dashboard</title>
 
     <!-- Add i18n script for translation support -->
-    <script src="/static/i18n.js"></script>
-<script>
-// Debug i18n loading
-console.log('i18n loaded:', typeof window.i18n !== 'undefined');
-if (window.i18n) {
-    console.log('Current language:', window.i18n.currentLang);
-} else {
-    console.error('i18n.js did not load properly!');
-}
-</script>
+
     <!-- Custom Styles -->
     <style>
         * {
@@ -2074,16 +2065,14 @@ if (window.i18n) {
 
         // Initialize on page load
       // Initialize on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    // Wait for i18n to be ready
-    if (window.i18n && window.i18n.currentLang) {
-        await initializeDashboard();
-    } else {
-        // Wait for i18n to initialize
-        setTimeout(async () => {
-            await initializeDashboard();
-        }, 100);
+    // Initialize i18n if it hasn't been initialized
+    if (window.i18n && !document.querySelector('.language-switcher')) {
+        window.i18n.init();
     }
+    // Initialize dashboard
+    await initializeDashboard();
 });
 
 
@@ -3189,5 +3178,6 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
             }
         });
     </script>
+<script src="/i18n.js"></script>
 </body>
 </html>
