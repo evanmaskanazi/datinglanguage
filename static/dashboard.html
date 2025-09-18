@@ -3232,6 +3232,98 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
  console.log('CHECKPOINT 6: All functions defined');
 
 
+        // Initialize language switcher
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLanguageSwitcher();
+});
+
+function initializeLanguageSwitcher() {
+    // Create language switcher with same style as login page
+    const switcher = document.createElement('div');
+    switcher.id = 'languageSwitcher';
+    switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1001; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+    switcher.innerHTML = `
+        <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem; background: white; cursor: pointer;">
+            <option value="en">English</option>
+            <option value="he">עברית</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+        </select>
+    `;
+    document.body.appendChild(switcher);
+
+    // Restore saved language
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    if (savedLanguage && savedLanguage !== 'en') {
+        document.getElementById('languageSelect').value = savedLanguage;
+        changeLanguage(savedLanguage);
+    }
+}
+
+function changeLanguage(lang) {
+    localStorage.setItem('selectedLanguage', lang);
+
+    // Apply RTL if needed but keep layout
+    if (lang === 'he' || lang === 'ar') {
+        document.body.classList.add('rtl');
+    } else {
+        document.body.classList.remove('rtl');
+    }
+
+    // Translate static elements
+    translateStaticElements(lang);
+
+    // Reload dynamic content with translation
+    if (typeof loadAllRestaurants === 'function') {
+        loadAllRestaurants();
+    }
+    if (typeof loadMatches === 'function' && document.getElementById('matches').classList.contains('active')) {
+        loadMatches();
+    }
+    if (typeof loadUpcomingDates === 'function' && document.getElementById('dates').classList.contains('active')) {
+        loadUpcomingDates();
+    }
+    if (typeof loadRestaurantsForFollowing === 'function' && document.getElementById('restaurants').classList.contains('active')) {
+        loadRestaurantsForFollowing();
+    }
+}
+
+function translateStaticElements(lang) {
+    if (!translations[lang]) return;
+
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const keys = element.getAttribute('data-translate').split('.');
+        let translation = translations[lang];
+
+        for (const key of keys) {
+            if (translation && translation[key]) {
+                translation = translation[key];
+            } else {
+                // Fallback to English
+                translation = translations.en;
+                for (const k of keys) {
+                    if (translation && translation[k]) {
+                        translation = translation[k];
+                    }
+                }
+                break;
+            }
+        }
+
+        if (typeof translation === 'string') {
+            element.textContent = translation;
+        }
+    });
+}
+
+// Make translations available globally for other functions
+window.translations = translations;
+
+
+
+
+
+
     </script>
 
 
@@ -3239,24 +3331,7 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
 
 
 
-console.log('CHECKPOINT 8b: window.i18n object created successfully');
 
-// Execute immediately
-    console.log('window.i18n created:', !!window.i18n);
-
-    try {
-        console.log('CHECKPOINT 8c: About to call i18n.init()');
-        window.i18n.init();
-        console.log('CHECKPOINT 8d: i18n.init() completed');
-    } catch (error) {
-        console.error('ERROR in i18n.init():', error);
-    }
-
-
-console.log('i18n initialization complete');
-
-
-   </script>
 
 
 
