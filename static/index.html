@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Table for Two - Real connections over real dinners">
     <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <!-- ConveyThis removed - using custom translation -->
     <title>Table for Two - Real Dating, Real Dinners</title>
     
     <style>
@@ -328,6 +329,27 @@
             flex-direction: row-reverse;
         }
 
+        /* Language switcher styling */
+        #languageSwitcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #languageSelect {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .nav-links {
@@ -349,6 +371,11 @@
 
             .step:nth-child(even) {
                 flex-direction: column;
+            }
+
+            #languageSwitcher {
+                top: 10px;
+                right: 10px;
             }
         }
 
@@ -520,9 +547,8 @@
         function initializeTranslation() {
             const switcher = document.createElement('div');
             switcher.id = 'languageSwitcher';
-            switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1001; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
             switcher.innerHTML = `
-                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
                     <option value="en">English</option>
                     <option value="he">עברית</option>
                     <option value="ar">العربية</option>
@@ -530,12 +556,23 @@
                 </select>
             `;
             document.body.appendChild(switcher);
+
+            // Restore saved language
+            const savedLanguage = localStorage.getItem('selectedLanguage');
+            if (savedLanguage && savedLanguage !== 'en') {
+                document.getElementById('languageSelect').value = savedLanguage;
+                changeLanguage(savedLanguage);
+            }
         }
 
         function changeLanguage(lang) {
+            // Save language preference
+            localStorage.setItem('selectedLanguage', lang);
+
             const translations = {
                 'he': {
                     'Real Dates. Real People. Real Connections.': 'דייטים אמיתיים. אנשים אמיתיים. קשרים אמיתיים.',
+                    'Skip the endless swiping. Meet your match over dinner at curated restaurants in your city.': 'דלג על ההחלקות האינסופיות. פגש את ההתאמה שלך בארוחת ערב במסעדות נבחרות בעיר שלך.',
                     'How It Works': 'איך זה עובד',
                     'Features': 'תכונות',
                     'Restaurants': 'מסעדות',
@@ -545,25 +582,48 @@
                     'Learn More': 'למד עוד',
                     'How Table for Two Works': 'איך שולחן לשניים עובד',
                     'Browse Available Tables': 'עיין בשולחנות זמינים',
+                    'Check out available dinner slots at our partner restaurants. See who else is looking to meet up at each time.': 'בדוק זמני ארוחת ערב זמינים במסעדות השותפות שלנו. ראה מי עוד מחפש להיפגש בכל זמן.',
                     'Find Your Match': 'מצא את ההתאמה שלך',
+                    'Our smart matching algorithm suggests compatible dining partners based on your values and interests.': 'האלגוריתם החכם שלנו מציע שותפים תואמים לארוחת ערב על בסיס הערכים והעניינים שלך.',
                     'Confirm & Commit': 'אשר והתחייב',
+                    'Both parties pay a small commitment fee to confirm the date. No more ghosting!': 'שני הצדדים משלמים דמי התחייבות קטנים לאישור הדייט. לא עוד נעלמים!',
                     'Meet & Connect': 'פגש והתחבר',
+                    'Show up, enjoy great food, and have a real conversation. It\'s dating how it should be.': 'התייצב, תיהנה מאוכל נהדר וקיים שיחה אמיתית. זה דייטים כמו שצריך להיות.',
                     'Why Choose Table for Two?': 'למה לבחור בשולחן לשניים?',
                     'Quality Matches': 'התאמות איכותיות',
+                    'Value-based matching ensures you meet people who share your interests and life goals.': 'התאמה מבוססת ערכים מבטיחה שתפגוש אנשים החולקים את העניינים ומטרות החיים שלך.',
                     'Curated Restaurants': 'מסעדות נבחרות',
+                    'Handpicked venues provide the perfect atmosphere for meaningful conversations.': 'מקומות נבחרים בקפידה מספקים את האווירה המושלמת לשיחות משמעותיות.',
                     'Safe & Secure': 'בטוח ומאובטח',
+                    'Verified profiles, public meeting spots, and optional anonymity until you meet.': 'פרופילים מאומתים, מקומות פגישה ציבוריים ואנונימיות אופציונלית עד שתפגשו.',
                     'No Endless Chatting': 'בלי צ\'אט אינסופי',
+                    'Skip the small talk. Real chemistry happens in person, not through a screen.': 'דלג על הדיבורים הקטנים. כימיה אמיתית קורה באופן אישי, לא דרך מסך.',
                     'Feedback System': 'מערכת משוב',
+                    'Post-date feedback helps us improve matches and maintain a quality community.': 'משוב לאחר הדייט עוזר לנו לשפר התאמות ולשמור על קהילה איכותית.',
                     'No Pressure': 'בלי לחץ',
+                    'Just two people sharing a meal. What happens next is entirely up to you both.': 'רק שני אנשים שחולקים ארוחה. מה קורה אחר כך תלוי לגמרי בשניכם.',
                     'Ready to Find Your Table for Two?': 'מוכן למצוא את השולחן שלך לשניים?',
+                    'Join thousands of singles who are done with swiping and ready for real connections.': 'הצטרף לאלפי רווקים שנמאסו מההחלקות ומוכנים לקשרים אמיתיים.',
                     'Get Started Free': 'התחל בחינם',
                     'Company': 'חברה',
+                    'About Us': 'עלינו',
+                    'How It Works': 'איך זה עובד',
+                    'Safety': 'בטיחות',
+                    'Press': 'עיתונות',
                     'Support': 'תמיכה',
+                    'Help Center': 'מרכז עזרה',
+                    'Contact Us': 'צור קשר',
+                    'FAQ': 'שאלות נפוצות',
                     'Legal': 'משפטי',
-                    'Connect': 'התחבר'
+                    'Privacy Policy': 'מדיניות פרטיות',
+                    'Terms of Service': 'תנאי שירות',
+                    'Cookie Policy': 'מדיניות עוגיות',
+                    'Connect': 'התחבר',
+                    '© 2024 Table for Two. Made with ❤️ in Tel Aviv.': '© 2024 שולחן לשניים. נוצר באהבה ❤️ בתל אביב.'
                 },
                 'ar': {
                     'Real Dates. Real People. Real Connections.': 'مواعيد حقيقية. أشخاص حقيقيون. روابط حقيقية.',
+                    'Skip the endless swiping. Meet your match over dinner at curated restaurants in your city.': 'تخط التمرير اللانهائي. قابل شريكك المثالي على العشاء في المطاعم المختارة في مدينتك.',
                     'How It Works': 'كيف يعمل',
                     'Features': 'الميزات',
                     'Restaurants': 'المطاعم',
@@ -573,27 +633,50 @@
                     'Learn More': 'اعرف المزيد',
                     'How Table for Two Works': 'كيف يعمل طاولة لاثنين',
                     'Browse Available Tables': 'تصفح الطاولات المتاحة',
+                    'Check out available dinner slots at our partner restaurants. See who else is looking to meet up at each time.': 'تحقق من أوقات العشاء المتاحة في المطاعم الشريكة لدينا. اكتشف من آخرين يبحثون عن اللقاء في كل وقت.',
                     'Find Your Match': 'اعثر على مطابقتك',
+                    'Our smart matching algorithm suggests compatible dining partners based on your values and interests.': 'خوارزمية المطابقة الذكية لدينا تقترح شركاء عشاء متوافقين بناءً على قيمك واهتماماتك.',
                     'Confirm & Commit': 'أكد والتزم',
+                    'Both parties pay a small commitment fee to confirm the date. No more ghosting!': 'يدفع كلا الطرفين رسم التزام صغير لتأكيد الموعد. لا مزيد من الاختفاء!',
                     'Meet & Connect': 'التقي وتواصل',
+                    'Show up, enjoy great food, and have a real conversation. It\'s dating how it should be.': 'احضر واستمتع بالطعام الرائع وأجر محادثة حقيقية. إنها المواعدة كما يجب أن تكون.',
                     'Why Choose Table for Two?': 'لماذا تختار طاولة لاثنين؟',
                     'Quality Matches': 'مطابقات عالية الجودة',
+                    'Value-based matching ensures you meet people who share your interests and life goals.': 'المطابقة القائمة على القيم تضمن أن تلتقي بأشخاص يشاركونك اهتماماتك وأهداف حياتك.',
                     'Curated Restaurants': 'مطاعم منتقاة',
+                    'Handpicked venues provide the perfect atmosphere for meaningful conversations.': 'الأماكن المختارة بعناية توفر الأجواء المثالية للمحادثات المعنوية.',
                     'Safe & Secure': 'آمن ومحمي',
+                    'Verified profiles, public meeting spots, and optional anonymity until you meet.': 'ملفات تعريف متحققة، أماكن لقاء عامة، وإخفاء هوية اختياري حتى تلتقوا.',
                     'No Endless Chatting': 'لا دردشة لا نهائية',
+                    'Skip the small talk. Real chemistry happens in person, not through a screen.': 'تخط الأحاديث الصغيرة. الكيمياء الحقيقية تحدث شخصياً وليس عبر الشاشة.',
                     'Feedback System': 'نظام التغذية الراجعة',
+                    'Post-date feedback helps us improve matches and maintain a quality community.': 'التغذية الراجعة بعد الموعد تساعدنا على تحسين المطابقات والحفاظ على مجتمع عالي الجودة.',
                     'No Pressure': 'بدون ضغط',
+                    'Just two people sharing a meal. What happens next is entirely up to you both.': 'مجرد شخصين يتشاركان وجبة. ما يحدث بعد ذلك متروك لكما تماماً.',
                     'Ready to Find Your Table for Two?': 'مستعد للعثور على طاولتك لاثنين؟',
+                    'Join thousands of singles who are done with swiping and ready for real connections.': 'انضم إلى آلاف العزاب الذين سئموا من التمرير ومستعدون للروابط الحقيقية.',
                     'Get Started Free': 'ابدأ مجاناً',
                     'Company': 'الشركة',
+                    'About Us': 'عنا',
+                    'How It Works': 'كيف يعمل',
+                    'Safety': 'الأمان',
+                    'Press': 'الصحافة',
                     'Support': 'الدعم',
+                    'Help Center': 'مركز المساعدة',
+                    'Contact Us': 'اتصل بنا',
+                    'FAQ': 'الأسئلة الشائعة',
                     'Legal': 'قانوني',
-                    'Connect': 'تواصل'
+                    'Privacy Policy': 'سياسة الخصوصية',
+                    'Terms of Service': 'شروط الخدمة',
+                    'Cookie Policy': 'سياسة ملفات تعريف الارتباط',
+                    'Connect': 'تواصل',
+                    '© 2024 Table for Two. Made with ❤️ in Tel Aviv.': '© 2024 طاولة لاثنين. صُنع بحب ❤️ في تل أبيب.'
                 },
                 'ru': {
                     'Real Dates. Real People. Real Connections.': 'Настоящие свидания. Настоящие люди. Настоящие связи.',
+                    'Skip the endless swiping. Meet your match over dinner at curated restaurants in your city.': 'Забудьте о бесконечных свайпах. Встретьте свою пару за ужином в отобранных ресторанах вашего города.',
                     'How It Works': 'Как это работает',
-                    'Features': 'Функции',
+                    'Features': 'Возможности',
                     'Restaurants': 'Рестораны',
                     'Log In': 'Войти',
                     'Get Started': 'Начать',
@@ -601,46 +684,79 @@
                     'Learn More': 'Узнать больше',
                     'How Table for Two Works': 'Как работает Столик на двоих',
                     'Browse Available Tables': 'Просмотр доступных столиков',
+                    'Check out available dinner slots at our partner restaurants. See who else is looking to meet up at each time.': 'Посмотрите доступные времена ужина в наших ресторанах-партнерах. Узнайте, кто еще хочет встретиться в каждое время.',
                     'Find Your Match': 'Найди свою пару',
+                    'Our smart matching algorithm suggests compatible dining partners based on your values and interests.': 'Наш умный алгоритм подбора предлагает совместимых партнеров для ужина на основе ваших ценностей и интересов.',
                     'Confirm & Commit': 'Подтверди и обязуйся',
+                    'Both parties pay a small commitment fee to confirm the date. No more ghosting!': 'Обе стороны платят небольшую плату за обязательство подтвердить свидание. Больше никаких исчезновений!',
                     'Meet & Connect': 'Встречайтесь и знакомьтесь',
+                    'Show up, enjoy great food, and have a real conversation. It\'s dating how it should be.': 'Приходите, наслаждайтесь отличной едой и ведите настоящий разговор. Это свидания, какими они должны быть.',
                     'Why Choose Table for Two?': 'Почему выбрать Столик на двоих?',
                     'Quality Matches': 'Качественные пары',
+                    'Value-based matching ensures you meet people who share your interests and life goals.': 'Подбор на основе ценностей гарантирует, что вы встретите людей, разделяющих ваши интересы и жизненные цели.',
                     'Curated Restaurants': 'Отобранные рестораны',
+                    'Handpicked venues provide the perfect atmosphere for meaningful conversations.': 'Тщательно отобранные заведения создают идеальную атмосферу для содержательных разговоров.',
                     'Safe & Secure': 'Безопасно и надежно',
-                    'No Endless Chatting': 'Никакой бесконечной переписки',
+                    'Verified profiles, public meeting spots, and optional anonymity until you meet.': 'Проверенные профили, общественные места встреч и необязательная анонимность до встречи.',
+                    'No Endless Chatting': 'Никаких бесконечных переписок',
+                    'Skip the small talk. Real chemistry happens in person, not through a screen.': 'Пропустите светские беседы. Настоящая химия происходит лично, а не через экран.',
                     'Feedback System': 'Система обратной связи',
+                    'Post-date feedback helps us improve matches and maintain a quality community.': 'Отзывы после свиданий помогают нам улучшать подбор пар и поддерживать качественное сообщество.',
                     'No Pressure': 'Без давления',
+                    'Just two people sharing a meal. What happens next is entirely up to you both.': 'Просто два человека делят трапезу. Что произойдет дальше, полностью зависит от вас обоих.',
                     'Ready to Find Your Table for Two?': 'Готовы найти свой Столик на двоих?',
+                    'Join thousands of singles who are done with swiping and ready for real connections.': 'Присоединяйтесь к тысячам одиноких людей, которые устали от свайпов и готовы к настоящим связям.',
                     'Get Started Free': 'Начать бесплатно',
                     'Company': 'Компания',
+                    'About Us': 'О нас',
+                    'How It Works': 'Как это работает',
+                    'Safety': 'Безопасность',
+                    'Press': 'Пресса',
                     'Support': 'Поддержка',
+                    'Help Center': 'Центр помощи',
+                    'Contact Us': 'Связаться с нами',
+                    'FAQ': 'ЧаВо',
                     'Legal': 'Правовая информация',
-                    'Connect': 'Связаться'
+                    'Privacy Policy': 'Политика конфиденциальности',
+                    'Terms of Service': 'Условия обслуживания',
+                    'Cookie Policy': 'Политика использования файлов cookie',
+                    'Connect': 'Связаться',
+                    '© 2024 Table for Two. Made with ❤️ in Tel Aviv.': '© 2024 Столик на двоих. Сделано с ❤️ в Тель-Авиве.'
                 }
             };
 
             if (lang === 'en') {
                 document.body.dir = 'ltr';
+                document.documentElement.lang = 'en';
                 location.reload();
                 return;
             }
 
             const langData = translations[lang];
             if (langData) {
+                // Apply translations
                 Object.keys(langData).forEach(english => {
-                    document.querySelectorAll('*').forEach(element => {
+                    const elements = document.querySelectorAll('*');
+                    elements.forEach(element => {
+                        // Check direct text content
                         if (element.children.length === 0 && element.textContent.trim() === english) {
                             element.textContent = langData[english];
+                        }
+                        // Check for elements that might contain the text as part of larger content
+                        else if (element.children.length === 0 && element.textContent.includes(english)) {
+                            element.textContent = element.textContent.replace(english, langData[english]);
                         }
                     });
                 });
                 
+                // Apply RTL for Hebrew and Arabic
                 if (lang === 'he' || lang === 'ar') {
                     document.body.dir = 'rtl';
+                    document.documentElement.lang = lang;
                     document.body.style.fontFamily = 'Arial, sans-serif';
                 } else {
                     document.body.dir = 'ltr';
+                    document.documentElement.lang = lang;
                 }
             }
         }
@@ -664,6 +780,29 @@
             if (window.top !== window.self) {
                 window.top.location = window.self.location;
             }
+
+            // Add subtle animations on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe feature cards and steps for animation
+            document.querySelectorAll('.feature-card, .step').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
         }
     </script>
 </body>
