@@ -1078,73 +1078,53 @@
             box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
         }
 
-        /* Language Switcher Styles */
-        .language-switcher {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-            background: white;
-            border-radius: 12px;
-            box-shadow: var(--shadow-md);
-            padding: 0.5rem;
-            display: flex;
-            gap: 0.5rem;
-        }
+        
 
-        .lang-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            background: transparent;
-            color: var(--text-dark);
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: var(--transition);
-        }
+       /* RTL Support - Keep layout structure */
+.rtl {
+    direction: rtl;
+}
 
-        .lang-btn:hover {
-            background: var(--background-light);
-        }
+/* Keep the same layout - sidebar on left, content on right */
+.rtl .dashboard-container {
+    grid-template-columns: 280px 1fr;
+    direction: ltr; /* Keep container LTR for layout */
+}
 
-        .lang-btn.active {
-            background: var(--primary-color);
-            color: white;
-        }
+.rtl .sidebar {
+    direction: rtl; /* RTL for text inside sidebar */
+}
 
-        /* RTL Support */
-        .rtl {
-            direction: rtl;
-        }
+.rtl .main-content {
+    direction: rtl; /* RTL for text inside main content */
+}
 
-        .rtl .dashboard-container {
-            grid-template-columns: 1fr 280px;
-        }
+.rtl .sidebar-link {
+    direction: rtl;
+    text-align: right;
+}
 
-        .rtl .sidebar-link {
-            flex-direction: row-reverse;
-        }
+.rtl .user-profile {
+    direction: rtl;
+    text-align: right;
+}
 
-        .rtl .user-profile {
-            flex-direction: row-reverse;
-        }
+.rtl .restaurant-meta {
+    flex-direction: row-reverse;
+}
 
-        .rtl .restaurant-meta {
-            flex-direction: row-reverse;
-        }
+.rtl .match-list-item {
+    flex-direction: row-reverse;
+}
 
-        .rtl .match-list-item {
-            flex-direction: row-reverse;
-        }
+.rtl .modal-header {
+    flex-direction: row-reverse;
+}
 
-        .rtl .modal-header {
-            flex-direction: row-reverse;
-        }
-
-        .rtl .language-switcher {
-            right: auto;
-            left: 2rem;
-        }
+.rtl .language-switcher {
+    right: auto;
+    left: 2rem;
+}
 
         /* Responsive Design */
         @media (max-width: 1024px) {
@@ -2406,24 +2386,28 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
 
         // Create restaurant card HTML
         function createRestaurantCard(restaurant) {
-            return `
-                <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
-                    <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
-                        <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                        <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
-                        <div class="restaurant-meta">
-                            <div class="restaurant-rating">
-                                ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
-                                <span>${restaurant.rating || 0}</span>
-                            </div>
-                            <span class="available-slots">${restaurant.available_slots || 0} slots</span>
-                        </div>
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+    const followText = lang === 'he' ? 'עוקב' : lang === 'ar' ? 'متابع' : lang === 'ru' ? 'Подписан' : 'Following';
+    const slotsText = lang === 'he' ? 'מקומות' : lang === 'ar' ? 'أماكن' : lang === 'ru' ? 'мест' : 'slots';
+
+    return `
+        <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
+            <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
+            <div class="restaurant-info">
+                <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
+                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
+                <div class="restaurant-meta">
+                    <div class="restaurant-rating">
+                        ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
+                        <span>${restaurant.rating || 0}</span>
                     </div>
+                    <span class="available-slots">${restaurant.available_slots || 0} ${slotsText}</span>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
         // Create match card HTML
         function createMatchCard(match) {
@@ -3253,186 +3237,351 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
 
     <script>console.log('CHECKPOINT: About to load i18n');</script>
 
-   <script>
-console.log('=== DIRECT I18N INIT - NO WRAPPER ===');
-
-// Direct assignment to window.i18n without IIFE
-window.i18n = {
-    currentLang: localStorage.getItem('userLanguage') || 'en',
-    translations: {
-        en: {
-            nav: {
-                overview: 'Overview',
-                browse: 'Browse Tables',
-                matches: 'My Matches',
-                dates: 'Upcoming Dates',
-                desired_times: 'Desired Times',
-                history: 'Date History',
-                profile: 'Profile',
-                restaurants: 'Restaurants',
-                settings: 'Settings',
-                logout: 'Logout'
-            },
-            overview: {
-                title: 'Welcome back!',
-                subtitle: "Here's what's happening with your dating life"
-            },
-            stats: {
-                active_matches: 'Active Matches',
-                upcoming_dates: 'Upcoming Dates',
-                compatibility: 'Avg Compatibility',
-                total_dates: 'Total Dates'
-            }
+  <script>
+// Translation definitions
+const translations = {
+    en: {
+        nav: {
+            overview: 'Overview',
+            browse: 'Browse Tables',
+            matches: 'My Matches',
+            dates: 'Upcoming Dates',
+            desired_times: 'Desired Times',
+            history: 'Date History',
+            profile: 'Profile',
+            restaurants: 'Restaurants',
+            settings: 'Settings',
+            logout: 'Logout'
         },
-        he: {
-            nav: {
-                overview: 'סקירה כללית',
-                browse: 'דפדוף שולחנות',
-                matches: 'ההתאמות שלי',
-                dates: 'פגישות קרובות',
-                desired_times: 'זמנים רצויים',
-                history: 'היסטוריית פגישות',
-                profile: 'פרופיל',
-                restaurants: 'מסעדות',
-                settings: 'הגדרות',
-                logout: 'יציאה'
-            },
-            overview: {
-                title: 'ברוך שובך!',
-                subtitle: 'הנה מה שקורה בחיי הדייטינג שלך'
-            },
-            stats: {
-                active_matches: 'התאמות פעילות',
-                upcoming_dates: 'פגישות קרובות',
-                compatibility: 'התאמה ממוצעת',
-                total_dates: 'סך הפגישות'
-            }
+        overview: {
+            title: 'Welcome back!',
+            subtitle: "Here's what's happening with your dating life"
         },
-        ar: {
-            nav: {
-                overview: 'نظرة عامة',
-                browse: 'تصفح الطاولات',
-                matches: 'مبارياتي',
-                dates: 'المواعيد القادمة',
-                desired_times: 'الأوقات المرغوبة',
-                history: 'سجل المواعيد',
-                profile: 'الملف الشخصي',
-                restaurants: 'المطاعم',
-                settings: 'الإعدادات',
-                logout: 'تسجيل خروج'
-            },
-            overview: {
-                title: 'مرحباً بعودتك!',
-                subtitle: 'إليك ما يحدث في حياتك العاطفية'
-            }
+        stats: {
+            active_matches: 'Active Matches',
+            upcoming_dates: 'Upcoming Dates',
+            compatibility: 'Avg Compatibility',
+            total_dates: 'Total Dates'
         },
-        ru: {
-            nav: {
-                overview: 'Обзор',
-                browse: 'Просмотр столиков',
-                matches: 'Мои совпадения',
-                dates: 'Предстоящие свидания',
-                desired_times: 'Желаемое время',
-                history: 'История свиданий',
-                profile: 'Профиль',
-                restaurants: 'Рестораны',
-                settings: 'Настройки',
-                logout: 'Выход'
-            },
-            overview: {
-                title: 'С возвращением!',
-                subtitle: 'Вот что происходит в вашей личной жизни'
-            }
-        }
+        browse: {
+            title: 'Browse Available Tables',
+            subtitle: 'Find your perfect dinner date spot'
+        },
+        filters: {
+            date: 'Date',
+            time: 'Time',
+            cuisine: 'Cuisine',
+            apply: 'Apply Filters'
+        },
+        matches: {
+            title: 'My Matches',
+            subtitle: 'People interested in dining with you'
+        },
+        dates: {
+            title: 'Upcoming Dates',
+            subtitle: 'Your scheduled dinner dates'
+        },
+        history: {
+            title: 'Date History',
+            subtitle: 'Your past dinner dates'
+        },
+        profile: {
+            title: 'My Profile',
+            subtitle: 'Manage your personal information',
+            personal_info: 'Personal Information',
+            edit: 'Edit Profile',
+            name: 'Name',
+            location: 'Location',
+            bio: 'Bio',
+            preferences: 'Dating Preferences',
+            age_range: 'Age Range',
+            interests: 'Interests'
+        },
+        restaurants: {
+            title: 'Restaurant Partners',
+            subtitle: 'Follow your favorite restaurants'
+        },
+        settings: {
+            title: 'Settings',
+            subtitle: 'Manage your account preferences',
+            notifications: 'Notification Preferences',
+            email_notifications: 'Email Notifications',
+            sms_notifications: 'SMS Notifications',
+            privacy: 'Privacy Settings',
+            profile_visibility: 'Profile visible to matches',
+            cancel: 'Cancel',
+            save: 'Save Settings'
+        },
+        modal: {
+            request_match: 'Request a Match',
+            select_time: 'Select Time',
+            suggested_matches: 'Suggested Matches',
+            cancel: 'Cancel',
+            send_request: 'Send Request'
+        },
+        desired_times: {
+            title: 'Desired Meeting Times',
+            subtitle: "Set your preferred times and we'll find matches"
+        },
+        loading: 'Loading...',
+        recent_activity: 'Recent Activity',
+        no_activity: 'No recent activity',
+        start_browsing: 'Start browsing tables to find your perfect match!',
+        add_preference: 'Add Time Preference',
+        select_date: 'Select Date',
+        select_time: 'Select Time',
+        add_time: 'Add Time',
+        selected_date: 'Selected:',
+        your_preferences: 'Your Time Preferences',
+        no_preferences: 'No time preferences set',
+        add_preferences: 'Add your desired meeting times above'
     },
-
-    init: function() {
-        console.log('i18n.init() executing');
-        this.createLanguageSwitcher();
-        this.translatePage();
+    he: {
+        nav: {
+            overview: 'סקירה כללית',
+            browse: 'דפדוף שולחנות',
+            matches: 'ההתאמות שלי',
+            dates: 'פגישות קרובות',
+            desired_times: 'זמנים רצויים',
+            history: 'היסטוריית פגישות',
+            profile: 'פרופיל',
+            restaurants: 'מסעדות',
+            settings: 'הגדרות',
+            logout: 'יציאה'
+        },
+        overview: {
+            title: 'ברוך שובך!',
+            subtitle: 'הנה מה שקורה בחיי הדייטינג שלך'
+        },
+        stats: {
+            active_matches: 'התאמות פעילות',
+            upcoming_dates: 'פגישות קרובות',
+            compatibility: 'התאמה ממוצעת',
+            total_dates: 'סך הפגישות'
+        },
+        browse: {
+            title: 'דפדוף שולחנות זמינים',
+            subtitle: 'מצא את מקום הפגישה המושלם שלך'
+        },
+        filters: {
+            date: 'תאריך',
+            time: 'שעה',
+            cuisine: 'מטבח',
+            apply: 'החל מסננים'
+        },
+        matches: {
+            title: 'ההתאמות שלי',
+            subtitle: 'אנשים שמעוניינים לסעוד איתך'
+        },
+        dates: {
+            title: 'פגישות קרובות',
+            subtitle: 'פגישות הארוחה המתוכננות שלך'
+        },
+        history: {
+            title: 'היסטוריית פגישות',
+            subtitle: 'פגישות הארוחה הקודמות שלך'
+        },
+        profile: {
+            title: 'הפרופיל שלי',
+            subtitle: 'נהל את המידע האישי שלך',
+            personal_info: 'מידע אישי',
+            edit: 'ערוך פרופיל',
+            name: 'שם',
+            location: 'מיקום',
+            bio: 'ביו',
+            preferences: 'העדפות דייטינג',
+            age_range: 'טווח גילאים',
+            interests: 'תחומי עניין'
+        },
+        restaurants: {
+            title: 'מסעדות שותפות',
+            subtitle: 'עקוב אחר המסעדות המועדפות עליך'
+        },
+        settings: {
+            title: 'הגדרות',
+            subtitle: 'נהל את העדפות החשבון שלך',
+            notifications: 'העדפות התראות',
+            email_notifications: 'התראות דוא״ל',
+            sms_notifications: 'התראות SMS',
+            privacy: 'הגדרות פרטיות',
+            profile_visibility: 'פרופיל גלוי להתאמות',
+            cancel: 'ביטול',
+            save: 'שמור הגדרות'
+        },
+        modal: {
+            request_match: 'בקש התאמה',
+            select_time: 'בחר שעה',
+            suggested_matches: 'התאמות מוצעות',
+            cancel: 'ביטול',
+            send_request: 'שלח בקשה'
+        },
+        desired_times: {
+            title: 'זמני פגישה רצויים',
+            subtitle: 'הגדר את הזמנים המועדפים עליך ונמצא התאמות'
+        },
+        loading: 'טוען...',
+        recent_activity: 'פעילות אחרונה',
+        no_activity: 'אין פעילות אחרונה',
+        start_browsing: 'התחל לדפדף בשולחנות כדי למצוא את ההתאמה המושלמת שלך!',
+        add_preference: 'הוסף העדפת זמן',
+        select_date: 'בחר תאריך',
+        select_time: 'בחר שעה',
+        add_time: 'הוסף זמן',
+        selected_date: 'נבחר:',
+        your_preferences: 'העדפות הזמן שלך',
+        no_preferences: 'לא הוגדרו העדפות זמן',
+        add_preferences: 'הוסף את זמני הפגישה הרצויים שלך למעלה'
     },
-
-    createLanguageSwitcher: function() {
-        console.log('createLanguageSwitcher executing');
-
-        if (document.querySelector('.language-switcher')) {
-            console.log('Language switcher already exists');
-            return;
-        }
-
-        const switcher = document.createElement('div');
-        switcher.className = 'language-switcher';
-        switcher.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:red;border:3px solid yellow;padding:10px;border-radius:10px;';
-
-        const buttons = ['EN', 'HE', 'AR', 'RU'];
-        buttons.forEach(lang => {
-            const btn = document.createElement('button');
-            btn.textContent = lang;
-            btn.style.cssText = 'padding:5px 10px;margin:2px;cursor:pointer;background:white;border:1px solid black;';
-            btn.onclick = () => this.changeLanguage(lang.toLowerCase());
-            switcher.appendChild(btn);
-        });
-
-        document.body.appendChild(switcher);
-        console.log('Language switcher added to body');
+    ar: {
+        nav: {
+            overview: 'نظرة عامة',
+            browse: 'تصفح الطاولات',
+            matches: 'مبارياتي',
+            dates: 'المواعيد القادمة',
+            desired_times: 'الأوقات المرغوبة',
+            history: 'سجل المواعيد',
+            profile: 'الملف الشخصي',
+            restaurants: 'المطاعم',
+            settings: 'الإعدادات',
+            logout: 'تسجيل خروج'
+        },
+        overview: {
+            title: 'مرحباً بعودتك!',
+            subtitle: 'إليك ما يحدث في حياتك العاطفية'
+        },
+        stats: {
+            active_matches: 'المطابقات النشطة',
+            upcoming_dates: 'المواعيد القادمة',
+            compatibility: 'متوسط التوافق',
+            total_dates: 'إجمالي المواعيد'
+        },
+        // Add more Arabic translations as needed
+        loading: 'جار التحميل...',
+        recent_activity: 'النشاط الأخير',
+        no_activity: 'لا يوجد نشاط حديث',
+        start_browsing: 'ابدأ بتصفح الطاولات للعثور على التطابق المثالي!'
     },
-
-    changeLanguage: function(lang) {
-        console.log('Changing to:', lang);
-        this.currentLang = lang;
-        localStorage.setItem('userLanguage', lang);
-        this.translatePage();
-
-        // Update button styles
-        const buttons = document.querySelectorAll('.language-switcher button');
-        buttons.forEach(btn => {
-            if (btn.textContent.toLowerCase() === lang) {
-                btn.style.background = '#FF6B6B';
-                btn.style.color = 'white';
-            } else {
-                btn.style.background = 'white';
-                btn.style.color = 'black';
-            }
-        });
-    },
-
-    translatePage: function() {
-        console.log('translatePage executing for language:', this.currentLang);
-
-        document.querySelectorAll('[data-translate]').forEach(element => {
-            const keys = element.getAttribute('data-translate').split('.');
-            let translation = this.translations[this.currentLang];
-
-            for (const key of keys) {
-                if (translation && translation[key]) {
-                    translation = translation[key];
-                } else {
-                    // Fallback to English
-                    translation = this.translations.en;
-                    for (const k of keys) {
-                        if (translation && translation[k]) {
-                            translation = translation[k];
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (typeof translation === 'string') {
-                element.textContent = translation;
-            }
-        });
-
-        // Apply RTL if needed
-        if (this.currentLang === 'he' || this.currentLang === 'ar') {
-            document.body.classList.add('rtl');
-            document.body.style.direction = 'rtl';
-        } else {
-            document.body.classList.remove('rtl');
-            document.body.style.direction = 'ltr';
-        }
+    ru: {
+        nav: {
+            overview: 'Обзор',
+            browse: 'Просмотр столиков',
+            matches: 'Мои совпадения',
+            dates: 'Предстоящие свидания',
+            desired_times: 'Желаемое время',
+            history: 'История свиданий',
+            profile: 'Профиль',
+            restaurants: 'Рестораны',
+            settings: 'Настройки',
+            logout: 'Выход'
+        },
+        overview: {
+            title: 'С возвращением!',
+            subtitle: 'Вот что происходит в вашей личной жизни'
+        },
+        stats: {
+            active_matches: 'Активные совпадения',
+            upcoming_dates: 'Предстоящие свидания',
+            compatibility: 'Средняя совместимость',
+            total_dates: 'Всего свиданий'
+        },
+        // Add more Russian translations as needed
+        loading: 'Загрузка...',
+        recent_activity: 'Недавняя активность',
+        no_activity: 'Нет недавней активности',
+        start_browsing: 'Начните просматривать столики, чтобы найти идеальное совпадение!'
     }
 };
+
+// Initialize language switcher on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLanguageSwitcher();
+});
+
+function initializeLanguageSwitcher() {
+    // Create language switcher with same style as login page
+    const switcher = document.createElement('div');
+    switcher.id = 'languageSwitcher';
+    switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1001; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+    switcher.innerHTML = `
+        <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem; background: white; cursor: pointer;">
+            <option value="en">English</option>
+            <option value="he">עברית</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+        </select>
+    `;
+    document.body.appendChild(switcher);
+
+    // Restore saved language
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    if (savedLanguage && savedLanguage !== 'en') {
+        document.getElementById('languageSelect').value = savedLanguage;
+        changeLanguage(savedLanguage);
+    }
+}
+
+
+
+
+function changeLanguage(lang) {
+    localStorage.setItem('selectedLanguage', lang);
+
+    // Apply RTL if needed but keep layout
+    if (lang === 'he' || lang === 'ar') {
+        document.body.classList.add('rtl');
+    } else {
+        document.body.classList.remove('rtl');
+    }
+
+    // Translate static elements
+    translateStaticElements(lang);
+
+    // Reload dynamic content with translation
+    if (typeof loadAllRestaurants === 'function') {
+        loadAllRestaurants();
+    }
+    if (typeof loadMatches === 'function' && document.getElementById('matches').classList.contains('active')) {
+        loadMatches();
+    }
+    if (typeof loadUpcomingDates === 'function' && document.getElementById('dates').classList.contains('active')) {
+        loadUpcomingDates();
+    }
+    if (typeof loadRestaurantsForFollowing === 'function' && document.getElementById('restaurants').classList.contains('active')) {
+        loadRestaurantsForFollowing();
+    }
+}
+
+function translateStaticElements(lang) {
+    if (!translations[lang]) return;
+
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const keys = element.getAttribute('data-translate').split('.');
+        let translation = translations[lang];
+
+        for (const key of keys) {
+            if (translation && translation[key]) {
+                translation = translation[key];
+            } else {
+                // Fallback to English
+                translation = translations.en;
+                for (const k of keys) {
+                    if (translation && translation[k]) {
+                        translation = translation[k];
+                    }
+                }
+                break;
+            }
+        }
+
+        if (typeof translation === 'string') {
+            element.textContent = translation;
+        }
+    });
+}
+
+// Make translations available globally for other functions
+window.translations = translations;
+</script>
 
 console.log('CHECKPOINT 8b: window.i18n object created successfully');
 
