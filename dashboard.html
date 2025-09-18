@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+.language-switcher {
+    position: fixed !important;
+    top: 2rem !important;
+    right: 2rem !important;
+    z-index: 9999 !important;
+    background: red !important; /* Temporary - make it very visible */
+    padding: 1rem !important;
+    border: 3px solid blue !important;
+}
+</style>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TableForTwo - Dashboard</title>
@@ -3230,5 +3242,33 @@ document.head.appendChild(script);
         }
     }, 1000);
 </script>
+
+
+
+<script>
+// Force i18n initialization after everything loads
+window.addEventListener('load', function() {
+    console.error('Window loaded - checking i18n...');
+    if (window.i18n) {
+        console.error('i18n found, checking for language switcher...');
+        if (!document.querySelector('.language-switcher')) {
+            console.error('Language switcher missing - force initializing...');
+            window.i18n.init();
+        } else {
+            console.error('Language switcher already exists');
+        }
+    } else {
+        console.error('window.i18n not found!');
+    }
+});
+</script>
+
+
+
+
+
+
+
+
 </body>
 </html>
