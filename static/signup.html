@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.conveythis.com; style-src 'self' 'unsafe-inline';">
-    <script src="https://cdn.conveythis.com/javascript/conveythis.js?api_key=pub_b4f4ddeec8a41da8ad98b4b8c5f1e0ad"></script>
+    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Sign Up - Table for Two</title>
     
     <style>
@@ -269,6 +268,27 @@
             color: var(--primary-color);
             text-decoration: none;
         }
+
+        /* Custom RTL Support */
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input {
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-input[type="email"],
+        [dir="rtl"] .form-input[type="password"] {
+            text-align: left;
+            direction: ltr;
+        }
+
+        [dir="rtl"] .terms-checkbox input[type="checkbox"] {
+            margin-left: 0.5rem;
+            margin-right: 0;
+        }
     </style>
 </head>
 <body>
@@ -378,289 +398,346 @@
     </div>
 
     <script>
-        // CSRF Token management
-        let csrfToken = null;
-
-        async function getCSRFToken() {
-            if (!csrfToken) {
-                try {
-                    const response = await fetch('/api/csrf-token', {
-                        credentials: 'same-origin'
-                    });
-                    const data = await response.json();
-                    csrfToken = data.csrf_token;
-                } catch (error) {
-                    console.error('Failed to get CSRF token:', error);
-                }
-            }
-            return csrfToken;
-        }
-
-        // Form validation
-        function validateEmail(email) {
-            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return regex.test(email);
-        }
-
-        function validatePassword(password) {
-            const requirements = {
-                length: password.length >= 8,
-                upper: /[A-Z]/.test(password),
-                lower: /[a-z]/.test(password),
-                number: /[0-9]/.test(password)
-            };
-
-            // Update visual indicators
-            document.getElementById('lengthReq').className = requirements.length ? 'valid' : 'invalid';
-            document.getElementById('upperReq').className = requirements.upper ? 'valid' : 'invalid';
-            document.getElementById('lowerReq').className = requirements.lower ? 'valid' : 'invalid';
-            document.getElementById('numberReq').className = requirements.number ? 'valid' : 'invalid';
-
-            return requirements.length && requirements.upper && requirements.lower && requirements.number;
-        }
-
-        // Real-time password validation
-        document.getElementById('password').addEventListener('input', (e) => {
-            validatePassword(e.target.value);
+        // Initialize translation system after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTranslation();
+            initializeSignupForm();
         });
 
-        function validateForm() {
-            let isValid = true;
-            const displayName = document.getElementById('displayName');
-            const email = document.getElementById('email');
-            const password = document.getElementById('password');
-            const confirmPassword = document.getElementById('confirmPassword');
-            const terms = document.getElementById('terms');
-            
-            const displayNameError = document.getElementById('displayNameError');
-            const emailError = document.getElementById('emailError');
-            const passwordError = document.getElementById('passwordError');
-            const confirmPasswordError = document.getElementById('confirmPasswordError');
-
-            // Reset errors
-            displayName.classList.remove('error');
-            email.classList.remove('error');
-            password.classList.remove('error');
-            confirmPassword.classList.remove('error');
-            displayNameError.style.display = 'none';
-            emailError.style.display = 'none';
-            passwordError.style.display = 'none';
-            confirmPasswordError.style.display = 'none';
-
-            // Validate display name
-            if (!displayName.value.trim()) {
-                displayNameError.textContent = 'Display name is required';
-                displayNameError.style.display = 'block';
-                displayName.classList.add('error');
-                isValid = false;
-            } else if (displayName.value.trim().length < 2) {
-                displayNameError.textContent = 'Display name must be at least 2 characters';
-                displayNameError.style.display = 'block';
-                displayName.classList.add('error');
-                isValid = false;
-            }
-
-            // Validate email
-            if (!email.value.trim()) {
-                emailError.textContent = 'Email is required';
-                emailError.style.display = 'block';
-                email.classList.add('error');
-                isValid = false;
-            } else if (!validateEmail(email.value)) {
-                emailError.textContent = 'Please enter a valid email';
-                emailError.style.display = 'block';
-                email.classList.add('error');
-                isValid = false;
-            }
-
-            // Validate password
-            if (!password.value) {
-                passwordError.textContent = 'Password is required';
-                passwordError.style.display = 'block';
-                password.classList.add('error');
-                isValid = false;
-            } else if (!validatePassword(password.value)) {
-                passwordError.textContent = 'Password does not meet requirements';
-                passwordError.style.display = 'block';
-                password.classList.add('error');
-                isValid = false;
-            }
-
-            // Validate password confirmation
-            if (!confirmPassword.value) {
-                confirmPasswordError.textContent = 'Please confirm your password';
-                confirmPasswordError.style.display = 'block';
-                confirmPassword.classList.add('error');
-                isValid = false;
-            } else if (password.value !== confirmPassword.value) {
-                confirmPasswordError.textContent = 'Passwords do not match';
-                confirmPasswordError.style.display = 'block';
-                confirmPassword.classList.add('error');
-                isValid = false;
-            }
-
-            // Validate terms
-            if (!terms.checked) {
-                showAlert('Please accept the Terms of Service and Privacy Policy');
-                isValid = false;
-            }
-
-            return isValid;
+        function initializeTranslation() {
+            const switcher = document.createElement('div');
+            switcher.id = 'languageSwitcher';
+            switcher.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; background: white; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+            switcher.innerHTML = `
+                <select id="languageSelect" onchange="changeLanguage(this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
+                    <option value="en">English</option>
+                    <option value="he">עברית</option>
+                    <option value="ar">العربية</option>
+                    <option value="ru">Русский</option>
+                </select>
+            `;
+            document.body.appendChild(switcher);
         }
 
-        function showAlert(message, type = 'error') {
-            const alertDiv = document.getElementById('alertMessage');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert ${type}`;
-            alertDiv.style.display = 'block';
+        function changeLanguage(lang) {
+            const translations = {
+                'he': {
+                    'Find Your Perfect Dinner Date': 'מצא את דייט הארוחה המושלם שלך',
+                    'Display Name': 'שם לתצוגה',
+                    'Email': 'אימייל',
+                    'Password': 'סיסמה',
+                    'Confirm Password': 'אישור סיסמה',
+                    'Create Account': 'צור חשבון',
+                    'At least 8 characters': 'לפחות 8 תווים',
+                    'One uppercase letter': 'אות גדולה אחת',
+                    'One lowercase letter': 'אות קטנה אחת',
+                    'One number': 'מספר אחד',
+                    'I agree to the': 'אני מסכים ל',
+                    'Terms of Service': 'תנאי השירות',
+                    'and': 'ו',
+                    'Privacy Policy': 'מדיניות פרטיות',
+                    'or': 'או',
+                    'Google': 'Google',
+                    'Facebook': 'Facebook',
+                    'Already have an account?': 'כבר יש לך חשבון?',
+                    'Log in': 'התחבר'
+                },
+                'ar': {
+                    'Find Your Perfect Dinner Date': 'اعثر على موعد العشاء المثالي',
+                    'Display Name': 'اسم العرض',
+                    'Email': 'البريد الإلكتروني',
+                    'Password': 'كلمة المرور',
+                    'Confirm Password': 'تأكيد كلمة المرور',
+                    'Create Account': 'إنشاء حساب',
+                    'At least 8 characters': 'على الأقل 8 أحرف',
+                    'One uppercase letter': 'حرف كبير واحد',
+                    'One lowercase letter': 'حرف صغير واحد',
+                    'One number': 'رقم واحد',
+                    'I agree to the': 'أوافق على',
+                    'Terms of Service': 'شروط الخدمة',
+                    'and': 'و',
+                    'Privacy Policy': 'سياسة الخصوصية',
+                    'or': 'أو',
+                    'Google': 'Google',
+                    'Facebook': 'Facebook',
+                    'Already have an account?': 'لديك حساب بالفعل؟',
+                    'Log in': 'تسجيل الدخول'
+                },
+                'ru': {
+                    'Find Your Perfect Dinner Date': 'Найди свое идеальное свидание за ужином',
+                    'Display Name': 'Отображаемое имя',
+                    'Email': 'Электронная почта',
+                    'Password': 'Пароль',
+                    'Confirm Password': 'Подтвердите пароль',
+                    'Create Account': 'Создать аккаунт',
+                    'At least 8 characters': 'Не менее 8 символов',
+                    'One uppercase letter': 'Одна заглавная буква',
+                    'One lowercase letter': 'Одна строчная буква',
+                    'One number': 'Одна цифра',
+                    'I agree to the': 'Я согласен с',
+                    'Terms of Service': 'Условия использования',
+                    'and': 'и',
+                    'Privacy Policy': 'Политика конфиденциальности',
+                    'or': 'или',
+                    'Google': 'Google',
+                    'Facebook': 'Facebook',
+                    'Already have an account?': 'Уже есть аккаунт?',
+                    'Log in': 'Войти'
+                }
+            };
 
-            // Log for debugging
-            console.log(`Alert: ${type} - ${message}`);
-
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        function setLoading(isLoading) {
-            const button = document.querySelector('.btn-primary');
-            const buttonText = document.getElementById('buttonText');
-            const spinner = document.getElementById('loadingSpinner');
-
-            if (isLoading) {
-                button.disabled = true;
-                buttonText.style.display = 'none';
-                spinner.style.display = 'block';
-            } else {
-                button.disabled = false;
-                buttonText.style.display = 'inline';
-                spinner.style.display = 'none';
-            }
-        }
-
-        // Handle signup
-        document.getElementById('signupForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!validateForm()) {
+            if (lang === 'en') {
+                document.body.dir = 'ltr';
+                location.reload();
                 return;
             }
 
-            setLoading(true);
+            const langData = translations[lang];
+            if (langData) {
+                Object.keys(langData).forEach(english => {
+                    document.querySelectorAll('*').forEach(element => {
+                        if (element.children.length === 0 && element.textContent.trim() === english) {
+                            element.textContent = langData[english];
+                        }
+                    });
+                });
+                
+                if (lang === 'he' || lang === 'ar') {
+                    document.body.dir = 'rtl';
+                    document.body.style.fontFamily = 'Arial, sans-serif';
+                } else {
+                    document.body.dir = 'ltr';
+                }
+            }
+        }
 
-            try {
-                const token = await getCSRFToken();
-                const formData = {
-                    display_name: document.getElementById('displayName').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    password: document.getElementById('password').value
+        function initializeSignupForm() {
+            // CSRF Token management
+            let csrfToken = null;
+
+            async function getCSRFToken() {
+                if (!csrfToken) {
+                    try {
+                        const response = await fetch('/api/csrf-token', {
+                            credentials: 'same-origin'
+                        });
+                        const data = await response.json();
+                        csrfToken = data.csrf_token;
+                    } catch (error) {
+                        console.error('Failed to get CSRF token:', error);
+                    }
+                }
+                return csrfToken;
+            }
+
+            // Form validation
+            function validateEmail(email) {
+                const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return regex.test(email);
+            }
+
+            function validatePassword(password) {
+                const requirements = {
+                    length: password.length >= 8,
+                    upper: /[A-Z]/.test(password),
+                    lower: /[a-z]/.test(password),
+                    number: /[0-9]/.test(password)
                 };
 
-                console.log('Sending registration request:', { ...formData, password: '[hidden]' });
+                // Update visual indicators
+                document.getElementById('lengthReq').className = requirements.length ? 'valid' : 'invalid';
+                document.getElementById('upperReq').className = requirements.upper ? 'valid' : 'invalid';
+                document.getElementById('lowerReq').className = requirements.lower ? 'valid' : 'invalid';
+                document.getElementById('numberReq').className = requirements.number ? 'valid' : 'invalid';
 
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': token
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(formData)
-                });
-
-                const data = await response.json();
-                console.log('Registration response:', response.status, data);
-
-                if (response.ok) {
-                    showAlert('Account created successfully! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/login.html';
-                    }, 2000);
-                } else {
-                    showAlert(data.error || 'Registration failed. Please try again.');
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                showAlert('Network error. Please check your connection and try again.');
-            } finally {
-                setLoading(false);
+                return requirements.length && requirements.upper && requirements.lower && requirements.number;
             }
-        });
 
-        // Social signup placeholder
-        function socialSignup(provider) {
-            showAlert(`${provider} signup coming soon!`, 'info');
+            // Real-time password validation
+            document.getElementById('password').addEventListener('input', (e) => {
+                validatePassword(e.target.value);
+            });
+
+            function validateForm() {
+                let isValid = true;
+                const displayName = document.getElementById('displayName');
+                const email = document.getElementById('email');
+                const password = document.getElementById('password');
+                const confirmPassword = document.getElementById('confirmPassword');
+                const terms = document.getElementById('terms');
+                
+                const displayNameError = document.getElementById('displayNameError');
+                const emailError = document.getElementById('emailError');
+                const passwordError = document.getElementById('passwordError');
+                const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+                // Reset errors
+                displayName.classList.remove('error');
+                email.classList.remove('error');
+                password.classList.remove('error');
+                confirmPassword.classList.remove('error');
+                displayNameError.style.display = 'none';
+                emailError.style.display = 'none';
+                passwordError.style.display = 'none';
+                confirmPasswordError.style.display = 'none';
+
+                // Validate display name
+                if (!displayName.value.trim()) {
+                    displayNameError.textContent = 'Display name is required';
+                    displayNameError.style.display = 'block';
+                    displayName.classList.add('error');
+                    isValid = false;
+                } else if (displayName.value.trim().length < 2) {
+                    displayNameError.textContent = 'Display name must be at least 2 characters';
+                    displayNameError.style.display = 'block';
+                    displayName.classList.add('error');
+                    isValid = false;
+                }
+
+                // Validate email
+                if (!email.value.trim()) {
+                    emailError.textContent = 'Email is required';
+                    emailError.style.display = 'block';
+                    email.classList.add('error');
+                    isValid = false;
+                } else if (!validateEmail(email.value)) {
+                    emailError.textContent = 'Please enter a valid email';
+                    emailError.style.display = 'block';
+                    email.classList.add('error');
+                    isValid = false;
+                }
+
+                // Validate password
+                if (!password.value) {
+                    passwordError.textContent = 'Password is required';
+                    passwordError.style.display = 'block';
+                    password.classList.add('error');
+                    isValid = false;
+                } else if (!validatePassword(password.value)) {
+                    passwordError.textContent = 'Password does not meet requirements';
+                    passwordError.style.display = 'block';
+                    password.classList.add('error');
+                    isValid = false;
+                }
+
+                // Validate password confirmation
+                if (!confirmPassword.value) {
+                    confirmPasswordError.textContent = 'Please confirm your password';
+                    confirmPasswordError.style.display = 'block';
+                    confirmPassword.classList.add('error');
+                    isValid = false;
+                } else if (password.value !== confirmPassword.value) {
+                    confirmPasswordError.textContent = 'Passwords do not match';
+                    confirmPasswordError.style.display = 'block';
+                    confirmPassword.classList.add('error');
+                    isValid = false;
+                }
+
+                // Validate terms
+                if (!terms.checked) {
+                    showAlert('Please accept the Terms of Service and Privacy Policy');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            function showAlert(message, type = 'error') {
+                const alertDiv = document.getElementById('alertMessage');
+                alertDiv.textContent = message;
+                alertDiv.className = `alert ${type}`;
+                alertDiv.style.display = 'block';
+
+                console.log(`Alert: ${type} - ${message}`);
+
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            function setLoading(isLoading) {
+                const button = document.querySelector('.btn-primary');
+                const buttonText = document.getElementById('buttonText');
+                const spinner = document.getElementById('loadingSpinner');
+
+                if (isLoading) {
+                    button.disabled = true;
+                    buttonText.style.display = 'none';
+                    spinner.style.display = 'block';
+                } else {
+                    button.disabled = false;
+                    buttonText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                }
+            }
+
+            // Handle signup
+            document.getElementById('signupForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!validateForm()) {
+                    return;
+                }
+
+                setLoading(true);
+
+                try {
+                    const token = await getCSRFToken();
+                    const formData = {
+                        display_name: document.getElementById('displayName').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value
+                    };
+
+                    console.log('Sending registration request:', { ...formData, password: '[hidden]' });
+
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': token
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    console.log('Registration response:', response.status, data);
+
+                    if (response.ok) {
+                        showAlert('Account created successfully! Redirecting to login...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/login.html';
+                        }, 2000);
+                    } else {
+                        showAlert(data.error || 'Registration failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    showAlert('Network error. Please check your connection and try again.');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // Social signup placeholder
+            window.socialSignup = function(provider) {
+                showAlert(`${provider} signup coming soon!`, 'info');
+            };
+
+            // Security: Prevent clickjacking
+            if (window.top !== window.self) {
+                window.top.location = window.self.location;
+            }
+
+            // Clear sensitive data on page unload
+            window.addEventListener('beforeunload', () => {
+                document.getElementById('password').value = '';
+                document.getElementById('confirmPassword').value = '';
+            });
+
+            console.log('Signup page loaded');
         }
-
-        // Security: Prevent clickjacking
-        if (window.top !== window.self) {
-            window.top.location = window.self.location;
-        }
-
-        // Clear sensitive data on page unload
-        window.addEventListener('beforeunload', () => {
-            document.getElementById('password').value = '';
-            document.getElementById('confirmPassword').value = '';
-        });
-
-        // Add console logging for debugging
-        console.log('Signup page loaded');
-
-    
-    
-    
-    
-    /* ConveyThis RTL Support */
-[dir="rtl"] {
-    direction: rtl;
-    text-align: right;
-}
-
-[dir="rtl"] .logo {
-    text-align: right;
-}
-
-[dir="rtl"] .nav-links {
-    flex-direction: row-reverse;
-}
-
-[dir="rtl"] .hero-container {
-    direction: rtl;
-}
-
-[dir="rtl"] .form-input {
-    text-align: right;
-}
-
-[dir="rtl"] .form-input[type="email"],
-[dir="rtl"] .form-input[type="password"] {
-    text-align: left;
-    direction: ltr;
-}
-
-.conveythis-rtl body {
-    direction: rtl;
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-}
-
-.conveythis-rtl .header-content,
-.conveythis-rtl .nav-container {
-    direction: rtl;
-}
-
-.conveythis-rtl .sidebar-nav {
-    direction: rtl;
-}
-
-.conveythis-rtl .restaurant-card {
-    direction: rtl;
-    text-align: right;
-}
-    
-    
-    
-    
-    
     </script>
 </body>
 </html>
