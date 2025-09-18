@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-CSP" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
-    <!-- ConveyThis removed - using custom translation -->
-    <title>Dashboard - Table for Two</title>
+    <title>TableForTwo - Dashboard</title>
 
+    <!-- Custom Styles -->
     <style>
         * {
             margin: 0;
@@ -15,164 +14,320 @@
         }
 
         :root {
-            --primary-color: #e74c3c;
-            --secondary-color: #3498db;
-            --dark-gray: #2c3e50;
-            --light-gray: #ecf0f1;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
+            --primary-color: #FF6B6B;
+            --secondary-color: #4ECDC4;
+            --accent-color: #FFE66D;
+            --text-dark: #2D3436;
+            --text-light: #636E72;
+            --background-light: #F8F9FA;
+            --border-color: #E0E3E7;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8f9fa;
-            color: var(--dark-gray);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.6;
         }
 
-        /* Header */
-        .header {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .header-nav {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .nav-link {
-            color: var(--dark-gray);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-link:hover {
-            color: var(--primary-color);
-        }
-
-        .user-menu {
-            position: relative;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* Main Layout */
+        /* Dashboard Layout */
         .dashboard-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
             max-width: 1400px;
             margin: 2rem auto;
-            padding: 0 2rem;
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            gap: 2rem;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            min-height: calc(100vh - 4rem);
         }
 
         /* Sidebar */
         .sidebar {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            height: fit-content;
-            position: sticky;
-            top: 100px;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .sidebar-link {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            color: var(--dark-gray);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transition: all 0.3s;
-        }
-
-        .sidebar-link:hover {
-            background: #f8f9fa;
-            color: var(--primary-color);
-        }
-
-        .sidebar-link.active {
-            background: var(--primary-color);
+            background: linear-gradient(180deg, #FF6B6B 0%, #FF8787 100%);
+            padding: 2rem;
             color: white;
         }
 
-        .sidebar-icon {
-            font-size: 1.2rem;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .brand-logo {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .user-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-info p {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(4px);
+        }
+
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.25);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.9;
         }
 
         /* Main Content */
         .main-content {
-            background: white;
-            border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            min-height: 600px;
+            overflow-y: auto;
         }
 
-        .page-title {
-            font-size: 2rem;
+        .content-header {
             margin-bottom: 2rem;
-            color: var(--dark-gray);
         }
 
-        /* Restaurant Grid */
-        .restaurant-grid {
+        .content-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .content-subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon.primary {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--primary-color);
+        }
+
+        .stat-icon.success {
+            background: rgba(78, 205, 196, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .stat-icon.warning {
+            background: rgba(255, 230, 109, 0.1);
+            color: #F39C12;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .stat-change.positive {
+            color: #27AE60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .stat-change.negative {
+            color: #E74C3C;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Restaurant Cards */
+        .restaurants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
         }
 
         .restaurant-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
+            background: white;
+            border-radius: 16px;
             overflow: hidden;
-            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
             cursor: pointer;
         }
 
         .restaurant-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
         }
 
         .restaurant-image {
@@ -189,263 +344,100 @@
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--text-dark);
         }
 
         .restaurant-details {
-            color: #666;
-            margin-bottom: 1rem;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
         }
 
         .restaurant-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
         }
 
         .restaurant-rating {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
-            color: var(--warning-color);
+            gap: 0.5rem;
+            color: #F39C12;
         }
 
         .available-slots {
-            background: #e8f5e9;
-            color: var(--success-color);
+            background: rgba(78, 205, 196, 0.1);
+            color: var(--secondary-color);
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        /* Date Picker */
-        .date-filter {
+        /* Filters */
+        .filters-container {
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
         }
 
-        .date-input {
-            padding: 0.75rem 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .filter-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .filter-btn:hover {
-            background: #c0392b;
-        }
-
-        /* Match Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
+        .filter-group {
             display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 2rem;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-        }
-
-        /* Time Slots */
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .time-slot {
-            padding: 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .time-slot:hover {
-            border-color: var(--primary-color);
-        }
-
-        .time-slot.selected {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .time-slot.unavailable {
-            background: #f5f5f5;
-            color: #999;
-            cursor: not-allowed;
-        }
-
-        /* Potential Matches */
-        .matches-section {
-            margin-top: 2rem;
-        }
-
-        .matches-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .match-card {
-            text-align: center;
-            padding: 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .match-card:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        .match-card.selected {
-            border-color: var(--primary-color);
-            background: #fff5f5;
-        }
-
-        .match-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 0.5rem;
-            object-fit: cover;
-        }
-
-        .match-name {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .match-compatibility {
-            color: var(--success-color);
+        .filter-label {
             font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-light);
         }
 
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
+        .filter-input {
+            padding: 0.625rem 1rem;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .stat-icon.dates {
-            background: #ffe0e0;
-            color: var(--primary-color);
-        }
-
-        .stat-icon.matches {
-            background: #e0f2ff;
-            color: var(--secondary-color);
-        }
-
-        .stat-icon.success {
-            background: #e8f5e9;
-            color: var(--success-color);
-        }
-
-        .stat-content h3 {
-            font-size: 2rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-content p {
-            color: #666;
-            font-size: 0.875rem;
-        }
-
-        /* Match List Items */
-        .match-list-item {
+            font-size: 0.95rem;
+            transition: var(--transition);
             background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        /* Match List */
+        .matches-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .match-list-item {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: var(--transition);
+        }
+
+        .match-list-item:hover {
+            box-shadow: var(--shadow-sm);
         }
 
         .match-list-avatar {
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             object-fit: cover;
         }
@@ -455,206 +447,256 @@
         }
 
         .match-list-name {
-            font-size: 1.125rem;
             font-weight: 600;
+            color: var(--text-dark);
             margin-bottom: 0.25rem;
         }
 
         .match-list-details {
-            color: #666;
+            color: var(--text-light);
             font-size: 0.875rem;
         }
 
+        .match-status {
+            padding: 0.375rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .match-status.pending {
+            background: rgba(255, 230, 109, 0.2);
+            color: #F39C12;
+        }
+
+        .match-status.confirmed {
+            background: rgba(78, 205, 196, 0.2);
+            color: var(--secondary-color);
+        }
+
+        .match-status.completed {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27AE60;
+        }
+
         /* Date Cards */
-        .date-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+        .dates-grid {
             display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 1.5rem;
-            align-items: center;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .date-card {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: var(--transition);
+        }
+
+        .date-card:hover {
+            box-shadow: var(--shadow-sm);
         }
 
         .date-time {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: var(--background-light);
+            border-radius: 10px;
+            min-width: 80px;
         }
 
         .date-day {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.75rem;
+            font-weight: 700;
             color: var(--primary-color);
+            line-height: 1;
         }
 
         .date-month {
             font-size: 0.875rem;
-            color: #666;
+            color: var(--text-light);
+            text-transform: uppercase;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 1024px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                position: static;
-                order: -1;
-            }
-
-            .sidebar-nav {
-                flex-direction: row;
-                overflow-x: auto;
-                padding-bottom: 0.5rem;
-            }
-
-            .sidebar-link {
-                white-space: nowrap;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-nav {
-                display: none;
-            }
-
-            .restaurant-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .time-slots {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .matches-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 3rem;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* Notification Badge */
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--primary-color);
-            color: white;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 10px;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        /* Tab Content */
-        .tab-content {
+        /* Modal */
+        .modal {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
         }
 
-        .tab-content.active {
-            display: block;
+        .modal.active {
+            display: flex;
         }
 
-        /* Profile Section */
-        .profile-header {
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--background-light);
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #e0e0e0;
+            justify-content: center;
+            transition: var(--transition);
         }
 
-        .profile-avatar-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
+        .modal-close:hover {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--primary-color);
         }
 
-        .profile-info h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
+        .modal-body {
+            padding: 2rem;
         }
 
-        .profile-info p {
-            color: #666;
-            margin-bottom: 0.25rem;
+        .modal-footer {
+            padding: 1rem 2rem 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
         }
 
-        /* Match Status */
-        .match-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
+        /* Time Slots */
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+
+        .time-slot {
+            padding: 0.75rem;
+            text-align: center;
+            background: var(--background-light);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
             font-weight: 500;
         }
 
-        .match-status.pending {
-            background: #fff3cd;
-            color: #856404;
+        .time-slot:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: var(--primary-color);
         }
 
-        .match-status.confirmed {
-            background: #d4edda;
-            color: #155724;
+        .time-slot.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
-        .match-status.completed {
-            background: #e2e3e5;
-            color: #383d41;
+        .time-slot.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #F5F5F5;
+        }
+
+        /* Match Cards in Modal */
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .match-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background: var(--background-light);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .match-card:hover {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: var(--secondary-color);
+        }
+
+        .match-card.selected {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: var(--secondary-color);
+        }
+
+        .match-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            margin-bottom: 0.75rem;
+            object-fit: cover;
+        }
+
+        .match-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .match-compatibility {
+            font-size: 0.875rem;
+            color: var(--secondary-color);
+            font-weight: 600;
         }
 
         /* Buttons */
         .btn {
             padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
             border: none;
-            border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn-primary {
@@ -663,26 +705,86 @@
         }
 
         .btn-primary:hover {
-            background: #c0392b;
+            background: #FF5252;
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-secondary {
-            background: #e0e0e0;
-            color: var(--dark-gray);
+            background: var(--background-light);
+            color: var(--text-dark);
         }
 
         .btn-secondary:hover {
-            background: #d0d0d0;
+            background: #E0E3E7;
         }
 
         .btn-success {
-            background: var(--success-color);
+            background: var(--secondary-color);
             color: white;
         }
 
         .btn-success:hover {
-            background: #229954;
+            background: #45B7AA;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* Toast Notifications */
@@ -692,95 +794,215 @@
             right: 2rem;
             background: white;
             padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
             display: flex;
             align-items: center;
-            gap: 1rem;
-            transform: translateX(400px);
-            transition: transform 0.3s;
-            z-index: 3000;
+            gap: 0.75rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 2000;
+            max-width: 400px;
         }
 
         .toast.show {
-            transform: translateX(0);
+            transform: translateY(0);
+            opacity: 1;
         }
 
         .toast.success {
-            border-left: 4px solid var(--success-color);
+            border-left: 4px solid #27AE60;
         }
 
         .toast.error {
-            border-left: 4px solid var(--primary-color);
+            border-left: 4px solid #E74C3C;
         }
 
         .toast.info {
             border-left: 4px solid var(--secondary-color);
         }
 
-        /* Desired Times Styles */
-        .time-preference-item {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
+        /* Settings Form */
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-dark);
             margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-switch {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: var(--transition);
+            border-radius: 28px;
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: var(--transition);
+            border-radius: 50%;
+        }
+
+        .switch input:checked + .switch-slider {
+            background-color: var(--secondary-color);
+        }
+
+        .switch input:checked + .switch-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Desired Times Section */
+        .time-preference-container {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .time-selection-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .time-preference-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .time-preference-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1rem;
+            background: var(--background-light);
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        .time-preference-item:hover {
+            box-shadow: var(--shadow-sm);
         }
 
         .preference-info {
-            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
         }
 
         .preference-date {
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            color: var(--text-dark);
         }
 
         .preference-time {
-            color: #666;
-            font-size: 0.875rem;
+            background: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            color: var(--primary-color);
+            font-weight: 500;
         }
 
         .preference-matches {
-            color: var(--success-color);
+            color: var(--text-light);
             font-size: 0.875rem;
-            margin-top: 0.25rem;
         }
 
         .remove-preference-btn {
-            background: var(--primary-color);
-            color: white;
+            background: rgba(231, 76, 60, 0.1);
+            color: #E74C3C;
             border: none;
-            border-radius: 4px;
             padding: 0.5rem 1rem;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition);
         }
 
         .remove-preference-btn:hover {
-            background: #c0392b;
+            background: rgba(231, 76, 60, 0.2);
         }
 
-        /* Restaurant Following Styles */
+        /* Restaurant Following Section */
+        .restaurant-follow-list {
+            display: grid;
+            gap: 1rem;
+        }
+
         .restaurant-follow-card {
             background: white;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1.5rem;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
 
         .restaurant-follow-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
         }
 
         .restaurant-follow-card.following {
-            border-color: var(--success-color);
-            background: #f8fff8;
+            border-color: var(--secondary-color);
+            background: rgba(78, 205, 196, 0.05);
         }
 
         .restaurant-header {
@@ -791,32 +1013,27 @@
         }
 
         .restaurant-info h4 {
-            margin-bottom: 0.25rem;
             font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
         }
 
         .restaurant-cuisine {
-            color: #666;
+            color: var(--text-light);
             font-size: 0.875rem;
             margin-bottom: 0.25rem;
-        }
-
-        .restaurant-rating {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.875rem;
         }
 
         .follow-btn {
             padding: 0.5rem 1rem;
             border: 2px solid var(--primary-color);
-            border-radius: 6px;
-            background: transparent;
             color: var(--primary-color);
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
 
         .follow-btn:hover {
@@ -825,770 +1042,1293 @@
         }
 
         .follow-btn.following {
-            background: var(--success-color);
-            border-color: var(--success-color);
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
             color: white;
         }
 
         .follow-btn.following:hover {
-            background: #229954;
-            border-color: #229954;
+            background: #45B7AA;
+            border-color: #45B7AA;
         }
 
         .follower-count {
-            font-size: 0.75rem;
-            color: #999;
+            color: var(--text-light);
+            font-size: 0.875rem;
+            font-style: italic;
+        }
+
+        /* Date Input Styling */
+        .date-input {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: white;
             margin-top: 0.5rem;
         }
 
-        /* Booking Form Styles */
-        .booking-form {
-            margin-top: 2rem;
-            padding: 2rem;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--dark-gray);
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
+        .date-input:focus {
             outline: none;
             border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
         }
 
-        /* Custom RTL Support */
-        [dir="rtl"] {
+        /* Language Switcher Styles */
+        .language-switcher {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-dark);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .lang-btn:hover {
+            background: var(--background-light);
+        }
+
+        .lang-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* RTL Support */
+        .rtl {
             direction: rtl;
-            text-align: right;
         }
 
-        [dir="rtl"] .header-content {
-            direction: rtl;
+        .rtl .dashboard-container {
+            grid-template-columns: 1fr 280px;
         }
 
-        [dir="rtl"] .sidebar-nav {
-            direction: rtl;
-        }
-
-        [dir="rtl"] .restaurant-card {
-            direction: rtl;
-            text-align: right;
-        }
-
-        [dir="rtl"] .form-input {
-            text-align: right;
-        }
-
-        [dir="rtl"] .form-input[type="email"],
-        [dir="rtl"] .form-input[type="password"] {
-            text-align: left;
-            direction: ltr;
-        }
-
-        [dir="rtl"] .logo {
-            text-align: right;
-        }
-
-        [dir="rtl"] .nav-links {
+        .rtl .sidebar-link {
             flex-direction: row-reverse;
         }
 
-        [dir="rtl"] .hero-container {
-            direction: rtl;
+        .rtl .user-profile {
+            flex-direction: row-reverse;
+        }
+
+        .rtl .restaurant-meta {
+            flex-direction: row-reverse;
+        }
+
+        .rtl .match-list-item {
+            flex-direction: row-reverse;
+        }
+
+        .rtl .modal-header {
+            flex-direction: row-reverse;
+        }
+
+        .rtl .language-switcher {
+            right: auto;
+            left: 2rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 999;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .restaurants-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-container {
+                flex-direction: column;
+            }
+
+            .filter-input {
+                width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .dates-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .restaurants-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-   <header class="header">
-    <div class="header-content">
-        <a href="/" class="logo">Table for Two 🍽️❤️</a>
-        <nav class="header-nav">
-            <select id="languageSelect" onchange="changeLanguage(this.value)" style="margin-right: 1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
-                <option value="en">English</option>
-                <option value="he">עברית</option>
-                <option value="ar">العربية</option>
-                <option value="ru">Русский</option>
-            </select>
-            <a href="#" class="nav-link" onclick="showTab('browse')">Browse Tables</a>
-            <a href="#" class="nav-link" onclick="showTab('matches')">My Matches</a>
-            <a href="#" class="nav-link" onclick="showTab('dates')">Upcoming Dates</a>
-            <div class="user-menu">
-                    <div class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">JD</div>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                    <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; padding: 0.5rem;">
-                        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem 1rem; color: var(--dark-gray); text-decoration: none;">Logout</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-    </header>
+    <!-- Language Switcher -->
+    <div class="language-switcher">
+        <button class="lang-btn active" onclick="changeLanguage('en')">EN</button>
+        <button class="lang-btn" onclick="changeLanguage('he')">עב</button>
+        <button class="lang-btn" onclick="changeLanguage('ar')">عر</button>
+        <button class="lang-btn" onclick="changeLanguage('ru')">РУ</button>
+    </div>
 
-    <!-- Main Dashboard -->
+    <!-- Dashboard Container -->
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <nav class="sidebar-nav">
-                <a href="#" class="sidebar-link active" onclick="showTab('overview')">
-                    <span class="sidebar-icon">📊</span>
-                    <span>Overview</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('browse')">
-                    <span class="sidebar-icon">🍽️</span>
-                    <span>Browse Tables</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('matches')">
-                    <span class="sidebar-icon">💕</span>
-                    <span>My Matches</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('dates')">
-                    <span class="sidebar-icon">📅</span>
-                    <span>Upcoming Dates</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('desired-times')">
-                    <span class="sidebar-icon">⏰</span>
-                    <span>Desired Times</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('history')">
-                    <span class="sidebar-icon">📜</span>
-                    <span>Date History</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('profile')">
-                    <span class="sidebar-icon">👤</span>
-                    <span>My Profile</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('restaurants')">
-                    <span class="sidebar-icon">🏪</span>
-                    <span>Restaurants</span>
-                </a>
-                <a href="#" class="sidebar-link" onclick="showTab('settings')">
-                    <span class="sidebar-icon">⚙️</span>
-                    <span>Settings</span>
-                </a>
+            <div class="brand">
+                <div class="brand-logo">🍽️</div>
+                <div class="brand-name">TableForTwo</div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar" id="userInitials">JD</div>
+                <div class="user-info">
+                    <h3 id="userName">John Doe</h3>
+                    <p id="userLocation">New York, NY</p>
+                </div>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <button class="sidebar-link active" onclick="showTab('overview')">
+                            <span class="nav-icon">📊</span>
+                            <span data-translate="nav.overview">Overview</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('browse')">
+                            <span class="nav-icon">🔍</span>
+                            <span data-translate="nav.browse">Browse Tables</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('matches')">
+                            <span class="nav-icon">💝</span>
+                            <span data-translate="nav.matches">My Matches</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('dates')">
+                            <span class="nav-icon">📅</span>
+                            <span data-translate="nav.dates">Upcoming Dates</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('desired-times')">
+                            <span class="nav-icon">⏰</span>
+                            <span data-translate="nav.desired_times">Desired Times</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('history')">
+                            <span class="nav-icon">📜</span>
+                            <span data-translate="nav.history">Date History</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('profile')">
+                            <span class="nav-icon">👤</span>
+                            <span data-translate="nav.profile">Profile</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('restaurants')">
+                            <span class="nav-icon">🏪</span>
+                            <span data-translate="nav.restaurants">Restaurants</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="sidebar-link" onclick="showTab('settings')">
+                            <span class="nav-icon">⚙️</span>
+                            <span data-translate="nav.settings">Settings</span>
+                        </button>
+                    </li>
+                </ul>
             </nav>
+
+            <div style="margin-top: auto; padding-top: 2rem;">
+                <button class="sidebar-link" onclick="logout()">
+                    <span class="nav-icon">🚪</span>
+                    <span data-translate="nav.logout">Logout</span>
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Overview Tab -->
             <div id="overview" class="tab-content active">
-                <h1 class="page-title">Welcome back, <span id="userName">User</span>!</h1>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="overview.title">Welcome back!</h1>
+                    <p class="content-subtitle" data-translate="overview.subtitle">Here's what's happening with your dating life</p>
+                </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon dates">📅</div>
-                        <div class="stat-content">
-                            <h3 id="totalDates">0</h3>
-                            <p>Total Dates</p>
+                        <div class="stat-header">
+                            <span class="stat-label" data-translate="stats.active_matches">Active Matches</span>
+                            <div class="stat-icon primary">💝</div>
                         </div>
+                        <div class="stat-value" id="activeMatchesCount">0</div>
+                        <div class="stat-change positive">+2 this week</div>
                     </div>
+
                     <div class="stat-card">
-                        <div class="stat-icon matches">💕</div>
-                        <div class="stat-content">
-                            <h3 id="activeMatches">0</h3>
-                            <p>Active Matches</p>
+                        <div class="stat-header">
+                            <span class="stat-label" data-translate="stats.upcoming_dates">Upcoming Dates</span>
+                            <div class="stat-icon success">📅</div>
                         </div>
+                        <div class="stat-value" id="upcomingDatesCount">0</div>
+                        <div class="stat-change positive">+1 scheduled</div>
                     </div>
+
                     <div class="stat-card">
-                        <div class="stat-icon success">⭐</div>
-                        <div class="stat-content">
-                            <h3 id="successRate">0%</h3>
-                            <p>Success Rate</p>
+                        <div class="stat-header">
+                            <span class="stat-label" data-translate="stats.compatibility">Avg Compatibility</span>
+                            <div class="stat-icon warning">✨</div>
                         </div>
+                        <div class="stat-value" id="avgCompatibility">0%</div>
+                        <div class="stat-change positive">+5% improvement</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label" data-translate="stats.total_dates">Total Dates</span>
+                            <div class="stat-icon success">🍽️</div>
+                        </div>
+                        <div class="stat-value" id="totalDatesCount">0</div>
+                        <div class="stat-change">All time</div>
                     </div>
                 </div>
 
-                <h2 style="margin-bottom: 1rem;">Recommended Tables This Week</h2>
-                <div id="recommendedRestaurants" class="restaurant-grid">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading recommendations...</p>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" data-translate="recent_activity">Recent Activity</h2>
+                    </div>
+                    <div id="recentActivityList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <h3 data-translate="no_activity">No recent activity</h3>
+                            <p data-translate="start_browsing">Start browsing tables to find your perfect match!</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Browse Tables Tab -->
             <div id="browse" class="tab-content">
-                <h1 class="page-title">Browse Available Tables</h1>
-
-                <div class="date-filter">
-                    <input type="date" id="dateFilter" class="date-input">
-                    <select id="timeFilter" class="date-input">
-                        <option value="">All Times</option>
-                        <option value="lunch">Lunch (12pm-2pm)</option>
-                        <option value="dinner">Dinner (6pm-10pm)</option>
-                    </select>
-                    <select id="cuisineFilter" class="date-input">
-                        <option value="">All Cuisines</option>
-                        <option value="italian">Italian</option>
-                        <option value="asian">Asian</option>
-                        <option value="mediterranean">Mediterranean</option>
-                        <option value="american">American</option>
-                    </select>
-                    <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="browse.title">Browse Available Tables</h1>
+                    <p class="content-subtitle" data-translate="browse.subtitle">Find your perfect dinner date spot</p>
                 </div>
 
-                <div id="restaurantsList" class="restaurant-grid">
-                    <!-- Restaurants will be loaded here -->
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label class="filter-label" data-translate="filters.date">Date</label>
+                        <input type="date" class="filter-input" id="dateFilter">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" data-translate="filters.time">Time</label>
+                        <select class="filter-input" id="timeFilter">
+                            <option value="">Any time</option>
+                            <option value="lunch">Lunch (12pm-3pm)</option>
+                            <option value="dinner">Dinner (6pm-10pm)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" data-translate="filters.cuisine">Cuisine</label>
+                        <select class="filter-input" id="cuisineFilter">
+                            <option value="">All cuisines</option>
+                            <option value="italian">Italian</option>
+                            <option value="french">French</option>
+                            <option value="asian">Asian</option>
+                            <option value="mexican">Mexican</option>
+                            <option value="american">American</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">&nbsp;</label>
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <span data-translate="filters.apply">Apply Filters</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="restaurants-grid" id="restaurantsList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p data-translate="loading">Loading restaurants...</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Matches Tab -->
+            <!-- My Matches Tab -->
             <div id="matches" class="tab-content">
-                <h1 class="page-title">My Matches</h1>
-                <div id="matchesList">
-                    <!-- Matches will be loaded here -->
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="matches.title">My Matches</h1>
+                    <p class="content-subtitle" data-translate="matches.subtitle">People interested in dining with you</p>
+                </div>
+
+                <div class="matches-list" id="matchesList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p data-translate="loading">Loading matches...</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Upcoming Dates Tab -->
             <div id="dates" class="tab-content">
-                <h1 class="page-title">Upcoming Dates</h1>
-                <div id="upcomingDatesList">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📅</div>
-                        <h3>No upcoming dates</h3>
-                        <p>Browse available tables to find your next dinner date!</p>
-                        <button class="btn btn-primary" onclick="showTab('browse')">Browse Tables</button>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="dates.title">Upcoming Dates</h1>
+                    <p class="content-subtitle" data-translate="dates.subtitle">Your scheduled dinner dates</p>
+                </div>
+
+                <div class="dates-grid" id="upcomingDatesList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p data-translate="loading">Loading dates...</p>
                     </div>
                 </div>
             </div>
 
             <!-- Desired Times Tab -->
             <div id="desired-times" class="tab-content">
-                <h1 class="page-title">My Desired Times</h1>
-                <p style="margin-bottom: 2rem; color: #666;">Select up to 10 time slots when you'd like to meet someone. Other users who follow you can see these preferences and request matches.</p>
-
-                <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem; margin-bottom: 2rem;">
-                    <!-- Calendar -->
-                    <div>
-                        <h3>Select Date</h3>
-                        <input type="date" id="desiredDate" class="date-input" style="width: 100%; margin-bottom: 1rem;">
-                        <div id="selectedDateDisplay" style="font-weight: bold; margin-bottom: 1rem;"></div>
-                    </div>
-
-                    <!-- Time Selection -->
-                    <div>
-                        <h3>Select Time</h3>
-                        <div id="timeSelection" class="time-slots" style="grid-template-columns: repeat(2, 1fr);">
-                            <div class="time-slot" onclick="selectDesiredTime('12:00')">12:00</div>
-                            <div class="time-slot" onclick="selectDesiredTime('12:30')">12:30</div>
-                            <div class="time-slot" onclick="selectDesiredTime('13:00')">13:00</div>
-                            <div class="time-slot" onclick="selectDesiredTime('13:30')">13:30</div>
-                            <div class="time-slot" onclick="selectDesiredTime('18:00')">18:00</div>
-                            <div class="time-slot" onclick="selectDesiredTime('18:30')">18:30</div>
-                            <div class="time-slot" onclick="selectDesiredTime('19:00')">19:00</div>
-                            <div class="time-slot" onclick="selectDesiredTime('19:30')">19:30</div>
-                            <div class="time-slot" onclick="selectDesiredTime('20:00')">20:00</div>
-                            <div class="time-slot" onclick="selectDesiredTime('20:30')">20:30</div>
-                        </div>
-                        <button class="btn btn-primary" onclick="addDesiredTime()" style="width: 100%; margin-top: 1rem;" id="addTimeBtn" disabled>
-                            Add Time Preference
-                        </button>
-                    </div>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="desired_times.title">Desired Meeting Times</h1>
+                    <p class="content-subtitle" data-translate="desired_times.subtitle">Set your preferred times and we'll find matches</p>
                 </div>
 
-                <!-- Current Preferences -->
-                <div>
-                    <h3>Your Time Preferences (<span id="preferenceCount">0</span>/10)</h3>
-                    <div id="desiredTimesList">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading your preferences...</p>
+                <div class="time-preference-container">
+                    <div class="time-selection-card">
+                        <h3 class="card-title" data-translate="add_preference">Add Time Preference</h3>
+
+                        <div class="form-group">
+                            <label class="form-label" data-translate="select_date">Select Date</label>
+                            <input type="date" class="date-input" id="desiredDate">
+                        </div>
+
+                        <p style="margin: 1rem 0; font-weight: 500;" data-translate="select_time">Select Time</p>
+                        <div class="time-slots-grid" id="timeSelection">
+                            <div class="time-slot" onclick="selectDesiredTime('12:00')">12:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('12:30')">12:30 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('1:00')">1:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('1:30')">1:30 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('6:00')">6:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('6:30')">6:30 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('7:00')">7:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('7:30')">7:30 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('8:00')">8:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('8:30')">8:30 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('9:00')">9:00 PM</div>
+                            <div class="time-slot" onclick="selectDesiredTime('9:30')">9:30 PM</div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" id="addTimeBtn" onclick="addDesiredTime()" disabled>
+                                <span data-translate="add_time">Add Time</span>
+                            </button>
+                            <div style="margin-left: auto;">
+                                <span data-translate="selected_date">Selected:</span>
+                                <span id="selectedDateDisplay" style="font-weight: 600;">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title" data-translate="your_preferences">Your Time Preferences</h3>
+                            <span class="stat-value" id="preferenceCount">0</span>
+                        </div>
+                        <div class="time-preference-list" id="desiredTimesList">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">⏰</div>
+                                <h3 data-translate="no_preferences">No time preferences set</h3>
+                                <p data-translate="add_preferences">Add your desired meeting times above</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- History Tab -->
+            <!-- Date History Tab -->
             <div id="history" class="tab-content">
-                <h1 class="page-title">Date History</h1>
-                <div id="dateHistoryList">
-                    <!-- Date history will be loaded here -->
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="history.title">Date History</h1>
+                    <p class="content-subtitle" data-translate="history.subtitle">Your past dinner dates</p>
+                </div>
+
+                <div class="dates-grid" id="dateHistoryList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p data-translate="loading">Loading history...</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Profile Tab -->
             <div id="profile" class="tab-content">
-                <h1 class="page-title">My Profile</h1>
-                <div class="profile-header">
-                    <img src="/static/images/default-avatar.jpg" alt="Profile" class="profile-avatar-large">
-                    <div class="profile-info">
-                        <h2 id="profileName">Loading...</h2>
-                        <p id="profileEmail">Loading...</p>
-                        <p id="profileLocation">Loading...</p>
-                        <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="profile.title">My Profile</h1>
+                    <p class="content-subtitle" data-translate="profile.subtitle">Manage your personal information</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" data-translate="profile.personal_info">Personal Information</h2>
+                        <button class="btn btn-secondary" onclick="editProfile()">
+                            <span data-translate="profile.edit">Edit Profile</span>
+                        </button>
+                    </div>
+                    <div id="profileInfo">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="profile.name">Name</label>
+                            <p id="profileName" style="font-size: 1.125rem; font-weight: 500;">John Doe</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="profile.location">Location</label>
+                            <p id="profileLocation">New York, NY</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="profile.bio">Bio</label>
+                            <p id="profileBio">Food enthusiast looking for great conversations over amazing meals.</p>
+                        </div>
                     </div>
                 </div>
 
-                <h3>About Me</h3>
-                <p id="profileBio">Loading...</p>
-
-                <h3 style="margin-top: 2rem;">Dating Preferences</h3>
-                <div id="profilePreferences">
-                    <!-- Preferences will be loaded here -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" data-translate="profile.preferences">Dating Preferences</h2>
+                    </div>
+                    <div id="preferencesInfo">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="profile.age_range">Age Range</label>
+                            <p id="ageRange">25-35 years</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="profile.interests">Interests</label>
+                            <p id="interests">Italian cuisine, Wine tasting, Live music, Travel</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Restaurants Tab -->
             <div id="restaurants" class="tab-content">
-                <h1 class="page-title">Follow Restaurants</h1>
-                <p style="margin-bottom: 2rem; color: #666;">Follow restaurants to increase compatibility with users who share your taste. Each shared restaurant increases your match score!</p>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="restaurants.title">Restaurant Partners</h1>
+                    <p class="content-subtitle" data-translate="restaurants.subtitle">Follow your favorite restaurants</p>
+                </div>
 
-                <div id="restaurantFollowList" class="restaurant-grid">
+                <div class="restaurant-follow-list" id="restaurantFollowList">
                     <div class="loading">
                         <div class="loading-spinner"></div>
-                        <p>Loading restaurants...</p>
+                        <p data-translate="loading">Loading restaurants...</p>
                     </div>
                 </div>
             </div>
 
             <!-- Settings Tab -->
             <div id="settings" class="tab-content">
-                <h1 class="page-title">Settings</h1>
-                <div>
-                    <h3>Notification Preferences</h3>
-                    <label style="display: block; margin: 1rem 0;">
-                        <input type="checkbox" id="emailNotifications" checked>
-                        Email notifications for new matches
-                    </label>
-                    <label style="display: block; margin: 1rem 0;">
-                        <input type="checkbox" id="smsNotifications">
-                        SMS reminders for upcoming dates
-                    </label>
+                <div class="content-header">
+                    <h1 class="content-title" data-translate="settings.title">Settings</h1>
+                    <p class="content-subtitle" data-translate="settings.subtitle">Manage your account preferences</p>
+                </div>
 
-                    <h3 style="margin-top: 2rem;">Privacy Settings</h3>
-                    <label style="display: block; margin: 1rem 0;">
-                        <input type="checkbox" id="profileVisibility" checked>
-                        Show my profile to potential matches
-                    </label>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" data-translate="settings.notifications">Notification Preferences</h2>
+                    </div>
+                    <div class="settings-section">
+                        <div class="form-group">
+                            <div class="form-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="emailNotifications" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                                <label for="emailNotifications" data-translate="settings.email_notifications">Email Notifications</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="smsNotifications">
+                                    <span class="switch-slider"></span>
+                                </label>
+                                <label for="smsNotifications" data-translate="settings.sms_notifications">SMS Notifications</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" data-translate="settings.privacy">Privacy Settings</h2>
+                    </div>
+                    <div class="settings-section">
+                        <div class="form-group">
+                            <div class="form-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="profileVisibility" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                                <label for="profileVisibility" data-translate="settings.profile_visibility">Profile visible to matches</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" onclick="window.location.reload()">
+                        <span data-translate="settings.cancel">Cancel</span>
+                    </button>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <span data-translate="settings.save">Save Settings</span>
+                    </button>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Match Selection Modal -->
+    <!-- Match Request Modal -->
     <div id="matchModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Select Time & Match</h2>
+                <h2 class="modal-title" data-translate="modal.request_match">Request a Match</h2>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
+            <div class="modal-body">
+                <div id="modalRestaurantInfo">
+                    <!-- Restaurant info will be loaded here -->
+                </div>
 
-            <div id="modalRestaurantInfo">
-                <!-- Restaurant info will be populated here -->
-            </div>
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;" data-translate="modal.select_time">Select Time</h3>
+                <div class="time-slots-grid" id="timeSlots">
+                    <!-- Time slots will be loaded here -->
+                </div>
 
-            <h3>Available Times</h3>
-            <div id="timeSlots" class="time-slots">
-                <!-- Time slots will be populated here -->
-            </div>
-
-            <div class="matches-section">
-                <h3>Suggested Matches</h3>
-                <div id="suggestedMatches" class="matches-grid">
-                    <!-- Matches will be populated here -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;" data-translate="modal.suggested_matches">Suggested Matches</h3>
+                <div class="matches-grid" id="suggestedMatches">
+                    <!-- Suggested matches will be loaded here -->
                 </div>
             </div>
-
-            <!-- Booking Form -->
-            <div class="booking-form" style="display: none; margin-top: 2rem;" id="bookingForm">
-                <h3>Book Restaurant Date</h3>
-                <div class="form-group">
-                    <label>Date & Time:</label>
-                    <input type="datetime-local" id="dateTimeInput" required class="date-input">
-                </div>
-                <div class="form-group">
-                    <label>Special Requests:</label>
-                    <textarea id="specialRequestsInput" placeholder="Any special dietary requirements or preferences..."></textarea>
-                </div>
-                <button onclick="bookRestaurantDate(selectedRestaurantId, selectedMatchUserId)" class="btn btn-primary" style="width: 100%;">
-                    Send Booking Request
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    <span data-translate="modal.cancel">Cancel</span>
                 </button>
-            </div>
-
-            <div style="margin-top: 2rem; text-align: right;">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmMatch()">Request Match</button>
+                <button class="btn btn-primary" onclick="confirmMatch()">
+                    <span data-translate="modal.send_request">Send Request</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
+    <!-- Socket.io for real-time updates -->
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-
-   <script>
-    // Initialize translation system and dashboard
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Always initialize translation first
-        initializeTranslation();
-
-        // Check if user is authenticated before initializing dashboard
-        try {
-            const authCheck = await fetch('/api/profile', {
-                credentials: 'include',
-                method: 'HEAD' // Just check status, don't need body
-            });
-
-            if (authCheck.status === 401) {
-                // Not authenticated, redirect after a delay to show translation UI
-                setTimeout(() => {
-                    window.location.href = '/login.html';
-                }, 500);
-                return; // Don't initialize dashboard
+    <!-- Main JavaScript -->
+    <script>
+        // Translation system - PROPERLY STRUCTURED
+        const translations = {
+            en: {
+                nav: {
+                    overview: 'Overview',
+                    browse: 'Browse Tables',
+                    matches: 'My Matches',
+                    dates: 'Upcoming Dates',
+                    desired_times: 'Desired Times',
+                    history: 'Date History',
+                    profile: 'Profile',
+                    restaurants: 'Restaurants',
+                    settings: 'Settings',
+                    logout: 'Logout'
+                },
+                overview: {
+                    title: 'Welcome back!',
+                    subtitle: "Here's what's happening with your dating life"
+                },
+                stats: {
+                    active_matches: 'Active Matches',
+                    upcoming_dates: 'Upcoming Dates',
+                    compatibility: 'Avg Compatibility',
+                    total_dates: 'Total Dates'
+                },
+                browse: {
+                    title: 'Browse Available Tables',
+                    subtitle: 'Find your perfect dinner date spot'
+                },
+                filters: {
+                    date: 'Date',
+                    time: 'Time',
+                    cuisine: 'Cuisine',
+                    apply: 'Apply Filters'
+                },
+                matches: {
+                    title: 'My Matches',
+                    subtitle: 'People interested in dining with you'
+                },
+                dates: {
+                    title: 'Upcoming Dates',
+                    subtitle: 'Your scheduled dinner dates'
+                },
+                history: {
+                    title: 'Date History',
+                    subtitle: 'Your past dinner dates'
+                },
+                profile: {
+                    title: 'My Profile',
+                    subtitle: 'Manage your personal information',
+                    personal_info: 'Personal Information',
+                    edit: 'Edit Profile',
+                    name: 'Name',
+                    location: 'Location',
+                    bio: 'Bio',
+                    preferences: 'Dating Preferences',
+                    age_range: 'Age Range',
+                    interests: 'Interests'
+                },
+                restaurants: {
+                    title: 'Restaurant Partners',
+                    subtitle: 'Follow your favorite restaurants'
+                },
+                settings: {
+                    title: 'Settings',
+                    subtitle: 'Manage your account preferences',
+                    notifications: 'Notification Preferences',
+                    email_notifications: 'Email Notifications',
+                    sms_notifications: 'SMS Notifications',
+                    privacy: 'Privacy Settings',
+                    profile_visibility: 'Profile visible to matches',
+                    cancel: 'Cancel',
+                    save: 'Save Settings'
+                },
+                modal: {
+                    request_match: 'Request a Match',
+                    select_time: 'Select Time',
+                    suggested_matches: 'Suggested Matches',
+                    cancel: 'Cancel',
+                    send_request: 'Send Request'
+                },
+                desired_times: {
+                    title: 'Desired Meeting Times',
+                    subtitle: "Set your preferred times and we'll find matches"
+                },
+                loading: 'Loading...',
+                recent_activity: 'Recent Activity',
+                no_activity: 'No recent activity',
+                start_browsing: 'Start browsing tables to find your perfect match!',
+                add_preference: 'Add Time Preference',
+                select_date: 'Select Date',
+                select_time: 'Select Time',
+                add_time: 'Add Time',
+                selected_date: 'Selected:',
+                your_preferences: 'Your Time Preferences',
+                no_preferences: 'No time preferences set',
+                add_preferences: 'Add your desired meeting times above'
+            },
+            he: {
+                nav: {
+                    overview: 'סקירה כללית',
+                    browse: 'דפדוף שולחנות',
+                    matches: 'ההתאמות שלי',
+                    dates: 'פגישות קרובות',
+                    desired_times: 'זמנים רצויים',
+                    history: 'היסטוריית פגישות',
+                    profile: 'פרופיל',
+                    restaurants: 'מסעדות',
+                    settings: 'הגדרות',
+                    logout: 'יציאה'
+                },
+                overview: {
+                    title: 'ברוך שובך!',
+                    subtitle: 'הנה מה שקורה בחיי הדייטינג שלך'
+                },
+                stats: {
+                    active_matches: 'התאמות פעילות',
+                    upcoming_dates: 'פגישות קרובות',
+                    compatibility: 'התאמה ממוצעת',
+                    total_dates: 'סך הפגישות'
+                },
+                browse: {
+                    title: 'דפדוף שולחנות זמינים',
+                    subtitle: 'מצא את מקום הפגישה המושלם שלך'
+                },
+                filters: {
+                    date: 'תאריך',
+                    time: 'שעה',
+                    cuisine: 'מטבח',
+                    apply: 'החל מסננים'
+                },
+                matches: {
+                    title: 'ההתאמות שלי',
+                    subtitle: 'אנשים שמעוניינים לסעוד איתך'
+                },
+                dates: {
+                    title: 'פגישות קרובות',
+                    subtitle: 'פגישות הארוחה המתוכננות שלך'
+                },
+                history: {
+                    title: 'היסטוריית פגישות',
+                    subtitle: 'פגישות הארוחה הקודמות שלך'
+                },
+                profile: {
+                    title: 'הפרופיל שלי',
+                    subtitle: 'נהל את המידע האישי שלך',
+                    personal_info: 'מידע אישי',
+                    edit: 'ערוך פרופיל',
+                    name: 'שם',
+                    location: 'מיקום',
+                    bio: 'ביו',
+                    preferences: 'העדפות דייטינג',
+                    age_range: 'טווח גילאים',
+                    interests: 'תחומי עניין'
+                },
+                restaurants: {
+                    title: 'מסעדות שותפות',
+                    subtitle: 'עקוב אחר המסעדות המועדפות עליך'
+                },
+                settings: {
+                    title: 'הגדרות',
+                    subtitle: 'נהל את העדפות החשבון שלך',
+                    notifications: 'העדפות התראות',
+                    email_notifications: 'התראות דוא״ל',
+                    sms_notifications: 'התראות SMS',
+                    privacy: 'הגדרות פרטיות',
+                    profile_visibility: 'פרופיל גלוי להתאמות',
+                    cancel: 'ביטול',
+                    save: 'שמור הגדרות'
+                },
+                modal: {
+                    request_match: 'בקש התאמה',
+                    select_time: 'בחר שעה',
+                    suggested_matches: 'התאמות מוצעות',
+                    cancel: 'ביטול',
+                    send_request: 'שלח בקשה'
+                },
+                desired_times: {
+                    title: 'זמני פגישה רצויים',
+                    subtitle: 'הגדר את הזמנים המועדפים עליך ונמצא התאמות'
+                },
+                loading: 'טוען...',
+                recent_activity: 'פעילות אחרונה',
+                no_activity: 'אין פעילות אחרונה',
+                start_browsing: 'התחל לדפדף בשולחנות כדי למצוא את ההתאמה המושלמת שלך!',
+                add_preference: 'הוסף העדפת זמן',
+                select_date: 'בחר תאריך',
+                select_time: 'בחר שעה',
+                add_time: 'הוסף זמן',
+                selected_date: 'נבחר:',
+                your_preferences: 'העדפות הזמן שלך',
+                no_preferences: 'לא הוגדרו העדפות זמן',
+                add_preferences: 'הוסף את זמני הפגישה הרצויים שלך למעלה'
+            },
+            ar: {
+                nav: {
+                    overview: 'نظرة عامة',
+                    browse: 'تصفح الطاولات',
+                    matches: 'مبارياتي',
+                    dates: 'المواعيد القادمة',
+                    desired_times: 'الأوقات المرغوبة',
+                    history: 'سجل المواعيد',
+                    profile: 'الملف الشخصي',
+                    restaurants: 'المطاعم',
+                    settings: 'الإعدادات',
+                    logout: 'تسجيل خروج'
+                },
+                overview: {
+                    title: 'مرحباً بعودتك!',
+                    subtitle: 'إليك ما يحدث في حياتك العاطفية'
+                },
+                stats: {
+                    active_matches: 'المطابقات النشطة',
+                    upcoming_dates: 'المواعيد القادمة',
+                    compatibility: 'متوسط التوافق',
+                    total_dates: 'إجمالي المواعيد'
+                },
+                browse: {
+                    title: 'تصفح الطاولات المتاحة',
+                    subtitle: 'اعثر على مكان العشاء المثالي'
+                },
+                filters: {
+                    date: 'التاريخ',
+                    time: 'الوقت',
+                    cuisine: 'المطبخ',
+                    apply: 'تطبيق الفلاتر'
+                },
+                matches: {
+                    title: 'مطابقاتي',
+                    subtitle: 'الأشخاص المهتمون بتناول الطعام معك'
+                },
+                dates: {
+                    title: 'المواعيد القادمة',
+                    subtitle: 'مواعيد العشاء المجدولة'
+                },
+                history: {
+                    title: 'سجل المواعيد',
+                    subtitle: 'مواعيد العشاء السابقة'
+                },
+                profile: {
+                    title: 'ملفي الشخصي',
+                    subtitle: 'إدارة معلوماتك الشخصية',
+                    personal_info: 'المعلومات الشخصية',
+                    edit: 'تعديل الملف',
+                    name: 'الاسم',
+                    location: 'الموقع',
+                    bio: 'السيرة',
+                    preferences: 'تفضيلات المواعدة',
+                    age_range: 'نطاق العمر',
+                    interests: 'الاهتمامات'
+                },
+                restaurants: {
+                    title: 'المطاعم الشريكة',
+                    subtitle: 'تابع مطاعمك المفضلة'
+                },
+                settings: {
+                    title: 'الإعدادات',
+                    subtitle: 'إدارة تفضيلات حسابك',
+                    notifications: 'تفضيلات الإشعارات',
+                    email_notifications: 'إشعارات البريد الإلكتروني',
+                    sms_notifications: 'إشعارات الرسائل',
+                    privacy: 'إعدادات الخصوصية',
+                    profile_visibility: 'الملف مرئي للمطابقات',
+                    cancel: 'إلغاء',
+                    save: 'حفظ الإعدادات'
+                },
+                modal: {
+                    request_match: 'طلب مطابقة',
+                    select_time: 'اختر الوقت',
+                    suggested_matches: 'المطابقات المقترحة',
+                    cancel: 'إلغاء',
+                    send_request: 'إرسال طلب'
+                },
+                desired_times: {
+                    title: 'أوقات الاجتماع المرغوبة',
+                    subtitle: 'حدد أوقاتك المفضلة وسنجد لك المطابقات'
+                },
+                loading: 'جار التحميل...',
+                recent_activity: 'النشاط الأخير',
+                no_activity: 'لا يوجد نشاط حديث',
+                start_browsing: 'ابدأ بتصفح الطاولات للعثور على التطابق المثالي!',
+                add_preference: 'إضافة تفضيل زمني',
+                select_date: 'اختر التاريخ',
+                select_time: 'اختر الوقت',
+                add_time: 'إضافة وقت',
+                selected_date: 'المحدد:',
+                your_preferences: 'تفضيلات الوقت',
+                no_preferences: 'لم يتم تعيين تفضيلات زمنية',
+                add_preferences: 'أضف أوقات الاجتماع المرغوبة أعلاه'
+            },
+            ru: {
+                nav: {
+                    overview: 'Обзор',
+                    browse: 'Просмотр столиков',
+                    matches: 'Мои совпадения',
+                    dates: 'Предстоящие свидания',
+                    desired_times: 'Желаемое время',
+                    history: 'История свиданий',
+                    profile: 'Профиль',
+                    restaurants: 'Рестораны',
+                    settings: 'Настройки',
+                    logout: 'Выход'
+                },
+                overview: {
+                    title: 'С возвращением!',
+                    subtitle: 'Вот что происходит в вашей личной жизни'
+                },
+                stats: {
+                    active_matches: 'Активные совпадения',
+                    upcoming_dates: 'Предстоящие свидания',
+                    compatibility: 'Средняя совместимость',
+                    total_dates: 'Всего свиданий'
+                },
+                browse: {
+                    title: 'Просмотр доступных столиков',
+                    subtitle: 'Найдите идеальное место для ужина'
+                },
+                filters: {
+                    date: 'Дата',
+                    time: 'Время',
+                    cuisine: 'Кухня',
+                    apply: 'Применить фильтры'
+                },
+                matches: {
+                    title: 'Мои совпадения',
+                    subtitle: 'Люди, заинтересованные в ужине с вами'
+                },
+                dates: {
+                    title: 'Предстоящие свидания',
+                    subtitle: 'Ваши запланированные ужины'
+                },
+                history: {
+                    title: 'История свиданий',
+                    subtitle: 'Ваши прошлые ужины'
+                },
+                profile: {
+                    title: 'Мой профиль',
+                    subtitle: 'Управление личной информацией',
+                    personal_info: 'Личная информация',
+                    edit: 'Редактировать профиль',
+                    name: 'Имя',
+                    location: 'Местоположение',
+                    bio: 'О себе',
+                    preferences: 'Предпочтения знакомств',
+                    age_range: 'Возрастной диапазон',
+                    interests: 'Интересы'
+                },
+                restaurants: {
+                    title: 'Партнёрские рестораны',
+                    subtitle: 'Следите за любимыми ресторанами'
+                },
+                settings: {
+                    title: 'Настройки',
+                    subtitle: 'Управление настройками аккаунта',
+                    notifications: 'Настройки уведомлений',
+                    email_notifications: 'Email уведомления',
+                    sms_notifications: 'SMS уведомления',
+                    privacy: 'Настройки приватности',
+                    profile_visibility: 'Профиль виден совпадениям',
+                    cancel: 'Отмена',
+                    save: 'Сохранить настройки'
+                },
+                modal: {
+                    request_match: 'Запросить совпадение',
+                    select_time: 'Выберите время',
+                    suggested_matches: 'Предложенные совпадения',
+                    cancel: 'Отмена',
+                    send_request: 'Отправить запрос'
+                },
+                desired_times: {
+                    title: 'Желаемое время встречи',
+                    subtitle: 'Установите предпочтительное время, и мы найдём совпадения'
+                },
+                loading: 'Загрузка...',
+                recent_activity: 'Недавняя активность',
+                no_activity: 'Нет недавней активности',
+                start_browsing: 'Начните просматривать столики, чтобы найти идеальное совпадение!',
+                add_preference: 'Добавить предпочтение времени',
+                select_date: 'Выберите дату',
+                select_time: 'Выберите время',
+                add_time: 'Добавить время',
+                selected_date: 'Выбрано:',
+                your_preferences: 'Ваши предпочтения времени',
+                no_preferences: 'Предпочтения времени не установлены',
+                add_preferences: 'Добавьте желаемое время встречи выше'
             }
+        };
 
-            // User is authenticated, initialize dashboard
-            initDashboard();
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            setTimeout(() => {
-                window.location.href = '/login.html';
-            }, 500);
+        // Initialize translation system
+        function initTranslations() {
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            changeLanguage(savedLang);
         }
-    });
-
-        function initializeTranslation() {
-    // Language selector is now in the header HTML, so we just need to restore saved language
-    const savedLanguage = localStorage.getItem('selectedLanguage');
-    if (savedLanguage && savedLanguage !== 'en') {
-        const languageSelect = document.getElementById('languageSelect');
-        if (languageSelect) {
-            languageSelect.value = savedLanguage;
-            changeLanguage(savedLanguage);
-        }
-    }
-}
 
         function changeLanguage(lang) {
-            // Save language preference
             localStorage.setItem('selectedLanguage', lang);
 
-           const translations = {
-    'he': {
-        'Welcome back': 'ברוכים השבים',
-        'Browse Tables': 'עיין בשולחנות',
-        'My Matches': 'ההתאמות שלי',
-        'Upcoming Dates': 'דייטים קרובים',
-        'Overview': 'סקירה',
-        'Total Dates': 'סך דייטים',
-        'Active Matches': 'התאמות פעילות',
-        'Success Rate': 'אחוז הצלחה',
-        'Desired Times': 'זמנים רצויים',
-        'Date History': 'היסטוריית דייטים',
-        'My Profile': 'הפרופיל שלי',
-        'Restaurants': 'מסעדות',
-        'Settings': 'הגדרות',
-        'Logout': 'התנתק',
-        'All Times': 'כל הזמנים',
-        'All Cuisines': 'כל המטבחים',
-        'Apply Filters': 'החל מסננים',
-        'No upcoming dates': 'אין דייטים קרובים',
-        'Browse available tables to find your next dinner date!': 'עיין בשולחנות זמינים כדי למצוא את הדייט הבא שלך!',
-        'Loading recommendations...': 'טוען המלצות...',
-        'Recommended Tables This Week': 'שולחנות מומלצים השבוע',
-        'Browse Available Tables': 'עיין בשולחנות זמינים',
-        'Table for Two': 'שולחן לשניים',
-        'Select up to 10 time slots when you\'d like to meet someone. Other users who follow you can see these preferences and request matches.': 'בחר עד 10 משבצות זמן שבהן תרצה לפגוש מישהו. משתמשים אחרים שעוקבים אחריך יכולים לראות את ההעדפות האלה ולבקש התאמות.',
-        'Select Date': 'בחר תאריך',
-        'Select Time': 'בחר זמן',
-        'Add Time Preference': 'הוסף העדפת זמן',
-        'Your Time Preferences': 'העדפות הזמן שלך',
-        'Follow restaurants to increase compatibility with users who share your taste. Each shared restaurant increases your match score!': 'עקוב אחרי מסעדות כדי להגדיל את התאימות עם משתמשים שחולקים את הטעם שלך. כל מסעדה משותפת מגדילה את ציון ההתאמה שלך!',
-        'Loading restaurants...': 'טוען מסעדות...',
-        'Edit Profile': 'ערוך פרופיל',
-        'About Me': 'עליי',
-        'Dating Preferences': 'העדפות היכרות',
-        'Notification Preferences': 'העדפות התראות',
-        'Email notifications for new matches': 'התראות אימייל להתאמות חדשות',
-        'SMS reminders for upcoming dates': 'תזכורות SMS לדייטים קרובים',
-        'Privacy Settings': 'הגדרות פרטיות',
-        'Show my profile to potential matches': 'הצג את הפרופיל שלי להתאמות אפשריות',
-        'Save Settings': 'שמור הגדרות',
-        'Select Time & Match': 'בחר זמן והתאמה',
-        'Available Times': 'זמנים זמינים',
-        'Suggested Matches': 'התאמות מוצעות',
-        'Request Match': 'בקש התאמה',
-        'Cancel': 'בטל',
-        'Book Restaurant Date': 'הזמן דייט במסעדה',
-        'Date & Time': 'תאריך וזמן',
-        'Special Requests': 'בקשות מיוחדות',
-        'Send Booking Request': 'שלח בקשת הזמנה',
-        'Remove': 'הסר'
-    },
-    'ar': {
-        'Welcome back': 'مرحباً بعودتك',
-        'Browse Tables': 'تصفح الطاولات',
-        'My Matches': 'مطابقاتي',
-        'Upcoming Dates': 'المواعيد القادمة',
-        'Overview': 'نظرة عامة',
-        'Total Dates': 'إجمالي المواعيد',
-        'Active Matches': 'المطابقات النشطة',
-        'Success Rate': 'معدل النجاح',
-        'Desired Times': 'الأوقات المرغوبة',
-        'Date History': 'تاريخ المواعيد',
-        'My Profile': 'ملفي الشخصي',
-        'Restaurants': 'المطاعم',
-        'Settings': 'الإعدادات',
-        'Logout': 'تسجيل الخروج',
-        'All Times': 'كل الأوقات',
-        'All Cuisines': 'كل المأكولات',
-        'Apply Filters': 'تطبيق المرشحات',
-        'No upcoming dates': 'لا توجد مواعيد قادمة',
-        'Browse available tables to find your next dinner date!': 'تصفح الطاولات المتاحة للعثور على موعد العشاء القادم!',
-        'Loading recommendations...': 'تحميل التوصيات...',
-        'Recommended Tables This Week': 'الطاولات الموصى بها هذا الأسبوع',
-        'Browse Available Tables': 'تصفح الطاولات المتاحة',
-        'Table for Two': 'طاولة لاثنين',
-        'Select up to 10 time slots when you\'d like to meet someone. Other users who follow you can see these preferences and request matches.': 'اختر حتى 10 فترات زمنية عندما تريد مقابلة شخص ما. يمكن للمستخدمين الآخرين الذين يتابعونك رؤية هذه التفضيلات وطلب المطابقات.',
-        'Select Date': 'اختر التاريخ',
-        'Select Time': 'اختر الوقت',
-        'Add Time Preference': 'إضافة تفضيل الوقت',
-        'Your Time Preferences': 'تفضيلات وقتك',
-        'Follow restaurants to increase compatibility with users who share your taste. Each shared restaurant increases your match score!': 'تابع المطاعم لزيادة التوافق مع المستخدمين الذين يشاركونك ذوقك. كل مطعم مشترك يزيد من نقاط مطابقتك!',
-        'Loading restaurants...': 'تحميل المطاعم...',
-        'Edit Profile': 'تحرير الملف الشخصي',
-        'About Me': 'عني',
-        'Dating Preferences': 'تفضيلات المواعدة',
-        'Notification Preferences': 'تفضيلات الإشعارات',
-        'Email notifications for new matches': 'إشعارات البريد الإلكتروني للمطابقات الجديدة',
-        'SMS reminders for upcoming dates': 'تذكيرات الرسائل النصية للمواعيد القادمة',
-        'Privacy Settings': 'إعدادات الخصوصية',
-        'Show my profile to potential matches': 'إظهار ملفي الشخصي للمطابقات المحتملة',
-        'Save Settings': 'حفظ الإعدادات',
-        'Select Time & Match': 'اختر الوقت والمطابقة',
-        'Available Times': 'الأوقات المتاحة',
-        'Suggested Matches': 'المطابقات المقترحة',
-        'Request Match': 'طلب مطابقة',
-        'Cancel': 'إلغاء',
-        'Book Restaurant Date': 'احجز موعد المطعم',
-        'Date & Time': 'التاريخ والوقت',
-        'Special Requests': 'طلبات خاصة',
-        'Send Booking Request': 'إرسال طلب الحجز',
-        'Remove': 'إزالة'
-    },
-    'ru': {
-        'Welcome back': 'Добро пожаловать',
-        'Browse Tables': 'Обзор столиков',
-        'My Matches': 'Мои совпадения',
-        'Upcoming Dates': 'Предстоящие свидания',
-        'Overview': 'Обзор',
-        'Total Dates': 'Всего свиданий',
-        'Active Matches': 'Активные совпадения',
-        'Success Rate': 'Процент успеха',
-        'Desired Times': 'Желаемое время',
-        'Date History': 'История свиданий',
-        'My Profile': 'Мой профиль',
-        'Restaurants': 'Рестораны',
-        'Settings': 'Настройки',
-        'Logout': 'Выйти',
-        'All Times': 'Все время',
-        'All Cuisines': 'Все кухни',
-        'Apply Filters': 'Применить фильтры',
-        'No upcoming dates': 'Нет предстоящих свиданий',
-        'Browse available tables to find your next dinner date!': 'Просмотрите доступные столики, чтобы найти следующее свидание за ужином!',
-        'Loading recommendations...': 'Загрузка рекомендаций...',
-        'Recommended Tables This Week': 'Рекомендуемые столики на этой неделе',
-        'Browse Available Tables': 'Просмотр доступных столиков',
-        'Table for Two': 'Столик на двоих',
-        'Select up to 10 time slots when you\'d like to meet someone. Other users who follow you can see these preferences and request matches.': 'Выберите до 10 временных слотов, когда вы хотели бы встретиться с кем-то. Другие пользователи, которые следуют за вами, могут видеть эти предпочтения и запрашивать совпадения.',
-        'Select Date': 'Выбрать дату',
-        'Select Time': 'Выбрать время',
-        'Add Time Preference': 'Добавить предпочтение времени',
-        'Your Time Preferences': 'Ваши временные предпочтения',
-        'Follow restaurants to increase compatibility with users who share your taste. Each shared restaurant increases your match score!': 'Следуйте за ресторанами, чтобы увеличить совместимость с пользователями, которые разделяют ваш вкус. Каждый общий ресторан увеличивает ваш балл совпадения!',
-        'Loading restaurants...': 'Загрузка ресторанов...',
-        'Edit Profile': 'Редактировать профиль',
-        'About Me': 'Обо мне',
-        'Dating Preferences': 'Предпочтения знакомств',
-        'Notification Preferences': 'Настройки уведомлений',
-        'Email notifications for new matches': 'Уведомления по электронной почте о новых совпадениях',
-        'SMS reminders for upcoming dates': 'SMS напоминания о предстоящих свиданиях',
-        'Privacy Settings': 'Настройки конфиденциальности',
-        'Show my profile to potential matches': 'Показать мой профиль потенциальным совпадениям',
-        'Save Settings': 'Сохранить настройки',
-        'Select Time & Match': 'Выбрать время и совпадение',
-        'Available Times': 'Доступное время',
-        'Suggested Matches': 'Предлагаемые совпадения',
-        'Request Match': 'Запросить совпадение',
-        'Cancel': 'Отмена',
-        'Book Restaurant Date': 'Забронировать свидание в ресторане',
-        'Date & Time': 'Дата и время',
-        'Special Requests': 'Особые пожелания',
-        'Send Booking Request': 'Отправить запрос на бронирование',
-        'Remove': 'Удалить'
-    }
-};
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(lang) ||
+                    (lang === 'en' && btn.textContent === 'EN') ||
+                    (lang === 'he' && btn.textContent === 'עב') ||
+                    (lang === 'ar' && btn.textContent === 'عر') ||
+                    (lang === 'ru' && btn.textContent === 'РУ')) {
+                    btn.classList.add('active');
+                }
+            });
 
-            if (lang === 'en') {
-                document.body.dir = 'ltr';
-                localStorage.setItem('selectedLanguage', 'en');
-                location.reload();
-                return;
+            // Apply RTL if needed
+            if (lang === 'he' || lang === 'ar') {
+                document.body.classList.add('rtl');
+            } else {
+                document.body.classList.remove('rtl');
             }
 
-            const langData = translations[lang];
-            if (langData) {
-                Object.keys(langData).forEach(english => {
-                    document.querySelectorAll('*').forEach(element => {
-                        if (element.children.length === 0 && element.textContent.trim() === english) {
-                            element.textContent = langData[english];
-                        }
-                    });
-                });
-
-                if (lang === 'he' || lang === 'ar') {
-                    document.body.dir = 'rtl';
-                    document.body.style.fontFamily = 'Arial, sans-serif';
-                } else {
-                    document.body.dir = 'ltr';
+            // Translate elements
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const keys = element.getAttribute('data-translate').split('.');
+                let translation = translations[lang];
+                for (const key of keys) {
+                    if (translation) {
+                        translation = translation[key];
+                    }
                 }
+                if (translation) {
+                    element.textContent = translation;
+                }
+            });
+        }
+
+        // Global variables
+        let currentUser = null;
+        let websocket = null;
+        let selectedRestaurant = null;
+        let selectedTime = null;
+        let selectedMatch = null;
+        let selectedRestaurantId = null;
+        let selectedMatchUserId = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize translations first
+            initTranslations();
+
+            // Then initialize dashboard
+            await initializeDashboard();
+        });
+
+        // Initialize dashboard
+        async function initializeDashboard() {
+            try {
+                // Check authentication
+                await checkAuth();
+
+                // Load user profile
+                await loadUserProfile();
+
+                // Load initial data
+                await loadStats();
+                await loadAllRestaurants();
+
+                // Setup WebSocket
+                setupWebSocket();
+
+                // Set default date to today
+                const dateFilter = document.getElementById('dateFilter');
+                if (dateFilter) {
+                    dateFilter.valueAsDate = new Date();
+                }
+
+            } catch (error) {
+                console.error('Dashboard initialization error:', error);
+                window.location.href = '/login.html';
             }
         }
 
-        // Function to make authenticated API calls
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/check', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Not authenticated');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login.html';
+                return false;
+            }
+        }
+
+        // Authenticated fetch wrapper
         async function authenticatedFetch(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
+            const defaultOptions = {
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     ...options.headers
-                },
-                credentials: 'include'
-            });
+                }
+            };
 
-            // If unauthorized, redirect to login
+            const response = await fetch(url, { ...defaultOptions, ...options });
+
             if (response.status === 401) {
                 window.location.href = '/login.html';
-                return;
+                throw new Error('Authentication required');
             }
 
             return response;
         }
 
-        // Global variables
-        let currentUser = null;
-        let selectedRestaurant = null;
-        let selectedTime = null;
-        let selectedMatch = null;
-        let csrfToken = null;
-        let websocket = null;
-        let selectedRestaurantId = null;
-        let selectedMatchUserId = null;
-
-        // CSRF Token management
+        // Get CSRF token
         async function getCSRFToken() {
-            if (!csrfToken) {
-                try {
-                    const response = await fetch('/api/csrf-token', {
-                        credentials: 'same-origin'
-                    });
-                    const data = await response.json();
-                    csrfToken = data.csrf_token;
-                } catch (error) {
-                    console.error('Failed to get CSRF token:', error);
-                }
-            }
-            return csrfToken;
-        }
-
-        // Initialize dashboard
-        async function initDashboard() {
             try {
-                // Load user profile
-                await loadUserProfile();
-
-                // Load initial data
-                await Promise.all([
-                    loadStats(),
-                    loadRecommendedRestaurants(),
-                    loadMatches(),
-                    loadUpcomingDates()
-                ]);
-
-                // Set up real-time updates
-                setupWebSocket();
-
-                // Set today's date as default filter
-                document.getElementById('dateFilter').valueAsDate = new Date();
-
+                const response = await fetch('/api/csrf-token', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                return data.csrf_token;
             } catch (error) {
-                console.error('Failed to initialize dashboard:', error);
-                showToast('Error loading dashboard', 'error');
+                console.error('Failed to get CSRF token:', error);
+                return '';
             }
         }
-
-        // Handle restaurant card clicks
-        document.addEventListener('click', function(e) {
-            const restaurantCard = e.target.closest('.restaurant-card');
-            if (restaurantCard) {
-                const restaurantId = restaurantCard.getAttribute('data-restaurant-id');
-                openMatchModal(restaurantId);
-            }
-        });
 
         // Load user profile
-      // Load user profile
-// Load user profile
-async function loadUserProfile() {
-    try {
-        const response = await authenticatedFetch('/api/profile');
+        async function loadUserProfile() {
+            try {
+                const response = await authenticatedFetch('/api/profile');
 
-        if (!response.ok) {
-            throw new Error('Failed to load profile');
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const profile = await response.json();
+                currentUser = profile;
+
+                // Update UI with user info
+                document.getElementById('userName').textContent = profile.name;
+                document.getElementById('userLocation').textContent = profile.location || 'Location not set';
+                document.getElementById('userInitials').textContent = getInitials(profile.name);
+
+                // Update profile tab
+                document.getElementById('profileName').textContent = profile.name;
+                document.getElementById('profileLocation').textContent = profile.location || 'Not set';
+                document.getElementById('profileBio').textContent = profile.bio || 'No bio yet';
+
+                if (profile.preferences) {
+                    document.getElementById('ageRange').textContent =
+                        `${profile.preferences.min_age}-${profile.preferences.max_age} years`;
+                    document.getElementById('interests').textContent =
+                        profile.preferences.interests?.join(', ') || 'None specified';
+                }
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
         }
 
-        currentUser = await response.json();
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await authenticatedFetch('/api/stats');
 
-        // Update UI with user data
-        document.getElementById('userName').textContent = currentUser.name;
-        document.getElementById('userAvatar').textContent = getInitials(currentUser.name);
-        document.getElementById('profileName').textContent = currentUser.name;
-        document.getElementById('profileEmail').textContent = currentUser.email;
-        document.getElementById('profileLocation').textContent = currentUser.location || 'Not set';
-        document.getElementById('profileBio').textContent = currentUser.bio || 'No bio yet';
+                if (!response.ok) {
+                    throw new Error('Failed to load stats');
+                }
 
-        // Load preferences
-        if (currentUser.preferences) {
-            const prefsHtml = `
-                <p><strong>Age Range:</strong> ${currentUser.preferences.min_age} - ${currentUser.preferences.max_age}</p>
-                <p><strong>Preferred Gender:</strong> ${currentUser.preferences.gender_preference || 'Any'}</p>
-                <p><strong>Interests:</strong> ${currentUser.preferences.interests?.join(', ') || 'None specified'}</p>
-            `;
-            document.getElementById('profilePreferences').innerHTML = prefsHtml;
+                const stats = await response.json();
+
+                // Update stats display
+                document.getElementById('activeMatchesCount').textContent = stats.active_matches || 0;
+                document.getElementById('upcomingDatesCount').textContent = stats.upcoming_dates || 0;
+                document.getElementById('avgCompatibility').textContent = `${stats.avg_compatibility || 0}%`;
+                document.getElementById('totalDatesCount').textContent = stats.total_dates || 0;
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
         }
 
-    } catch (error) {
-        console.error('Error loading profile:', error);
-        // Don't redirect here anymore - it's handled by the auth check in DOMContentLoaded
-        // window.location.href = '/login.html';  // <-- This line is removed
-    }
-}
+        // Load all restaurants
+        async function loadAllRestaurants() {
+            const container = document.getElementById('restaurantsList');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading restaurants...</p></div>';
+
+            try {
+                const filters = getActiveFilters();
+                const queryParams = new URLSearchParams(filters);
+
+                const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load restaurants');
+                }
+
+                const restaurants = await response.json();
+
+                if (restaurants.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><h3>No restaurants found</h3><p>Try adjusting your filters</p></div>';
+                    return;
+                }
+
+                container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
+
+            } catch (error) {
+                console.error('Error loading restaurants:', error);
+                container.innerHTML = '<p>Error loading restaurants. Please try again later.</p>';
+            }
+        }
+
+        // Get active filters
+        function getActiveFilters() {
+            const filters = {};
+
+            const date = document.getElementById('dateFilter').value;
+            if (date) filters.date = date;
+
+            const time = document.getElementById('timeFilter').value;
+            if (time) filters.time = time;
+
+            const cuisine = document.getElementById('cuisineFilter').value;
+            if (cuisine) filters.cuisine = cuisine;
+
+            return filters;
+        }
+
+        // Apply filters
+        function applyFilters() {
+            loadAllRestaurants();
+        }
+
+        // Load matches
+        async function loadMatches() {
+            const container = document.getElementById('matchesList');
+
+            try {
+                const response = await authenticatedFetch('/api/matches');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load matches');
+                }
+
+                const matches = await response.json();
+
+                if (matches.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💕</div><h3>No matches yet</h3><p>Browse tables and request matches to connect with someone special!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = matches.map(match => createMatchCard(match)).join('');
+
+            } catch (error) {
+                console.error('Error loading matches:', error);
+                container.innerHTML = '<p>Error loading matches. Please try again later.</p>';
+            }
+        }
 
         // Load upcoming dates
         async function loadUpcomingDates() {
@@ -1618,7 +2358,7 @@ async function loadUserProfile() {
         // Create restaurant card HTML
         function createRestaurantCard(restaurant) {
             return `
-                <div class="restaurant-card" data-restaurant-id="${restaurant.id}">
+                <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
                     <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
                     <div class="restaurant-info">
                         <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
@@ -1676,35 +2416,18 @@ async function loadUserProfile() {
             `;
         }
 
-        // Add this function to debug restaurant API responses
-        function debugRestaurantAPI(restaurantId) {
-            fetch(`/api/restaurants/${restaurantId}`, { credentials: 'include' })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('=== RESTAURANT API DEBUG ===');
-                    console.log('Restaurant ID:', restaurantId);
-                    console.log('Full API Response:', JSON.stringify(data, null, 2));
-                    console.log('All keys:', Object.keys(data));
-                    console.log('=== END DEBUG ===');
-                })
-                .catch(error => console.error('Debug API error:', error));
-        }
-
-        // Open match modal - UPDATED VERSION
+        // Open match modal
         async function openMatchModal(restaurantId) {
             selectedRestaurant = restaurantId;
             selectedRestaurantId = restaurantId;
             const modal = document.getElementById('matchModal');
 
-            // DEBUG: Log restaurant API response structure
-            debugRestaurantAPI(restaurantId);
-
             try {
                 // Load restaurant details
                 const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLang}`, {
-    credentials: 'include'
-});
+                const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLang}`, {
+                    credentials: 'include'
+                });
 
                 if (!response.ok) {
                     throw new Error('Failed to load restaurant');
@@ -1837,7 +2560,7 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
             });
         }
 
-        // Updated confirmMatch function with better debugging
+        // Confirm match
         async function confirmMatch() {
             if (!selectedTime || !selectedMatch) {
                 showToast('Please select a time and a match', 'error');
@@ -1870,50 +2593,16 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                 // Create proper datetime string
                 const dateTimeString = `${selectedDate}T${selectedTime}:00`;
 
-                // Get restaurant info from selectedRestaurant - fetch it fresh
+                // Get restaurant info
                 let restaurantName = 'Unknown Restaurant';
                 try {
-                    console.log('Fetching restaurant data for ID:', selectedRestaurant);
                     const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?lang=${currentLang}`, {
-    credentials: 'include'
-});
+                    const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?lang=${currentLang}`, {
+                        credentials: 'include'
+                    });
                     if (restaurantResponse.ok) {
                         const restaurantData = await restaurantResponse.json();
-                        console.log('Restaurant API response:', restaurantData);
-
-                        // Try different possible response structures - COMPREHENSIVE CHECK
-                        if (restaurantData.name) {
-                            restaurantName = restaurantData.name;
-                        } else if (restaurantData.restaurant && restaurantData.restaurant.name) {
-                            restaurantName = restaurantData.restaurant.name;
-                        } else if (restaurantData.data && restaurantData.data.name) {
-                            restaurantName = restaurantData.data.name;
-                        } else if (typeof restaurantData === 'string') {
-                            // Sometimes the API returns just a string
-                            restaurantName = restaurantData;
-                        } else if (restaurantData.title) {
-                            // Some APIs use 'title' instead of 'name'
-                            restaurantName = restaurantData.title;
-                        } else if (restaurantData.business_name) {
-                            // Some APIs use 'business_name'
-                            restaurantName = restaurantData.business_name;
-                        } else {
-                            // Log the full structure to debug
-                            console.warn('Restaurant name not found in response structure:', JSON.stringify(restaurantData, null, 2));
-                            // Try to extract any reasonable name field
-                            const possibleNameFields = Object.keys(restaurantData).filter(key =>
-                                key.toLowerCase().includes('name') || key.toLowerCase().includes('title')
-                            );
-                            if (possibleNameFields.length > 0) {
-                                restaurantName = restaurantData[possibleNameFields[0]];
-                                console.log('Found name in field:', possibleNameFields[0], '=', restaurantName);
-                            }
-                        }
-
-                        console.log('Extracted restaurant name:', restaurantName);
-                    } else {
-                        console.error('Restaurant API call failed:', restaurantResponse.status, restaurantResponse.statusText);
+                        restaurantName = restaurantData.name || restaurantData.restaurant?.name || 'Unknown Restaurant';
                     }
                 } catch (error) {
                     console.error('Error fetching restaurant name:', error);
@@ -1951,7 +2640,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                     await loadStats();
 
                 } else {
-                    // Handle specific error messages from backend
                     const errorMessage = result.error || 'Failed to send match request';
                     showToast(errorMessage, 'error');
                     console.error('Match request failed:', result);
@@ -1991,7 +2679,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
 
         // View date details
         function viewDateDetails(dateId) {
-            // In a real app, this would open a detailed view
             showToast('Date details feature coming soon!', 'info');
         }
 
@@ -2008,7 +2695,7 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
             selectedMatchUserId = null;
         }
 
-        // Show tab - Enhanced version with proper loading for all tabs
+        // Show tab
         function showTab(tabName) {
             // Update sidebar
             document.querySelectorAll('.sidebar-link').forEach(link => {
@@ -2035,7 +2722,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                 loadDateHistory();
             } else if (tabName === 'desired-times') {
                 loadDesiredTimes();
-                // Set today as default date
                 const dateInput = document.getElementById('desiredDate');
                 if (dateInput) {
                     dateInput.valueAsDate = new Date();
@@ -2147,7 +2833,7 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                     if (response.ok) {
                         showToast('Profile updated successfully!', 'success');
                         modal.remove();
-                        loadUserProfile(); // Reload profile data
+                        loadUserProfile();
                     } else {
                         showToast('Failed to update profile', 'error');
                     }
@@ -2193,7 +2879,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
         function setupWebSocket() {
             if (typeof io === 'undefined') {
                 console.log('Socket.IO not loaded, using polling instead');
-                // Set up periodic polling instead
                 setInterval(async () => {
                     try {
                         await loadStats();
@@ -2225,29 +2910,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
             });
         }
 
-        // Handle WebSocket messages
-        function handleWebSocketMessage(data) {
-            switch (data.type) {
-                case 'new_match':
-                    showToast('You have a new match request!', 'info');
-                    loadMatches();
-                    loadStats();
-                    break;
-                case 'match_accepted':
-                    showToast('Your match request was accepted!', 'success');
-                    loadMatches();
-                    loadUpcomingDates();
-                    break;
-                case 'match_declined':
-                    showToast('Your match request was declined', 'info');
-                    loadMatches();
-                    break;
-                case 'date_reminder':
-                    showToast(`Reminder: You have a date at ${data.restaurant} in ${data.time}`, 'info');
-                    break;
-            }
-        }
-
         // Desired Times functionality
         let selectedDesiredDate = null;
         let selectedDesiredTime = null;
@@ -2255,7 +2917,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
         function selectDesiredTime(time) {
             selectedDesiredTime = time;
 
-            // Update UI
             document.querySelectorAll('#timeSelection .time-slot').forEach(slot => {
                 slot.classList.remove('selected');
                 if (slot.textContent.trim() === time) {
@@ -2263,7 +2924,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                 }
             });
 
-            // Enable add button if date is also selected
             const addBtn = document.getElementById('addTimeBtn');
             const dateInput = document.getElementById('desiredDate');
             if (dateInput.value && selectedDesiredTime) {
@@ -2297,7 +2957,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                     showToast('Time preference added!', 'success');
                     loadDesiredTimes();
 
-                    // Reset selection
                     document.querySelectorAll('#timeSelection .time-slot').forEach(slot => {
                         slot.classList.remove('selected');
                     });
@@ -2437,7 +3096,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Update UI
                     if (isFollowing) {
                         button.classList.remove('following');
                         button.textContent = 'Follow';
@@ -2466,7 +3124,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                     document.getElementById('selectedDateDisplay').textContent =
                         this.value ? new Date(this.value).toLocaleDateString() : '';
 
-                    // Enable add button if time is also selected
                     const addBtn = document.getElementById('addTimeBtn');
                     if (selectedDesiredDate && selectedDesiredTime) {
                         addBtn.disabled = false;
@@ -2474,104 +3131,6 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
                 });
             }
         });
-
-        // Add this booking function to user dashboard
-        async function bookRestaurantDate(restaurantId, matchUserId) {
-            const bookingData = {
-                restaurant_id: restaurantId,
-                match_user_id: matchUserId,
-                booking_datetime: document.getElementById('dateTimeInput').value,
-                party_size: 2,
-                special_requests: document.getElementById('specialRequestsInput').value
-            };
-
-            try {
-                const response = await fetch('/api/bookings/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(bookingData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showAlert('Booking request sent successfully!', 'success');
-                } else {
-                    showAlert(result.error || 'Failed to create booking', 'error');
-                }
-            } catch (error) {
-                console.error('Booking error:', error);
-                showAlert('Failed to create booking', 'error');
-            }
-        }
-
-        // Add this rating function
-        async function rateRestaurant(bookingId, rating, review) {
-            try {
-                const response = await fetch(`/api/bookings/${bookingId}/rate`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        rating: rating,
-                        review: review
-                    })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showAlert('Rating submitted successfully!', 'success');
-                } else {
-                    showAlert(result.error || 'Failed to submit rating', 'error');
-                }
-            } catch (error) {
-                console.error('Rating error:', error);
-                showAlert('Failed to submit rating', 'error');
-            }
-        }
-
-        // Add showAlert function if it doesn't exist
-        function showAlert(message, type = 'info') {
-            // Simple alert implementation - you can make this fancier
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-
-            // Create or update alert element
-            let alertDiv = document.getElementById('userAlert');
-            if (!alertDiv) {
-                alertDiv = document.createElement('div');
-                alertDiv.id = 'userAlert';
-                alertDiv.style.cssText = `
-                    position: fixed; top: 20px; right: 20px; z-index: 1000;
-                    padding: 1rem; border-radius: 6px; max-width: 300px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                `;
-                document.body.appendChild(alertDiv);
-            }
-
-            alertDiv.textContent = message;
-            alertDiv.className = `alert ${alertClass}`;
-            alertDiv.style.display = 'block';
-
-            // Apply colors based on type
-            if (type === 'success') {
-                alertDiv.style.backgroundColor = '#d4edda';
-                alertDiv.style.color = '#155724';
-                alertDiv.style.border = '1px solid #c3e6cb';
-            } else {
-                alertDiv.style.backgroundColor = '#f8d7da';
-                alertDiv.style.color = '#721c24';
-                alertDiv.style.border = '1px solid #f5c6cb';
-            }
-
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 5000);
-        }
 
         // Utility functions
         function getInitials(name) {
@@ -2605,19 +3164,12 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
 
             document.body.appendChild(toast);
 
-            // Trigger animation
             setTimeout(() => toast.classList.add('show'), 100);
 
-            // Auto remove after 5 seconds
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, 5000);
-        }
-
-        function toggleUserMenu() {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         }
 
         async function logout() {
@@ -2644,143 +3196,4 @@ const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?l
         });
     </script>
 </body>
-</html> Error('Failed to load profile');
-                }
-
-                currentUser = await response.json();
-
-                // Update UI with user data
-                document.getElementById('userName').textContent = currentUser.name;
-                document.getElementById('userAvatar').textContent = getInitials(currentUser.name);
-                document.getElementById('profileName').textContent = currentUser.name;
-                document.getElementById('profileEmail').textContent = currentUser.email;
-                document.getElementById('profileLocation').textContent = currentUser.location || 'Not set';
-                document.getElementById('profileBio').textContent = currentUser.bio || 'No bio yet';
-
-                // Load preferences
-                if (currentUser.preferences) {
-                    const prefsHtml = `
-                        <p><strong>Age Range:</strong> ${currentUser.preferences.min_age} - ${currentUser.preferences.max_age}</p>
-                        <p><strong>Preferred Gender:</strong> ${currentUser.preferences.gender_preference || 'Any'}</p>
-                        <p><strong>Interests:</strong> ${currentUser.preferences.interests?.join(', ') || 'None specified'}</p>
-                    `;
-                    document.getElementById('profilePreferences').innerHTML = prefsHtml;
-                }
-
-            } catch (error) {
-                console.error('Error loading profile:', error);
-                window.location.href = '/login.html';
-            }
-        }
-
-        // Load dashboard stats
-        async function loadStats() {
-            try {
-                const response = await authenticatedFetch('/api/user/stats');
-
-                if (response.ok) {
-                    const stats = await response.json();
-                    document.getElementById('totalDates').textContent = stats.total_dates || 0;
-                    document.getElementById('activeMatches').textContent = stats.active_matches || 0;
-                    document.getElementById('successRate').textContent = `${stats.success_rate || 0}%`;
-
-                    // Update notification badge
-                    if (stats.pending_matches > 0) {
-                        document.getElementById('notificationBadge').textContent = stats.pending_matches;
-                        document.getElementById('notificationBadge').style.display = 'block';
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        // Load recommended restaurants
-        async function loadRecommendedRestaurants() {
-            const container = document.getElementById('recommendedRestaurants');
-
-            try {
-                const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-                const response = await authenticatedFetch(`/api/restaurants?recommended=true&limit=3&lang=${currentLang}`);
-
-                if (!response.ok) {
-                    throw new Error('Failed to load restaurants');
-                }
-
-                const restaurants = await response.json();
-
-                if (restaurants.length === 0) {
-                    container.innerHTML = '<p>No recommendations available at the moment.</p>';
-                    return;
-                }
-
-                container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
-
-            } catch (error) {
-                console.error('Error loading restaurants:', error);
-                container.innerHTML = '<p>Error loading recommendations. Please try again later.</p>';
-            }
-        }
-
-        // Load all restaurants for browse tab
-        async function loadAllRestaurants() {
-            const container = document.getElementById('restaurantsList');
-            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading restaurants...</p></div>';
-
-            try {
-                const filters = getActiveFilters();
-                const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-                filters.lang = currentLang;
-                const queryParams = new URLSearchParams(filters);
-
-                const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
-
-                if (!response.ok) {
-                    throw new Error('Failed to load restaurants');
-                }
-
-                const restaurants = await response.json();
-
-                if (restaurants.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><h3>No restaurants found</h3><p>Try adjusting your filters</p></div>';
-                    return;
-                }
-
-                container.innerHTML = restaurants.map(restaurant => createRestaurantCard(restaurant)).join('');
-
-            } catch (error) {
-                console.error('Error loading restaurants:', error);
-                container.innerHTML = '<p>Error loading restaurants. Please try again later.</p>';
-            }
-        }
-
-        // Get active filters
-        function getActiveFilters() {
-            const filters = {};
-
-            const date = document.getElementById('dateFilter').value;
-            if (date) filters.date = date;
-
-            const time = document.getElementById('timeFilter').value;
-            if (time) filters.time = time;
-
-            const cuisine = document.getElementById('cuisineFilter').value;
-            if (cuisine) filters.cuisine = cuisine;
-
-            return filters;
-        }
-
-        // Apply filters
-        function applyFilters() {
-            loadAllRestaurants();
-        }
-
-        // Load matches
-        async function loadMatches() {
-            const container = document.getElementById('matchesList');
-
-            try {
-                const response = await authenticatedFetch('/api/matches');
-
-                if (!response.ok) {
-                    throw new
+</html>
