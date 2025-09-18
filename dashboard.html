@@ -1664,6 +1664,9 @@
 
     <!-- Main JavaScript -->
     <script>
+        console.log('CHECKPOINT 1: Main script started');
+
+
         // Translation system - PROPERLY STRUCTURED
         const translations = {
             en: {
@@ -2052,7 +2055,7 @@
             }
         };
 
-
+console.log('CHECKPOINT 2: Translations object created');
 
 
         // Global variables
@@ -2064,6 +2067,28 @@
         let selectedRestaurantId = null;
         let selectedMatchUserId = null;
 
+
+// Error reporting to server (ADD THIS ENTIRE BLOCK HERE)
+window.addEventListener('error', function(e) {
+    console.error('JavaScript Error:', e.message, 'at', e.filename, ':', e.lineno);
+
+    // Send to server for logging
+    fetch('/api/debug-log', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            error: e.message,
+            file: e.filename,
+            line: e.lineno,
+            col: e.colno
+        })
+    }).catch(() => {});
+});
+
+
+
+         console.log('CHECKPOINT 3: Global variables initialized');
+
         // Initialize on page load
       // Initialize on page load
 // Initialize on page load
@@ -2072,11 +2097,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.i18n && !document.querySelector('.language-switcher')) {
         window.i18n.init();
     }
+
+     console.log('CHECKPOINT 4b: After i18n check');
     // Initialize dashboard
     await initializeDashboard();
 });
 
-
+console.log('CHECKPOINT 5: Before languageChanged listener');
 
 // Listen for language changes from i18n
 window.addEventListener('languageChanged', function() {
@@ -2098,33 +2125,70 @@ window.addEventListener('languageChanged', function() {
     loadUserProfile();
 });
 
-        // Initialize dashboard
-        async function initializeDashboard() {
-            try {
-                // Check authentication
-                await checkAuth();
+       // Initialize dashboard
+async function initializeDashboard() {
+    console.log('DEBUG: initializeDashboard started');
 
-                // Load user profile
-                await loadUserProfile();
+    try {
+        console.log('DEBUG: About to check authentication');
 
-                // Load initial data
-                await loadStats();
-                await loadAllRestaurants();
+        // Check authentication
+        await checkAuth();
+        console.log('DEBUG: Authentication check completed');
 
-                // Setup WebSocket
-                setupWebSocket();
+        console.log('DEBUG: About to load user profile');
 
-                // Set default date to today
-                const dateFilter = document.getElementById('dateFilter');
-                if (dateFilter) {
-                    dateFilter.valueAsDate = new Date();
-                }
+        // Load user profile
+        await loadUserProfile();
+        console.log('DEBUG: User profile loaded');
 
-            } catch (error) {
-                console.error('Dashboard initialization error:', error);
-                window.location.href = '/login.html';
-            }
+        console.log('DEBUG: About to load stats');
+
+        // Load initial data
+        await loadStats();
+        console.log('DEBUG: Stats loaded');
+
+        console.log('DEBUG: About to load all restaurants');
+
+        await loadAllRestaurants();
+        console.log('DEBUG: All restaurants loaded');
+
+        console.log('DEBUG: About to setup WebSocket');
+
+        // Setup WebSocket
+        setupWebSocket();
+        console.log('DEBUG: WebSocket setup complete');
+
+        console.log('DEBUG: About to set default date');
+
+        // Set default date to today
+        const dateFilter = document.getElementById('dateFilter');
+        if (dateFilter) {
+            console.log('DEBUG: Date filter element found');
+            dateFilter.valueAsDate = new Date();
+            console.log('DEBUG: Date set to:', dateFilter.valueAsDate);
+        } else {
+            console.log('DEBUG: Date filter element NOT found');
         }
+
+        console.log('DEBUG: initializeDashboard completed successfully');
+
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error type:', error.constructor.name);
+
+        // Don't redirect immediately - let's see the error first
+        console.error('Would redirect to /login.html but commenting out for debugging');
+        // window.location.href = '/login.html';
+    }
+
+    console.log('DEBUG: initializeDashboard function ending');
+}
+
+
+
+
 
         // Check authentication
         async function checkAuth() {
@@ -3179,6 +3243,11 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                 setupWebSocket();
             }
         });
+
+
+ console.log('CHECKPOINT 6: All functions defined');
+
+
     </script>
 
 
@@ -3365,11 +3434,30 @@ window.i18n = {
     }
 };
 
+console.log('CHECKPOINT 8b: window.i18n object created successfully');
+
 // Execute immediately
-console.log('window.i18n created:', !!window.i18n);
-window.i18n.init();
+    console.log('window.i18n created:', !!window.i18n);
+
+    try {
+        console.log('CHECKPOINT 8c: About to call i18n.init()');
+        window.i18n.init();
+        console.log('CHECKPOINT 8d: i18n.init() completed');
+    } catch (error) {
+        console.error('ERROR in i18n.init():', error);
+    }
+
+    console.log('i18n initialization complete');
+
+} catch (error) {
+    console.error('ERROR creating i18n system:', error);
+}
+
+
 console.log('i18n initialization complete');
-</script>
+
+
+   </script>
 
 
 
