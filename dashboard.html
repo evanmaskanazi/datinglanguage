@@ -3178,7 +3178,43 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
             }
         });
     </script>
-<script src="/i18n.js"></script>
+<script>
+console.error('=== SCRIPT LOADING DEBUG ===');
+
+// Check for CSP violations first
+document.addEventListener('securitypolicyviolation', (e) => {
+    console.error('CSP Violation:', e);
+});
+
+// Method 1: Dynamic script loading with full error handling
+const script = document.createElement('script');
+script.src = '/i18n.js';
+
+script.onload = function() {
+    console.error('✓ i18n.js loaded successfully');
+    console.error('window.i18n exists?', !!window.i18n);
+    if (window.i18n) {
+        console.error('Calling i18n.init()');
+        window.i18n.init();
+    }
+};
+
+script.onerror = function(e) {
+    console.error('✗ Failed to load i18n.js');
+    console.error('Error details:', e);
+    console.error('Script src was:', this.src);
+
+    // Try alternative path
+    console.error('Trying /static/i18n.js instead...');
+    const script2 = document.createElement('script');
+    script2.src = '/static/i18n.js';
+    script2.onload = () => console.error('✓ Loaded from /static/');
+    script2.onerror = () => console.error('✗ Also failed from /static/');
+    document.head.appendChild(script2);
+};
+
+document.head.appendChild(script);
+</script>
 
 <script>
     console.error('Dashboard end script running');

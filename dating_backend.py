@@ -390,6 +390,88 @@ def debug_paths():
     })
 
 
+@app.route('/debug/script-test')
+def debug_script_test():
+    """Test page to debug script loading"""
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Script Loading Test</title>
+    </head>
+    <body>
+        <h1>Script Loading Test</h1>
+        <div id="results"></div>
+
+        <script>
+            const results = document.getElementById('results');
+
+            function log(msg) {
+                const p = document.createElement('p');
+                p.textContent = msg;
+                results.appendChild(p);
+                console.log(msg);
+            }
+
+            log('Starting test...');
+
+            // Test 1: Load from /i18n.js
+            const script1 = document.createElement('script');
+            script1.src = '/i18n.js';
+            script1.onload = () => log('✓ Loaded from /i18n.js');
+            script1.onerror = () => log('✗ Failed to load from /i18n.js');
+            document.head.appendChild(script1);
+
+            // Test 2: Load from /static/i18n.js
+            setTimeout(() => {
+                const script2 = document.createElement('script');
+                script2.src = '/static/i18n.js';
+                script2.onload = () => log('✓ Loaded from /static/i18n.js');
+                script2.onerror = () => log('✗ Failed to load from /static/i18n.js');
+                document.head.appendChild(script2);
+            }, 1000);
+
+            // Test 3: Check if window.i18n exists after 2 seconds
+            setTimeout(() => {
+                log('window.i18n exists: ' + (typeof window.i18n !== 'undefined'));
+                if (window.i18n) {
+                    log('i18n.currentLang: ' + window.i18n.currentLang);
+                }
+            }, 2000);
+        </script>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.route('/debug/file-check')
+def debug_file_check():
+    """Check if i18n.js file exists and its content"""
+    import os
+    import hashlib
+
+    file_path = os.path.join(app.static_folder, 'i18n.js')
+
+    info = {
+        'file_path': str(file_path),
+        'exists': os.path.exists(file_path),
+        'static_folder': str(app.static_folder),
+        'static_url_path': app.static_url_path
+    }
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
+            content = f.read()
+            info['size'] = len(content)
+            info['md5'] = hashlib.md5(content).hexdigest()
+            info['first_line'] = content[:100].decode('utf-8', errors='ignore')
+            info['last_line'] = content[-100:].decode('utf-8', errors='ignore')
+
+    return jsonify(info)
+
+
+
 # CSRF token endpoint
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
@@ -1717,16 +1799,46 @@ def favicon():
     return send_file(img_io, mimetype='image/x-icon')
 
 
-
 @app.route('/i18n.js')
 def serve_i18n_root():
     """Serve i18n.js from root"""
-    return send_file('static/i18n.js', mimetype='application/javascript')
+    import os
+    file_path = os.path.join(app.static_folder, 'i18n.js')
+
+    logger.info(f"i18n.js requested")
+    logger.info(f"Looking for file at: {file_path}")
+    logger.info(f"File exists: {os.path.exists(file_path)}")
+
+    if os.path.exists(file_path):
+        logger.info(f"File size: {os.path.getsize(file_path)} bytes")
+        return send_file(file_path, mimetype='application/javascript')
+    else:
+        logger.error(f"File not found at {file_path}")
+        return "File not found", 404
+
 
 @app.route('/static/i18n.js')
 def serve_i18n_static():
     """Serve i18n.js from static path"""
-    return send_file('static/i18n.js', mimetype='application/javascript')
+    import os
+    file_path = os.path.join(app.static_folder, 'i18n.js')
+
+    logger.info(f"static/i18n.js requested")
+    logger.info(f"Looking for file at: {file_path}")
+
+    if os.path.exists(file_path):
+        # Read file content to verify it's not empty
+        with open(file_path, 'r') as f:
+            content = f.read()
+            logger.info(f"File content length: {len(content)}")
+            logger.info(f"First 100 chars: {content[:100]}")
+
+        response = make_response(send_file(file_path, mimetype='application/javascript'))
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+    else:
+        return "File not found", 404
 
 
 
