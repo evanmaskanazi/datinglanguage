@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TableForTwo - Dashboard</title>
 
+    <!-- Add i18n script for translation support -->
+    <script src="i18n.js"></script>
+<script>
+// Debug i18n loading
+console.log('i18n loaded:', typeof window.i18n !== 'undefined');
+if (window.i18n) {
+    console.log('Current language:', window.i18n.currentLang);
+} else {
+    console.error('i18n.js did not load properly!');
+}
+</script>
     <!-- Custom Styles -->
     <style>
         * {
@@ -1201,14 +1212,7 @@
     </style>
 </head>
 <body>
-    <!-- Language Switcher -->
-    <!-- Language Switcher -->
-<div class="language-switcher">
-    <button class="lang-btn active" onclick="changeLanguage('en')">EN</button>
-    <button class="lang-btn" onclick="changeLanguage('he')">HE</button>
-    <button class="lang-btn" onclick="changeLanguage('ar')">AR</button>
-    <button class="lang-btn" onclick="changeLanguage('ru')">RU</button>
-</div>
+
 
     <!-- Dashboard Container -->
     <div class="dashboard-container">
@@ -2056,48 +2060,8 @@
             }
         };
 
-        // Initialize translation system
-        function initTranslations() {
-            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-            changeLanguage(savedLang);
-        }
 
-        function changeLanguage(lang) {
-            localStorage.setItem('selectedLanguage', lang);
 
-            // Update active button
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase().includes(lang) ||
-                    (lang === 'en' && btn.textContent === 'EN') ||
-                    (lang === 'he' && btn.textContent === 'עב') ||
-                    (lang === 'ar' && btn.textContent === 'عر') ||
-                    (lang === 'ru' && btn.textContent === 'РУ')) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Apply RTL if needed
-            if (lang === 'he' || lang === 'ar') {
-                document.body.classList.add('rtl');
-            } else {
-                document.body.classList.remove('rtl');
-            }
-
-            // Translate elements
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const keys = element.getAttribute('data-translate').split('.');
-                let translation = translations[lang];
-                for (const key of keys) {
-                    if (translation) {
-                        translation = translation[key];
-                    }
-                }
-                if (translation) {
-                    element.textContent = translation;
-                }
-            });
-        }
 
         // Global variables
         let currentUser = null;
@@ -2109,13 +2073,40 @@
         let selectedMatchUserId = null;
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize translations first
-            initTranslations();
-
-            // Then initialize dashboard
+      // Initialize on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for i18n to be ready
+    if (window.i18n && window.i18n.currentLang) {
+        await initializeDashboard();
+    } else {
+        // Wait for i18n to initialize
+        setTimeout(async () => {
             await initializeDashboard();
-        });
+        }, 100);
+    }
+});
+
+
+
+// Listen for language changes from i18n
+window.addEventListener('languageChanged', function() {
+    console.log('Language changed to:', window.i18n.currentLang);
+
+    // Apply RTL if needed
+    if (window.i18n.currentLang === 'he' || window.i18n.currentLang === 'ar') {
+        document.body.classList.add('rtl');
+    } else {
+        document.body.classList.remove('rtl');
+    }
+
+    // Reload restaurants with new language
+    if (document.getElementById('browse').classList.contains('active')) {
+        loadAllRestaurants();
+    }
+
+    // Update any cached data
+    loadUserProfile();
+});
 
         // Initialize dashboard
         async function initializeDashboard() {
@@ -2263,7 +2254,9 @@
                 const filters = getActiveFilters();
                 const queryParams = new URLSearchParams(filters);
 
-                const response = await authenticatedFetch(`/api/restaurants?${queryParams}`);
+                // Include language parameter for translation
+const lang = window.i18n ? window.i18n.currentLang : 'en';
+const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=${lang}`);
 
                 if (!response.ok) {
                     throw new Error('Failed to load restaurants');
@@ -2425,8 +2418,8 @@
 
             try {
                 // Load restaurant details
-                const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-                const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLang}`, {
+               const currentLang = window.i18n ? window.i18n.currentLang : 'en';
+const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLang}`, {
                     credentials: 'include'
                 });
 

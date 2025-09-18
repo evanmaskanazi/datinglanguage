@@ -787,18 +787,29 @@ def get_restaurant_slots(restaurant_id):
 def get_restaurant(restaurant_id):
     """Get restaurant details"""
     try:
+        lang = request.args.get('lang', 'en')  # Get language parameter
+
         # Handle API restaurants (prefixed with 'api_')
         if str(restaurant_id).startswith('api_'):
-            # FIX 1: Check cache first (populated by get_restaurants())
+            # Check cache first (populated by get_restaurants())
             cache_key = f"restaurant_{restaurant_id}"
             cached_data = cache.get(cache_key)
 
             if cached_data and isinstance(cached_data, dict):
                 logger.info(f"Found cached restaurant data for {restaurant_id}")
+
+                # Translate cached data if needed
+                restaurant_name = cached_data.get('name', 'Restaurant')
+                cuisine_type = cached_data.get('cuisine', 'International')
+
+                if lang != 'en':
+                    restaurant_name = translate_text(restaurant_name, lang)
+                    cuisine_type = translate_text(cuisine_type, lang)
+
                 return jsonify({
                     'id': restaurant_id,
-                    'name': cached_data.get('name', 'Restaurant'),
-                    'cuisine': cached_data.get('cuisine', 'International'),
+                    'name': restaurant_name,
+                    'cuisine': cuisine_type,
                     'address': cached_data.get('address', 'Address not available'),
                     'price_range': '$' * cached_data.get('price_range', 2),
                     'rating': cached_data.get('rating', 4.0),
@@ -809,7 +820,7 @@ def get_restaurant(restaurant_id):
             # Extract the actual place ID (remove 'api_' prefix)
             place_id = restaurant_id[4:]  # Remove 'api_' prefix
 
-            # FIX 2: Try Google Places API with better error handling
+            # Try Google Places API with better error handling
             try:
                 import requests
                 google_api_key = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -853,23 +864,31 @@ def get_restaurant(restaurant_id):
                             elif 'french_restaurant' in types:
                                 cuisine = 'French'
 
+                            # Translate if needed
+                            restaurant_name = place.get('name', 'Restaurant')
+                            cuisine_type = cuisine
+
+                            if lang != 'en':
+                                restaurant_name = translate_text(restaurant_name, lang)
+                                cuisine_type = translate_text(cuisine_type, lang)
+
                             restaurant_data = {
                                 'id': restaurant_id,
-                                'name': place.get('name', 'Restaurant'),
-                                'cuisine': cuisine,
+                                'name': restaurant_name,
+                                'cuisine': cuisine_type,
                                 'address': place.get('formatted_address', 'Address not available'),
                                 'price_range': price_range,
                                 'rating': place.get('rating', 4.0),
                                 'available_tables': 3
                             }
 
-                            # FIX 3: Cache this data for future use
+                            # Cache this data for future use
                             try:
                                 cache_data = {
-                                    'name': restaurant_data['name'],
-                                    'cuisine': cuisine,
-                                    'address': restaurant_data['address'],
-                                    'rating': restaurant_data['rating'],
+                                    'name': place.get('name', 'Restaurant'),  # Cache original name
+                                    'cuisine': cuisine,  # Cache original cuisine
+                                    'address': place.get('formatted_address', 'Address not available'),
+                                    'rating': place.get('rating', 4.0),
                                     'price_range': place.get('price_level', 2),
                                     'source': 'google',
                                     'cached_at': datetime.utcnow().isoformat()
@@ -888,7 +907,7 @@ def get_restaurant(restaurant_id):
             except Exception as e:
                 logger.warning(f"Google Places API failed for {place_id}: {e}")
 
-            # FIX 4: Enhanced fallback lookup table with more restaurants
+            # Enhanced fallback lookup table with more restaurants
             restaurant_lookup = {
                 'ChIJ1-U0Qp1MHRURJFvgKIuvslw': {
                     'name': 'Cafe Central',
@@ -960,10 +979,18 @@ def get_restaurant(restaurant_id):
 
             restaurant_info = restaurant_lookup.get(place_id)
             if restaurant_info:
+                # Translate if needed
+                restaurant_name = restaurant_info['name']
+                cuisine_type = restaurant_info['cuisine']
+
+                if lang != 'en':
+                    restaurant_name = translate_text(restaurant_name, lang)
+                    cuisine_type = translate_text(cuisine_type, lang)
+
                 restaurant_data = {
                     'id': restaurant_id,
-                    'name': restaurant_info['name'],
-                    'cuisine': restaurant_info['cuisine'],
+                    'name': restaurant_name,
+                    'cuisine': cuisine_type,
                     'address': restaurant_info['address'],
                     'price_range': '$$',
                     'rating': restaurant_info['rating'],
@@ -973,8 +1000,8 @@ def get_restaurant(restaurant_id):
                 # Cache the lookup table data too
                 try:
                     cache_data = {
-                        'name': restaurant_info['name'],
-                        'cuisine': restaurant_info['cuisine'],
+                        'name': restaurant_info['name'],  # Cache original name
+                        'cuisine': restaurant_info['cuisine'],  # Cache original cuisine
                         'address': restaurant_info['address'],
                         'rating': restaurant_info['rating'],
                         'price_range': 2,
@@ -987,11 +1014,18 @@ def get_restaurant(restaurant_id):
 
                 return jsonify(restaurant_data)
             else:
-                # Last resort fallback
+                # Last resort fallback - still translate
+                restaurant_name = 'Local Restaurant'
+                cuisine_type = 'International'
+
+                if lang != 'en':
+                    restaurant_name = translate_text(restaurant_name, lang)
+                    cuisine_type = translate_text(cuisine_type, lang)
+
                 return jsonify({
                     'id': restaurant_id,
-                    'name': 'Local Restaurant',
-                    'cuisine': 'International',
+                    'name': restaurant_name,
+                    'cuisine': cuisine_type,
                     'address': 'Tel Aviv, Israel',
                     'price_range': '$$',
                     'rating': 4.0,
@@ -1004,10 +1038,18 @@ def get_restaurant(restaurant_id):
             if not restaurant:
                 return jsonify({'error': 'Restaurant not found'}), 404
 
+            # Translate database restaurant if needed
+            restaurant_name = restaurant.name
+            cuisine_type = restaurant.cuisine_type
+
+            if lang != 'en':
+                restaurant_name = translate_text(restaurant_name, lang)
+                cuisine_type = translate_text(cuisine_type, lang)
+
             return jsonify({
                 'id': restaurant.id,
-                'name': restaurant.name,
-                'cuisine': restaurant.cuisine_type,
+                'name': restaurant_name,
+                'cuisine': cuisine_type,
                 'address': restaurant.address,
                 'price_range': '$' * (restaurant.price_range or 1),
                 'rating': restaurant.rating or 4.0,
