@@ -1212,18 +1212,6 @@ def refresh_restaurants():
         logger.error(f"Refresh restaurants error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to refresh restaurants'}), 500
 
-# Matching endpoints
-@app.route('/api/matches', methods=['GET'])
-@require_auth()
-def get_matches():
-    """Get user's matches"""
-    try:
-        from services.matching_service import MatchingService
-
-        return matching_service.get_user_matches(request.current_user.id)
-    except Exception as e:
-        logger.error(f"Get matches error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to get matches'}), 500
 
 @app.route('/api/matches/suggestions', methods=['POST'])
 @require_auth()
@@ -1249,38 +1237,189 @@ def browse_matches():
         logger.error(f"Browse matches error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to browse matches'}), 500
 
+
 @app.route('/api/matches/request', methods=['POST'])
 @require_auth()
 @limiter.limit("10 per hour")
 def request_match():
     """Request a match with another user"""
     try:
-        from services.matching_service import MatchingService
+        data = request.json
+        user_id = request.current_user.id
+        match_user_id = data.get('match_user_id')
 
-        result = matching_service.request_match(request.current_user.id, request.json)
+        # Prevent self-matches
+        if user_id == match_user_id:
+            return jsonify({'error': 'Cannot match with yourself'}), 400
 
-        # Send WebSocket notification for new match
-        if hasattr(result, 'json') and result.status_code == 201:
-            websocket_service.notify_new_match(
-                request.json.get('match_user_id'),
-                {'type': 'match_request', 'from_user': request.current_user.id}
+        # Check if match already exists
+        existing_match = Match.query.filter(
+            or_(
+                and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
+                and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
             )
+        ).first()
 
-        return result
+        if existing_match:
+            return jsonify({'error': 'Match already exists'}), 400
+
+        # Create new match with SENT status for requester
+        match = Match(
+            user1_id=user_id,
+            user2_id=match_user_id,
+            status='SENT',  # Changed from PENDING
+            restaurant_id=data.get('restaurant_id'),
+            proposed_datetime=datetime.fromisoformat(data.get('datetime')) if data.get('datetime') else None,
+            compatibility_score=data.get('compatibility', 80)
+        )
+
+        db.session.add(match)
+        db.session.commit()
+
+        # Send notification to other user
+        websocket_service.notify_new_match(
+            match_user_id,
+            {'type': 'match_request', 'from_user': user_id}
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'Match request sent successfully',
+            'match_id': match.id
+        }), 201
+
     except Exception as e:
         logger.error(f"Request match error: {str(e)}", exc_info=True)
+        db.session.rollback()
         return jsonify({'error': 'Failed to request match'}), 500
+
+
+@app.route('/api/matches', methods=['GET'])
+@require_auth()
+def get_matches():
+    """Get user's matches with proper status display"""
+    try:
+        user_id = request.current_user.id
+
+        # Get all matches where user is involved
+        matches = Match.query.filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id)
+        ).all()
+
+        result = []
+        for match in matches:
+            # Determine the other user
+            if match.user1_id == user_id:
+                other_user_id = match.user2_id
+                # If current user initiated, show SENT instead of PENDING
+                display_status = 'SENT' if match.status == 'PENDING' else match.status
+            else:
+                other_user_id = match.user1_id
+                # If other user initiated, show PENDING for acceptance
+                display_status = match.status
+
+            other_user = User.query.get(other_user_id)
+
+            # Get restaurant info
+            restaurant_name = 'Unknown Restaurant'
+            if match.restaurant_id:
+                if str(match.restaurant_id).startswith('api_'):
+                    restaurant_name = 'Restaurant'
+                else:
+                    restaurant = Restaurant.query.get(match.restaurant_id)
+                    if restaurant:
+                        restaurant_name = restaurant.name
+
+            result.append({
+                'id': match.id,
+                'name': other_user.email.split('@')[0] if other_user else 'Unknown',
+                'email': other_user.email if other_user else '',
+                'restaurant_name': restaurant_name,
+                'date': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
+                'status': display_status,
+                'compatibility': match.compatibility_score,
+                'can_accept': match.user2_id == user_id and match.status == 'PENDING'
+            })
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Get matches error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get matches'}), 500
+
 
 @app.route('/api/matches/<int:match_id>/accept', methods=['POST'])
 @require_auth()
 def accept_match(match_id):
-    """Accept a match request"""
+    """Accept a match request and create restaurant booking"""
     try:
-        from services.matching_service import MatchingService
+        match = Match.query.get(match_id)
 
-        return matching_service.respond_to_match(request.current_user.id, match_id, {'accept': True})
+        if not match:
+            return jsonify({'error': 'Match not found'}), 404
+
+        # Verify user can accept this match
+        if match.user2_id != request.current_user.id:
+            return jsonify({'error': 'Not authorized'}), 403
+
+        # Update match status
+        match.status = 'ACCEPTED'
+
+        # Create restaurant booking if restaurant is specified
+        if match.restaurant_id:
+            from models.restaurant_management import RestaurantBooking
+
+            # Parse restaurant ID
+            restaurant_id = match.restaurant_id
+            if str(restaurant_id).startswith('api_'):
+                # For API restaurants, try to find or create in database
+                external_id = restaurant_id[4:]
+                restaurant = Restaurant.query.filter_by(external_id=external_id).first()
+                if not restaurant:
+                    # Create placeholder restaurant entry
+                    restaurant = Restaurant(
+                        name='API Restaurant',
+                        external_id=external_id,
+                        cuisine_type='International',
+                        address='Address',
+                        source='api',
+                        is_active=True
+                    )
+                    db.session.add(restaurant)
+                    db.session.flush()
+                    restaurant_id = restaurant.id
+                else:
+                    restaurant_id = restaurant.id
+            else:
+                restaurant_id = int(restaurant_id)
+
+            booking = RestaurantBooking(
+                restaurant_id=restaurant_id,
+                match_id=match.id,
+                user1_id=match.user1_id,
+                user2_id=match.user2_id,
+                booking_datetime=match.proposed_datetime or datetime.utcnow(),
+                status='pending',
+                party_size=2
+            )
+            db.session.add(booking)
+
+        db.session.commit()
+
+        # Send notification
+        websocket_service.notify_match_accepted(
+            match.user1_id,
+            {'match_id': match.id, 'accepted_by': request.current_user.id}
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'Match accepted successfully'
+        })
+
     except Exception as e:
         logger.error(f"Accept match error: {str(e)}", exc_info=True)
+        db.session.rollback()
         return jsonify({'error': 'Failed to accept match'}), 500
 
 @app.route('/api/matches/<int:match_id>/decline', methods=['POST'])
@@ -2070,6 +2209,62 @@ def get_followed_restaurants():
     except Exception as e:
         logger.error(f"Get followed restaurants error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get followed restaurants'}), 500
+
+
+@app.route('/api/users/all', methods=['GET'])
+@require_auth()
+def get_all_users():
+    """Get all users except current user for following"""
+    try:
+        from models.user import User
+
+        users = User.query.filter(
+            User.id != request.current_user.id,
+            User.is_active == True
+        ).all()
+
+        result = []
+        for user in users:
+            is_following = request.current_user.is_following_user(user)
+            result.append({
+                'id': user.id,
+                'email': user.email,
+                'name': user.email.split('@')[0],  # Use email prefix as name
+                'location': user.profile.location if user.profile else None,
+                'is_following': is_following,
+                'follower_count': user.followers.count()
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Get all users error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get users'}), 500
+
+
+@app.route('/api/users/<int:user_id>/time-preferences', methods=['GET'])
+@require_auth()
+def get_user_time_preferences(user_id):
+    """Get time preferences for a specific user"""
+    try:
+        from models.time_preferences import UserTimePreference
+
+        # Check if current user follows this user
+        target_user = User.query.get(user_id)
+        if not target_user or not request.current_user.is_following_user(target_user):
+            return jsonify({'error': 'Not authorized to view this user\'s preferences'}), 403
+
+        preferences = UserTimePreference.query.filter_by(user_id=user_id).all()
+
+        return jsonify([{
+            'id': p.id,
+            'date': p.preferred_date.isoformat(),
+            'time': p.preferred_time
+        } for p in preferences])
+
+    except Exception as e:
+        logger.error(f"Get user preferences error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get preferences'}), 500
+
 
 
 @app.route('/api/restaurants/all', methods=['GET'])
