@@ -1579,9 +1579,66 @@ def decline_match(match_id):
 @app.route('/api/dates/upcoming', methods=['GET'])
 @require_auth()
 def get_upcoming_dates():
-    """Get upcoming dates"""
+    """Get upcoming dates from accepted matches"""
     try:
-        return jsonify([])
+        user_id = request.current_user.id
+        current_time = datetime.utcnow()
+
+        # Get all accepted matches where user is involved and date is in future
+        accepted_matches = Match.query.filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id),
+            Match.proposed_datetime > current_time
+        ).all()
+
+        upcoming_dates = []
+        for match in accepted_matches:
+            # Check if status is ACCEPTED
+            status_str = get_match_status_string(match)
+            if status_str != 'ACCEPTED':
+                continue
+
+            # Determine the other user
+            if match.user1_id == user_id:
+                other_user_id = match.user2_id
+            else:
+                other_user_id = match.user1_id
+
+            other_user = User.query.get(other_user_id)
+
+            # Get restaurant info
+            restaurant_name = 'Unknown Restaurant'
+            restaurant_address = 'Address not available'
+
+            if match.restaurant_id:
+                restaurant_id_str = str(match.restaurant_id)
+                if restaurant_id_str.startswith('api_'):
+                    # API restaurant - check cache
+                    cache_key = f"restaurant_{restaurant_id_str}"
+                    cached_data = cache.get(cache_key)
+                    if cached_data and isinstance(cached_data, dict):
+                        restaurant_name = cached_data.get('name', 'Restaurant')
+                        restaurant_address = cached_data.get('address', 'Address not available')
+                else:
+                    # Database restaurant
+                    try:
+                        restaurant = Restaurant.query.get(int(match.restaurant_id))
+                        if restaurant:
+                            restaurant_name = restaurant.name
+                            restaurant_address = restaurant.address
+                    except (ValueError, TypeError):
+                        pass
+
+            upcoming_dates.append({
+                'id': match.id,
+                'restaurant_name': restaurant_name,
+                'restaurant_address': restaurant_address,
+                'match_name': other_user.email.split('@')[0] if other_user else 'Unknown',
+                'match_email': other_user.email if other_user else '',
+                'datetime': match.proposed_datetime.isoformat() if match.proposed_datetime else None
+            })
+
+        return jsonify(upcoming_dates)
+
     except Exception as e:
         logger.error(f"Get upcoming dates error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get upcoming dates'}), 500
