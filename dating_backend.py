@@ -3171,8 +3171,6 @@ def fix_accepted_matches():
         return jsonify({'error': 'Failed to fix matches'}), 500
 
 
-
-# === INITIALIZATION ===
 def initialize_database():
     """Initialize database with default data"""
     with app.app_context():
@@ -3194,25 +3192,51 @@ def initialize_database():
         try:
             from sqlalchemy import text
             with db.engine.connect() as conn:
-                # Fix all status variations to uppercase with proper enum casting
-                conn.execute(text("""
-                    UPDATE matches 
-                    SET status = 'ACCEPTED'::matchstatus
-                    WHERE LOWER(status::text) IN ('accepted', 'confirmed')
-                       OR status::text LIKE '%ACCEPTED%'
-                       OR status::text LIKE '%accepted%'
-                       OR status::text LIKE '%CONFIRMED%'
-                       OR status::text LIKE '%confirmed%'
+                # First check what enum values actually exist
+                result = conn.execute(text("""
+                    SELECT enumlabel 
+                    FROM pg_enum 
+                    WHERE enumtypid = (
+                        SELECT oid FROM pg_type WHERE typname = 'matchstatus'
+                    )
                 """))
+                valid_statuses = [row[0] for row in result]
+                logger.info(f"Valid matchstatus enum values: {valid_statuses}")
 
-                # Also normalize other statuses
-                conn.execute(text("""
-                    UPDATE matches 
-                    SET status = 'PENDING'::matchstatus
-                    WHERE LOWER(status::text) = 'pending'
-                       OR status::text LIKE '%PENDING%'
-                       OR status::text LIKE '%pending%'
-                """))
+                # Only update to values that exist in the enum
+                if 'ACCEPTED' in valid_statuses:
+                    conn.execute(text("""
+                        UPDATE matches 
+                        SET status = 'ACCEPTED'::matchstatus
+                        WHERE LOWER(status::text) IN ('accepted', 'confirmed')
+                           OR status::text LIKE '%ACCEPTED%'
+                           OR status::text LIKE '%accepted%'
+                           OR status::text LIKE '%CONFIRMED%'
+                           OR status::text LIKE '%confirmed%'
+                    """))
+
+                if 'PENDING' in valid_statuses:
+                    conn.execute(text("""
+                        UPDATE matches 
+                        SET status = 'PENDING'::matchstatus
+                        WHERE LOWER(status::text) = 'pending'
+                           OR status::text LIKE '%PENDING%'
+                           OR status::text LIKE '%pending%'
+                    """))
+
+                # Map cancelled to declined if CANCELLED doesn't exist
+                if 'CANCELLED' in valid_statuses:
+                    conn.execute(text("""
+                        UPDATE matches 
+                        SET status = 'CANCELLED'::matchstatus
+                        WHERE LOWER(status::text) = 'cancelled'
+                    """))
+                elif 'DECLINED' in valid_statuses:
+                    conn.execute(text("""
+                        UPDATE matches 
+                        SET status = 'DECLINED'::matchstatus
+                        WHERE LOWER(status::text) IN ('cancelled', 'canceled')
+                    """))
 
                 conn.commit()
                 logger.info("Match statuses normalized on startup")

@@ -521,19 +521,33 @@ def migrate_time_preferences_table():
 
 
 def migrate_match_status_normalization():
-    """Ensure all match statuses are uppercase"""
+    """Ensure all match statuses are uppercase - only use valid enum values"""
     from sqlalchemy import text
 
     try:
-        # Normalize all statuses to uppercase with proper ENUM casting
+        # First, check what enum values actually exist
+        check_enum_sql = """
+        SELECT enumlabel 
+        FROM pg_enum 
+        WHERE enumtypid = (
+            SELECT oid FROM pg_type WHERE typname = 'matchstatus'
+        )
+        """
+
+        result = db.session.execute(text(check_enum_sql))
+        valid_statuses = [row[0] for row in result]
+        print(f"Valid enum values: {valid_statuses}")
+
+        # Only normalize to values that exist in the enum
         normalize_sql = """
         UPDATE matches 
         SET status = CASE 
             WHEN LOWER(status::text) IN ('accepted', 'confirmed') THEN 'ACCEPTED'::matchstatus
             WHEN LOWER(status::text) = 'pending' THEN 'PENDING'::matchstatus
             WHEN LOWER(status::text) = 'declined' THEN 'DECLINED'::matchstatus
-            WHEN LOWER(status::text) = 'cancelled' THEN 'CANCELLED'::matchstatus
             WHEN LOWER(status::text) = 'completed' THEN 'COMPLETED'::matchstatus
+            -- Map cancelled to declined since CANCELLED doesn't exist
+            WHEN LOWER(status::text) = 'cancelled' THEN 'DECLINED'::matchstatus
             ELSE status
         END
         WHERE status IS NOT NULL;
