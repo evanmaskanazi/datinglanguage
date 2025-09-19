@@ -1650,18 +1650,18 @@
         // Translation system - PROPERLY STRUCTURED
         const translations = {
             en: {
-                nav: {
-                    overview: 'Overview',
-                    browse: 'Browse Tables',
-                    matches: 'My Matches',
-                    dates: 'Upcoming Dates',
-                    desired_times: 'Desired Times',
-                    history: 'Date History',
-                    profile: 'Profile',
-                    restaurants: 'Restaurants',
-                    settings: 'Settings',
-                    logout: 'Logout'
-                },
+    nav: {
+        overview: 'Overview',
+        browse: 'Browse Tables',
+        matches: 'My Matches',
+        dates: 'Upcoming Dates',
+        desired_times: 'Desired Times',
+        history: 'Date History',
+        profile: 'Profile',
+        restaurants: 'Restaurants',
+        settings: 'Settings',
+        logout: 'Logout'
+    },
                 overview: {
                     title: 'Welcome back!',
                     subtitle: "Here's what's happening with your dating life"
@@ -1672,10 +1672,11 @@
                     compatibility: 'Avg Compatibility',
                     total_dates: 'Total Dates'
                 },
-                browse: {
-                    title: 'Browse Available Tables',
-                    subtitle: 'Find your perfect dinner date spot'
-                },
+               browse: {
+    title: 'Browse Available Tables',
+    subtitle: 'Find your perfect dinner date spot',
+    browse_tables_btn: 'Browse Tables'
+},
                 filters: {
                     date: 'Date',
                     time: 'Time',
@@ -1683,29 +1684,36 @@
                     apply: 'Apply Filters'
                 },
                 matches: {
-                    title: 'My Matches',
-                    subtitle: 'People interested in dining with you'
-                },
+    title: 'My Matches',
+    subtitle: 'People interested in dining with you',
+    status_pending: 'Pending',
+    status_confirmed: 'Confirmed',
+    status_completed: 'Completed'
+},
                 dates: {
-                    title: 'Upcoming Dates',
-                    subtitle: 'Your scheduled dinner dates'
-                },
+    title: 'Upcoming Dates',
+    subtitle: 'Your scheduled dinner dates',
+    no_dates: 'No upcoming dates',
+    find_next: 'Browse available tables to find your next dinner date!'
+},
                 history: {
                     title: 'Date History',
                     subtitle: 'Your past dinner dates'
                 },
                 profile: {
-                    title: 'My Profile',
-                    subtitle: 'Manage your personal information',
-                    personal_info: 'Personal Information',
-                    edit: 'Edit Profile',
-                    name: 'Name',
-                    location: 'Location',
-                    bio: 'Bio',
-                    preferences: 'Dating Preferences',
-                    age_range: 'Age Range',
-                    interests: 'Interests'
-                },
+    title: 'My Profile',
+    subtitle: 'Manage your personal information',
+    personal_info: 'Personal Information',
+    edit: 'Edit Profile',
+    name: 'Name',
+    location: 'Location',
+    bio: 'Bio',
+    preferences: 'Dating Preferences',
+    age_range: 'Age Range',
+    interests: 'Interests',
+    years: 'years',
+    none_specified: 'None specified'
+},
                 restaurants: {
                     title: 'Restaurant Partners',
                     subtitle: 'Follow your favorite restaurants'
@@ -1732,6 +1740,10 @@
                     title: 'Desired Meeting Times',
                     subtitle: "Set your preferred times and we'll find matches"
                 },
+                restaurant: {
+    cuisine_separator: '•',
+    slots: 'slots'
+},
                 loading: 'Loading...',
                 recent_activity: 'Recent Activity',
                 no_activity: 'No recent activity',
@@ -1768,40 +1780,48 @@
                     compatibility: 'התאמה ממוצעת',
                     total_dates: 'סך הפגישות'
                 },
-                browse: {
-                    title: 'דפדוף שולחנות זמינים',
-                    subtitle: 'מצא את מקום הפגישה המושלם שלך'
-                },
+               browse: {
+    title: 'דפדוף שולחנות זמינים',
+    subtitle: 'מצא את מקום הפגישה המושלם שלך',
+    browse_tables_btn: 'דפדף בשולחנות'
+},
                 filters: {
                     date: 'תאריך',
                     time: 'שעה',
                     cuisine: 'מטבח',
                     apply: 'החל מסננים'
                 },
-                matches: {
-                    title: 'ההתאמות שלי',
-                    subtitle: 'אנשים שמעוניינים לסעוד איתך'
-                },
-                dates: {
-                    title: 'פגישות קרובות',
-                    subtitle: 'פגישות הארוחה המתוכננות שלך'
-                },
+               matches: {
+    title: 'ההתאמות שלי',
+    subtitle: 'אנשים שמעוניינים לסעוד איתך',
+    status_pending: 'ממתין',
+    status_confirmed: 'אושר',
+    status_completed: 'הושלם'
+},
+               dates: {
+    title: 'פגישות קרובות',
+    subtitle: 'פגישות הארוחה המתוכננות שלך',
+    no_dates: 'אין פגישות קרובות',
+    find_next: 'דפדף בשולחנות זמינים כדי למצוא את פגישת הארוחה הבאה שלך!'
+},
                 history: {
                     title: 'היסטוריית פגישות',
                     subtitle: 'פגישות הארוחה הקודמות שלך'
                 },
-                profile: {
-                    title: 'הפרופיל שלי',
-                    subtitle: 'נהל את המידע האישי שלך',
-                    personal_info: 'מידע אישי',
-                    edit: 'ערוך פרופיל',
-                    name: 'שם',
-                    location: 'מיקום',
-                    bio: 'ביו',
-                    preferences: 'העדפות דייטינג',
-                    age_range: 'טווח גילאים',
-                    interests: 'תחומי עניין'
-                },
+               profile: {
+    title: 'הפרופיל שלי',
+    subtitle: 'נהל את המידע האישי שלך',
+    personal_info: 'מידע אישי',
+    edit: 'ערוך פרופיל',
+    name: 'שם',
+    location: 'מיקום',
+    bio: 'ביו',
+    preferences: 'העדפות דייטינג',
+    age_range: 'טווח גילאים',
+    interests: 'תחומי עניין',
+    years: 'שנים',
+    none_specified: 'לא צוין'
+},
                 restaurants: {
                     title: 'מסעדות שותפות',
                     subtitle: 'עקוב אחר המסעדות המועדפות עליך'
@@ -1828,6 +1848,10 @@
                     title: 'זמני פגישה רצויים',
                     subtitle: 'הגדר את הזמנים המועדפים עליך ונמצא התאמות'
                 },
+                restaurant: {
+    cuisine_separator: '•',
+    slots: 'מקומות'
+},
                 loading: 'טוען...',
                 recent_activity: 'פעילות אחרונה',
                 no_activity: 'אין פעילות אחרונה',
@@ -1864,40 +1888,48 @@
                     compatibility: 'متوسط التوافق',
                     total_dates: 'إجمالي المواعيد'
                 },
-                browse: {
-                    title: 'تصفح الطاولات المتاحة',
-                    subtitle: 'اعثر على مكان العشاء المثالي'
-                },
+               browse: {
+    title: 'تصفح الطاولات المتاحة',
+    subtitle: 'اعثر على مكان العشاء المثالي',
+    browse_tables_btn: 'تصفح الطاولات'
+},
                 filters: {
                     date: 'التاريخ',
                     time: 'الوقت',
                     cuisine: 'المطبخ',
                     apply: 'تطبيق الفلاتر'
                 },
-                matches: {
-                    title: 'مطابقاتي',
-                    subtitle: 'الأشخاص المهتمون بتناول الطعام معك'
-                },
-                dates: {
-                    title: 'المواعيد القادمة',
-                    subtitle: 'مواعيد العشاء المجدولة'
-                },
+               matches: {
+    title: 'مطابقاتي',
+    subtitle: 'الأشخاص المهتمون بتناول الطعام معك',
+    status_pending: 'قيد الانتظار',
+    status_confirmed: 'مؤكد',
+    status_completed: 'مكتمل'
+},
+               dates: {
+    title: 'المواعيد القادمة',
+    subtitle: 'مواعيد العشاء المجدولة',
+    no_dates: 'لا توجد مواعيد قادمة',
+    find_next: 'تصفح الطاولات المتاحة للعثور على موعد العشاء التالي!'
+},
                 history: {
                     title: 'سجل المواعيد',
                     subtitle: 'مواعيد العشاء السابقة'
                 },
                 profile: {
-                    title: 'ملفي الشخصي',
-                    subtitle: 'إدارة معلوماتك الشخصية',
-                    personal_info: 'المعلومات الشخصية',
-                    edit: 'تعديل الملف',
-                    name: 'الاسم',
-                    location: 'الموقع',
-                    bio: 'السيرة',
-                    preferences: 'تفضيلات المواعدة',
-                    age_range: 'نطاق العمر',
-                    interests: 'الاهتمامات'
-                },
+    title: 'ملفي الشخصي',
+    subtitle: 'إدارة معلوماتك الشخصية',
+    personal_info: 'المعلومات الشخصية',
+    edit: 'تعديل الملف',
+    name: 'الاسم',
+    location: 'الموقع',
+    bio: 'السيرة',
+    preferences: 'تفضيلات المواعدة',
+    age_range: 'نطاق العمر',
+    interests: 'الاهتمامات',
+    years: 'سنوات',
+    none_specified: 'غير محدد'
+},
                 restaurants: {
                     title: 'المطاعم الشريكة',
                     subtitle: 'تابع مطاعمك المفضلة'
@@ -1924,6 +1956,10 @@
                     title: 'أوقات الاجتماع المرغوبة',
                     subtitle: 'حدد أوقاتك المفضلة وسنجد لك المطابقات'
                 },
+                restaurant: {
+    cuisine_separator: '•',
+    slots: 'أماكن'
+},
                 loading: 'جار التحميل...',
                 recent_activity: 'النشاط الأخير',
                 no_activity: 'لا يوجد نشاط حديث',
@@ -1960,40 +1996,48 @@
                     compatibility: 'Средняя совместимость',
                     total_dates: 'Всего свиданий'
                 },
-                browse: {
-                    title: 'Просмотр доступных столиков',
-                    subtitle: 'Найдите идеальное место для ужина'
-                },
+               browse: {
+    title: 'Просмотр доступных столиков',
+    subtitle: 'Найдите идеальное место для ужина',
+    browse_tables_btn: 'Просмотр столиков'
+},
                 filters: {
                     date: 'Дата',
                     time: 'Время',
                     cuisine: 'Кухня',
                     apply: 'Применить фильтры'
                 },
-                matches: {
-                    title: 'Мои совпадения',
-                    subtitle: 'Люди, заинтересованные в ужине с вами'
-                },
-                dates: {
-                    title: 'Предстоящие свидания',
-                    subtitle: 'Ваши запланированные ужины'
-                },
+               matches: {
+    title: 'Мои совпадения',
+    subtitle: 'Люди, заинтересованные в ужине с вами',
+    status_pending: 'В ожидании',
+    status_confirmed: 'Подтверждено',
+    status_completed: 'Завершено'
+},
+               dates: {
+    title: 'Предстоящие свидания',
+    subtitle: 'Ваши запланированные ужины',
+    no_dates: 'Нет предстоящих свиданий',
+    find_next: 'Просмотрите доступные столики, чтобы найти следующее свидание!'
+},
                 history: {
                     title: 'История свиданий',
                     subtitle: 'Ваши прошлые ужины'
                 },
                 profile: {
-                    title: 'Мой профиль',
-                    subtitle: 'Управление личной информацией',
-                    personal_info: 'Личная информация',
-                    edit: 'Редактировать профиль',
-                    name: 'Имя',
-                    location: 'Местоположение',
-                    bio: 'О себе',
-                    preferences: 'Предпочтения знакомств',
-                    age_range: 'Возрастной диапазон',
-                    interests: 'Интересы'
-                },
+    title: 'Мой профиль',
+    subtitle: 'Управление личной информацией',
+    personal_info: 'Личная информация',
+    edit: 'Редактировать профиль',
+    name: 'Имя',
+    location: 'Местоположение',
+    bio: 'О себе',
+    preferences: 'Предпочтения знакомств',
+    age_range: 'Возрастной диапазон',
+    interests: 'Интересы',
+    years: 'лет',
+    none_specified: 'Не указано'
+},
                 restaurants: {
                     title: 'Партнёрские рестораны',
                     subtitle: 'Следите за любимыми ресторанами'
@@ -2020,6 +2064,10 @@
                     title: 'Желаемое время встречи',
                     subtitle: 'Установите предпочтительное время, и мы найдём совпадения'
                 },
+                restaurant: {
+    cuisine_separator: '•',
+    slots: 'мест'
+},
                 loading: 'Загрузка...',
                 recent_activity: 'Недавняя активность',
                 no_activity: 'Нет недавней активности',
@@ -2246,11 +2294,15 @@ async function initializeDashboard() {
                 document.getElementById('profileBio').textContent = profile.bio || 'No bio yet';
 
                 if (profile.preferences) {
-                    document.getElementById('ageRange').textContent =
-                        `${profile.preferences.min_age}-${profile.preferences.max_age} years`;
-                    document.getElementById('interests').textContent =
-                        profile.preferences.interests?.join(', ') || 'None specified';
-                }
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+    const yearsText = translations[lang]?.profile?.years || 'years';
+    const noneText = translations[lang]?.profile?.none_specified || 'None specified';
+
+    document.getElementById('ageRange').textContent =
+        `${profile.preferences.min_age}-${profile.preferences.max_age} ${yearsText}`;
+    document.getElementById('interests').textContent =
+        profile.preferences.interests?.join(', ') || noneText;
+}
 
             } catch (error) {
                 console.error('Error loading profile:', error);
@@ -2360,42 +2412,51 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
         }
 
         // Load upcoming dates
-        async function loadUpcomingDates() {
-            const container = document.getElementById('upcomingDatesList');
+       async function loadUpcomingDates() {
+    const container = document.getElementById('upcomingDatesList');
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
 
-            try {
-                const response = await authenticatedFetch('/api/dates/upcoming');
+    try {
+        const response = await authenticatedFetch('/api/dates/upcoming');
 
-                if (!response.ok) {
-                    throw new Error('Failed to load dates');
-                }
-
-                const dates = await response.json();
-
-                if (dates.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No upcoming dates</h3><p>Browse available tables to find your next dinner date!</p><button class="btn btn-primary" onclick="showTab(\'browse\')">Browse Tables</button></div>';
-                    return;
-                }
-
-                container.innerHTML = dates.map(date => createDateCard(date)).join('');
-
-            } catch (error) {
-                console.error('Error loading dates:', error);
-            }
+        if (!response.ok) {
+            throw new Error('Failed to load dates');
         }
 
+        const dates = await response.json();
+
+        if (dates.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📅</div>
+                    <h3>${translations[lang]?.dates?.no_dates || 'No upcoming dates'}</h3>
+                    <p>${translations[lang]?.dates?.find_next || 'Browse available tables to find your next dinner date!'}</p>
+                    <button class="btn btn-primary" onclick="showTab('browse')">
+                        ${translations[lang]?.browse?.browse_tables_btn || 'Browse Tables'}
+                    </button>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = dates.map(date => createDateCard(date)).join('');
+
+    } catch (error) {
+        console.error('Error loading dates:', error);
+    }
+}
+
         // Create restaurant card HTML
-        function createRestaurantCard(restaurant) {
+      function createRestaurantCard(restaurant) {
     const lang = localStorage.getItem('selectedLanguage') || 'en';
-    const followText = lang === 'he' ? 'עוקב' : lang === 'ar' ? 'متابع' : lang === 'ru' ? 'Подписан' : 'Following';
-    const slotsText = lang === 'he' ? 'מקומות' : lang === 'ar' ? 'أماكن' : lang === 'ru' ? 'мест' : 'slots';
+    const slotsText = translations[lang]?.restaurant?.slots || 'slots';
+    const separator = translations[lang]?.restaurant?.cuisine_separator || '•';
 
     return `
         <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
             <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
             <div class="restaurant-info">
                 <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
-                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
+                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} ${separator} ${escapeHtml(restaurant.price_range)}</p>
                 <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
                 <div class="restaurant-meta">
                     <div class="restaurant-rating">
@@ -2410,23 +2471,26 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
 }
 
         // Create match card HTML
-        function createMatchCard(match) {
-            const statusClass = match.status.toLowerCase();
-            return `
-                <div class="match-list-item">
-                    <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-list-avatar">
-                    <div class="match-list-info">
-                        <h3 class="match-list-name">${escapeHtml(match.name)}</h3>
-                        <p class="match-list-details">${escapeHtml(match.restaurant_name)} • ${formatDate(match.date)}</p>
-                        <span class="match-status ${statusClass}">${match.status}</span>
-                    </div>
-                    <div>
-                        ${match.status === 'PENDING' ? '<button class="btn btn-primary" onclick="acceptMatch(' + match.id + ')">Accept</button>' : ''}
-                        ${match.status === 'CONFIRMED' ? '<button class="btn btn-success" onclick="viewDateDetails(' + match.id + ')">View Details</button>' : ''}
-                    </div>
-                </div>
-            `;
-        }
+       function createMatchCard(match) {
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+    const statusClass = match.status.toLowerCase();
+    const statusText = translations[lang]?.matches?.[`status_${statusClass}`] || match.status;
+
+    return `
+        <div class="match-list-item">
+            <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-list-avatar">
+            <div class="match-list-info">
+                <h3 class="match-list-name">${escapeHtml(match.name)}</h3>
+                <p class="match-list-details">${escapeHtml(match.restaurant_name)} • ${formatDate(match.date)}</p>
+                <span class="match-status ${statusClass}">${statusText}</span>
+            </div>
+            <div>
+                ${match.status === 'PENDING' ? '<button class="btn btn-primary" onclick="acceptMatch(' + match.id + ')">Accept</button>' : ''}
+                ${match.status === 'CONFIRMED' ? '<button class="btn btn-success" onclick="viewDateDetails(' + match.id + ')">View Details</button>' : ''}
+            </div>
+        </div>
+    `;
+}
 
         // Create date card HTML
         function createDateCard(date) {
