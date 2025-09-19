@@ -2055,32 +2055,6 @@ def serve_i18n_static():
 
 
 
-# Following endpoints
-@app.route('/api/users/follow', methods=['POST'])
-@require_auth()
-def follow_user():
-    """Follow another user"""
-    try:
-        from services.following_service import FollowingService
-        following_service = FollowingService(db, cache, logger)
-        return following_service.follow_user(request.current_user.id, request.json.get('user_id'))
-    except Exception as e:
-        logger.error(f"Follow user error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to follow user'}), 500
-
-
-@app.route('/api/users/unfollow', methods=['POST'])
-@require_auth()
-def unfollow_user():
-    """Unfollow a user"""
-    try:
-        from services.following_service import FollowingService
-        following_service = FollowingService(db, cache, logger)
-        return following_service.unfollow_user(request.current_user.id, request.json.get('user_id'))
-    except Exception as e:
-        logger.error(f"Unfollow user error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to unfollow user'}), 500
-
 
 @app.route('/api/restaurants/follow', methods=['POST'])
 @require_auth()
@@ -2185,17 +2159,7 @@ def handle_disconnect():
     """Handle WebSocket disconnection"""
     logger.info(f'WebSocket disconnected: {request.sid}')
 
-@app.route('/api/users/following', methods=['GET'])
-@require_auth()
-def get_user_following():
-    """Get users that current user is following"""
-    try:
-        from services.following_service import FollowingService
-        following_service = FollowingService(db, cache, logger)
-        return following_service.get_user_following(request.current_user.id)
-    except Exception as e:
-        logger.error(f"Get following error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to get following list'}), 500
+
 
 
 @app.route('/api/users/restaurants/following', methods=['GET'])
@@ -2216,8 +2180,6 @@ def get_followed_restaurants():
 def get_all_users():
     """Get all users except current user for following"""
     try:
-        from models.user import User
-
         users = User.query.filter(
             User.id != request.current_user.id,
             User.is_active == True
@@ -2226,11 +2188,21 @@ def get_all_users():
         result = []
         for user in users:
             is_following = request.current_user.is_following_user(user)
+
+            # Get location - check multiple possible sources
+            location = None
+            if hasattr(user, 'location'):
+                location = user.location
+            elif user.profile and hasattr(user.profile, 'city'):
+                location = user.profile.city
+            elif user.profile and hasattr(user.profile, 'address'):
+                location = user.profile.address
+
             result.append({
                 'id': user.id,
                 'email': user.email,
                 'name': user.email.split('@')[0],  # Use email prefix as name
-                'location': user.profile.location if user.profile else None,
+                'location': location,
                 'is_following': is_following,
                 'follower_count': user.followers.count()
             })
@@ -2239,6 +2211,96 @@ def get_all_users():
     except Exception as e:
         logger.error(f"Get all users error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get users'}), 500
+
+
+@app.route('/api/users/following', methods=['GET'])
+@require_auth()
+def get_user_following():
+    """Get users that current user is following"""
+    try:
+        # Get all users that current user is following
+        following_users = request.current_user.following.all()
+
+        result = []
+        for user in following_users:
+            # Get location - check multiple possible sources
+            location = None
+            if hasattr(user, 'location'):
+                location = user.location
+            elif user.profile and hasattr(user.profile, 'city'):
+                location = user.profile.city
+            elif user.profile and hasattr(user.profile, 'address'):
+                location = user.profile.address
+
+            result.append({
+                'id': user.id,
+                'email': user.email,
+                'name': user.email.split('@')[0],
+                'location': location,
+                'follower_count': user.followers.count()
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Get user following error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to get following list'}), 500
+
+
+@app.route('/api/users/follow', methods=['POST'])
+@require_auth()
+def follow_user():
+    """Follow another user"""
+    try:
+        user_id = request.json.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
+
+        if target_user.id == request.current_user.id:
+            return jsonify({'error': 'Cannot follow yourself'}), 400
+
+        request.current_user.follow_user(target_user)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Now following {target_user.email}'
+        })
+    except Exception as e:
+        logger.error(f"Follow user error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to follow user'}), 500
+
+
+@app.route('/api/users/unfollow', methods=['POST'])
+@require_auth()
+def unfollow_user():
+    """Unfollow a user"""
+    try:
+        user_id = request.json.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
+
+        request.current_user.unfollow_user(target_user)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Unfollowed {target_user.email}'
+        })
+    except Exception as e:
+        logger.error(f"Unfollow user error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to unfollow user'}), 500
+
+
 
 
 @app.route('/api/users/<int:user_id>/time-preferences', methods=['GET'])
