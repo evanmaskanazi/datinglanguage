@@ -525,16 +525,16 @@ def migrate_match_status_normalization():
     from sqlalchemy import text
 
     try:
-        # Normalize all statuses to uppercase
+        # Normalize all statuses to uppercase with proper ENUM casting
         normalize_sql = """
         UPDATE matches 
         SET status = CASE 
-            WHEN LOWER(status::text) IN ('accepted', 'confirmed') THEN 'ACCEPTED'
-            WHEN LOWER(status::text) = 'pending' THEN 'PENDING'
-            WHEN LOWER(status::text) = 'declined' THEN 'DECLINED'
-            WHEN LOWER(status::text) = 'cancelled' THEN 'CANCELLED'
-            WHEN LOWER(status::text) = 'completed' THEN 'COMPLETED'
-            ELSE UPPER(status::text)
+            WHEN LOWER(status::text) IN ('accepted', 'confirmed') THEN 'ACCEPTED'::matchstatus
+            WHEN LOWER(status::text) = 'pending' THEN 'PENDING'::matchstatus
+            WHEN LOWER(status::text) = 'declined' THEN 'DECLINED'::matchstatus
+            WHEN LOWER(status::text) = 'cancelled' THEN 'CANCELLED'::matchstatus
+            WHEN LOWER(status::text) = 'completed' THEN 'COMPLETED'::matchstatus
+            ELSE status
         END
         WHERE status IS NOT NULL;
         """

@@ -3194,23 +3194,24 @@ def initialize_database():
         try:
             from sqlalchemy import text
             with db.engine.connect() as conn:
-                # Fix all status variations to uppercase
+                # Fix all status variations to uppercase with proper enum casting
                 conn.execute(text("""
                     UPDATE matches 
-                    SET status = UPPER(status::text)
-                    WHERE status IS NOT NULL
-                """))
-
-                # Specifically ensure ACCEPTED is uppercase - handle enum representations
-                conn.execute(text("""
-                    UPDATE matches 
-                    SET status = 'ACCEPTED'::text
-                    WHERE LOWER(status::text) = 'accepted'
-                       OR LOWER(status::text) = 'confirmed'
+                    SET status = 'ACCEPTED'::matchstatus
+                    WHERE LOWER(status::text) IN ('accepted', 'confirmed')
                        OR status::text LIKE '%ACCEPTED%'
                        OR status::text LIKE '%accepted%'
                        OR status::text LIKE '%CONFIRMED%'
                        OR status::text LIKE '%confirmed%'
+                """))
+
+                # Also normalize other statuses
+                conn.execute(text("""
+                    UPDATE matches 
+                    SET status = 'PENDING'::matchstatus
+                    WHERE LOWER(status::text) = 'pending'
+                       OR status::text LIKE '%PENDING%'
+                       OR status::text LIKE '%pending%'
                 """))
 
                 conn.commit()
