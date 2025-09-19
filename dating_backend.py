@@ -1312,11 +1312,11 @@ def get_matches():
             if match.user1_id == user_id:
                 other_user_id = match.user2_id
                 # If current user initiated, show SENT instead of PENDING
-                display_status = 'SENT' if match.status == 'PENDING' else match.status
+                display_status = 'SENT' if str(match.status.value) == 'PENDING' else str(match.status.value)
             else:
                 other_user_id = match.user1_id
                 # If other user initiated, show PENDING for acceptance
-                display_status = match.status
+                display_status = str(match.status.value) if hasattr(match.status, 'value') else str(match.status)
 
             other_user = User.query.get(other_user_id)
 
@@ -1337,8 +1337,9 @@ def get_matches():
                 'restaurant_name': restaurant_name,
                 'date': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
                 'status': display_status,
-                'compatibility': match.compatibility_score,
-                'can_accept': match.user2_id == user_id and match.status == 'PENDING'
+                'compatibility': float(match.compatibility_score) if match.compatibility_score else 0,
+                'can_accept': match.user2_id == user_id and str(
+                    match.status.value if hasattr(match.status, 'value') else match.status) == 'PENDING'
             })
 
         return jsonify(result)
@@ -1951,6 +1952,7 @@ def default_avatar():
 
     return send_file(img_io, mimetype='image/jpeg')
 
+
 @app.route('/static/images/restaurant-placeholder.jpg')
 def restaurant_placeholder():
     """Generate a placeholder restaurant image"""
@@ -1960,8 +1962,8 @@ def restaurant_placeholder():
     img = Image.new('RGB', (400, 300), color='#f0f0f0')
     draw = ImageDraw.Draw(img)
 
+    # Just draw the red rectangle without any text
     draw.rectangle([150, 100, 250, 200], fill='#e74c3c')
-    draw.text((200, 220), "Restaurant", fill='#666', anchor="mm")
 
     img_io = io.BytesIO()
     img.save(img_io, 'JPEG', quality=70)
