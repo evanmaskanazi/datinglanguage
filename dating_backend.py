@@ -1285,7 +1285,16 @@ def request_match():
         if not target_user:
             return jsonify({'error': 'User not found'}), 404
 
-        # Check if match already exists
+        # Parse datetime
+        proposed_datetime = None
+        if data.get('datetime'):
+            try:
+                proposed_datetime = datetime.fromisoformat(data.get('datetime'))
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid datetime format: {data.get('datetime')}")
+                proposed_datetime = datetime.utcnow() + timedelta(days=1)
+
+        # Check if match already exists FOR THIS SPECIFIC TIME
         existing_match = Match.query.filter(
             or_(
                 and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
@@ -1293,17 +1302,17 @@ def request_match():
             )
         ).first()
 
+        # Only reject if there's an existing match that's not completed/cancelled
         if existing_match:
-            return jsonify({'error': 'Match already exists'}), 400
-
-        # Parse datetime if provided
-        proposed_datetime = None
-        if data.get('datetime'):
-            try:
-                proposed_datetime = datetime.fromisoformat(data.get('datetime'))
-            except (ValueError, TypeError) as e:
-                logger.warning(f"Invalid datetime format: {data.get('datetime')}")
-                proposed_datetime = None
+            status_str = get_match_status_string(existing_match)
+            if status_str not in ['COMPLETED', 'CANCELLED', 'DECLINED']:
+                # Check if it's the same datetime - if different, allow new match
+                if existing_match.proposed_datetime:
+                    time_diff = abs((existing_match.proposed_datetime - proposed_datetime).total_seconds())
+                    if time_diff < 3600:  # Within 1 hour, consider it duplicate
+                        return jsonify({'error': 'Match already exists for this time'}), 400
+                else:
+                    return jsonify({'error': 'Match already exists'}), 400
 
         # Create new match
         match = Match(
@@ -1314,13 +1323,17 @@ def request_match():
             compatibility_score=data.get('compatibility', 80)
         )
 
-        # Set status to PENDING using helper (or directly if no enum)
-        set_match_status(match, 'PENDING')
+        # Set status to PENDING
+        try:
+            from models.match import MatchStatus
+            match.status = MatchStatus.PENDING
+        except:
+            match.status = 'PENDING'
 
         db.session.add(match)
         db.session.commit()
 
-        # Send notification to other user
+        # Send notification
         try:
             websocket_service.notify_new_match(
                 match_user_id,
@@ -1333,7 +1346,6 @@ def request_match():
             )
         except Exception as ws_error:
             logger.warning(f"WebSocket notification failed: {ws_error}")
-            # Don't fail the request if websocket fails
 
         return jsonify({
             'success': True,
@@ -2867,6 +2879,74 @@ def internal_error(error):
         'error': 'Internal server error',
         'request_id': getattr(g, 'request_id', 'unknown')
     }), 500
+
+
+@app.route('/api/admin/fix-match-status', methods=['POST'])
+@require_auth(roles=['admin'])
+def fix_match_status():
+    """Fix match status enum issues"""
+    try:
+        with db.engine.connect() as conn:
+            # First, check what we have
+            result = conn.execute(text("""
+                SELECT DISTINCT status, COUNT(*) as count 
+                FROM matches 
+                GROUP BY status
+            """))
+
+            status_counts = {row[0]: row[1] for row in result}
+
+            # Fix any NULL or empty statuses
+            conn.execute(text("""
+                UPDATE matches 
+                SET status = 'PENDING' 
+                WHERE status IS NULL OR status = ''
+            """))
+
+            # Standardize status values
+            status_mapping = {
+                'pending': 'PENDING',
+                'Pending': 'PENDING',
+                'accepted': 'ACCEPTED',
+                'Accepted': 'ACCEPTED',
+                'CONFIRMED': 'ACCEPTED',
+                'confirmed': 'ACCEPTED',
+                'completed': 'COMPLETED',
+                'Completed': 'COMPLETED',
+                'cancelled': 'CANCELLED',
+                'Cancelled': 'CANCELLED',
+                'declined': 'DECLINED',
+                'Declined': 'DECLINED'
+            }
+
+            for old_status, new_status in status_mapping.items():
+                conn.execute(
+                    text("UPDATE matches SET status = :new WHERE LOWER(status) = LOWER(:old)"),
+                    {"new": new_status, "old": old_status}
+                )
+
+            conn.commit()
+
+            # Get updated counts
+            result = conn.execute(text("""
+                SELECT DISTINCT status, COUNT(*) as count 
+                FROM matches 
+                GROUP BY status
+            """))
+
+            updated_counts = {row[0]: row[1] for row in result}
+
+            return jsonify({
+                'success': True,
+                'before': status_counts,
+                'after': updated_counts,
+                'message': 'Match statuses normalized successfully'
+            })
+
+    except Exception as e:
+        logger.error(f"Fix match status error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to fix match statuses'}), 500
+
 
 # === INITIALIZATION ===
 def initialize_database():
