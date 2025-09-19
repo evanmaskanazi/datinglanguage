@@ -65,11 +65,12 @@ from utils.logging_config import setup_logger, log_audit
 def get_match_status_string(match):
     """Safely get match status as string, handling enum or string types"""
     if hasattr(match.status, 'value'):
-        return match.status.value
+        return match.status.value.upper() if match.status.value else 'PENDING'
     elif hasattr(match.status, 'name'):
-        return match.status.name
+        return match.status.name.upper() if match.status.name else 'PENDING'
     else:
-        return str(match.status)
+        status_str = str(match.status)
+        return status_str.upper() if status_str else 'PENDING'
 
 def set_match_status(match, status_string):
     """Safely set match status, handling enum or string types"""
@@ -1294,25 +1295,34 @@ def request_match():
                 logger.warning(f"Invalid datetime format: {data.get('datetime')}")
                 proposed_datetime = datetime.utcnow() + timedelta(days=1)
 
-        # Check if match already exists FOR THIS SPECIFIC TIME
+        # Check for existing match between these users
         existing_match = Match.query.filter(
             or_(
                 and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
                 and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
             )
+        ).filter(
+            Match.proposed_datetime == proposed_datetime
         ).first()
 
-        # Only reject if there's an existing match that's not completed/cancelled
         if existing_match:
+            # Check status - if it's cancelled or declined, allow creating a new one
             status_str = get_match_status_string(existing_match)
-            if status_str not in ['COMPLETED', 'CANCELLED', 'DECLINED']:
-                # Check if it's the same datetime - if different, allow new match
-                if existing_match.proposed_datetime:
-                    time_diff = abs((existing_match.proposed_datetime - proposed_datetime).total_seconds())
-                    if time_diff < 3600:  # Within 1 hour, consider it duplicate
-                        return jsonify({'error': 'Match already exists for this time'}), 400
-                else:
-                    return jsonify({'error': 'Match already exists'}), 400
+            if status_str in ['CANCELLED', 'DECLINED', 'COMPLETED']:
+                # Delete old match and create new one
+                db.session.delete(existing_match)
+                db.session.flush()
+            else:
+                # Update existing match instead of creating duplicate
+                existing_match.restaurant_id = data.get('restaurant_id')
+                existing_match.compatibility_score = data.get('compatibility', 80)
+                db.session.commit()
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Match request updated',
+                    'match_id': existing_match.id
+                }), 200
 
         # Create new match
         match = Match(
@@ -1352,6 +1362,32 @@ def request_match():
             'message': 'Match request sent successfully',
             'match_id': match.id
         }), 201
+
+    except IntegrityError as e:
+        # Handle database constraint violation
+        logger.warning(f"Duplicate match attempt: {str(e)}")
+        db.session.rollback()
+
+        # Try to find and update the existing match
+        existing_match = Match.query.filter(
+            or_(
+                and_(Match.user1_id == user_id, Match.user2_id == match_user_id),
+                and_(Match.user1_id == match_user_id, Match.user2_id == user_id)
+            )
+        ).first()
+
+        if existing_match:
+            existing_match.restaurant_id = data.get('restaurant_id')
+            existing_match.compatibility_score = data.get('compatibility', 80)
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': 'Match request updated',
+                'match_id': existing_match.id
+            }), 200
+        else:
+            return jsonify({'error': 'Unable to create match. Please try a different time.'}), 400
 
     except Exception as e:
         logger.error(f"Request match error: {str(e)}", exc_info=True)
@@ -1504,10 +1540,18 @@ def accept_match(match_id):
         db.session.commit()
 
         # Send notification
-        websocket_service.notify_match_accepted(
-            match.user1_id,
-            {'match_id': match.id, 'accepted_by': request.current_user.id}
-        )
+        # Send notification
+        try:
+            websocket_service.notify_new_match(
+                match.user1_id,
+                {
+                    'type': 'match_accepted',
+                    'match_id': match.id,
+                    'accepted_by': request.current_user.id
+                }
+            )
+        except Exception as ws_error:
+            logger.warning(f"WebSocket notification failed: {ws_error}")
 
         return jsonify({
             'success': True,
