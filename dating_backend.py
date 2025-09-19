@@ -1546,6 +1546,58 @@ def reset_password():
         return jsonify({'error': 'Failed to reset password'}), 500
 
 
+@app.route('/api/stats')
+@login_required
+def get_user_stats():
+    """Get user statistics for dashboard"""
+    try:
+        user_id = session.get('user_id')
+
+        # Count active matches (pending or confirmed)
+        active_matches = db.session.query(Match).filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id),
+            Match.status.in_(['PENDING', 'CONFIRMED'])
+        ).count()
+
+        # Count upcoming dates
+        upcoming_dates = db.session.query(Match).filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id),
+            Match.status == 'CONFIRMED',
+            Match.datetime > datetime.now()
+        ).count()
+
+        # Calculate average compatibility
+        all_matches = db.session.query(Match).filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id)
+        ).all()
+
+        avg_compatibility = 0
+        if all_matches:
+            total_compatibility = sum(m.compatibility for m in all_matches if m.compatibility)
+            avg_compatibility = round(total_compatibility / len(all_matches)) if all_matches else 0
+
+        # Count total dates (all confirmed matches)
+        total_dates = db.session.query(Match).filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id),
+            Match.status == 'CONFIRMED'
+        ).count()
+
+        return jsonify({
+            'active_matches': active_matches,
+            'upcoming_dates': upcoming_dates,
+            'avg_compatibility': avg_compatibility,
+            'total_dates': total_dates
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting user stats: {str(e)}")
+        return jsonify({
+            'active_matches': 0,
+            'upcoming_dates': 0,
+            'avg_compatibility': 0,
+            'total_dates': 0
+        })
+
 # OAuth endpoints
 @app.route('/auth/google')
 def google_login():
