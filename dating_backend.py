@@ -1567,13 +1567,13 @@ def get_user_stats():
         # Count active matches (pending or confirmed)
         active_matches = db.session.query(Match).filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id),
-            Match.status.in_(['pending', 'confirmed'])
+            Match.status.in_(['PENDING', 'ACCEPTED'])
         ).count()
 
         # Count upcoming dates
         upcoming_dates = db.session.query(Match).filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id),
-            Match.status == 'confirmed',
+            Match.status == 'ACCEPTED',
             Match.datetime > datetime.now()
         ).count()
 
@@ -1590,7 +1590,7 @@ def get_user_stats():
         # Count total dates (all confirmed matches)
         total_dates = db.session.query(Match).filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id),
-            Match.status == 'confirmed'
+            Match.status == 'ACCEPTED'
         ).count()
 
         return jsonify({
