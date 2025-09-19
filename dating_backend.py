@@ -2366,30 +2366,57 @@ def translate_address():
             'he': {
                 'Tel Aviv': 'תל אביב',
                 'Jerusalem': 'ירושלים',
+                'Haifa': 'חיפה',
                 'Street': 'רחוב',
+                'St.': 'רח׳',
                 'Road': 'דרך',
-                'Avenue': 'שדרות'
+                'Rd.': 'דרך',
+                'Avenue': 'שדרות',
+                'Ave.': 'שד׳',
+                'Boulevard': 'שדרות',
+                'Blvd.': 'שד׳',
+                'Beach': 'חוף',
+                'Lane': 'סמטה'
             },
             'ar': {
                 'Tel Aviv': 'تل أبيب',
                 'Jerusalem': 'القدس',
+                'Haifa': 'حيفا',
                 'Street': 'شارع',
+                'St.': 'ش.',
                 'Road': 'طريق',
-                'Avenue': 'جادة'
+                'Rd.': 'ط.',
+                'Avenue': 'جادة',
+                'Ave.': 'جادة',
+                'Boulevard': 'جادة',
+                'Blvd.': 'جادة',
+                'Beach': 'شاطئ',
+                'Lane': 'زقاق'
             },
             'ru': {
                 'Tel Aviv': 'Тель-Авив',
                 'Jerusalem': 'Иерусалим',
+                'Haifa': 'Хайфа',
                 'Street': 'улица',
+                'St.': 'ул.',
                 'Road': 'дорога',
-                'Avenue': 'проспект'
+                'Rd.': 'дор.',
+                'Avenue': 'проспект',
+                'Ave.': 'пр.',
+                'Boulevard': 'бульвар',
+                'Blvd.': 'бул.',
+                'Beach': 'пляж',
+                'Lane': 'переулок'
             }
         }
 
         translated = address
         if target_lang in manual_translations:
             for eng, trans in manual_translations[target_lang].items():
-                translated = translated.replace(eng, trans)
+                # Use word boundaries to avoid partial replacements
+                import re
+                pattern = r'\b' + re.escape(eng) + r'\b'
+                translated = re.sub(pattern, trans, translated, flags=re.IGNORECASE)
 
         return jsonify({'translated': translated})
 
