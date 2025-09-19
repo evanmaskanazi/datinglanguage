@@ -1494,6 +1494,9 @@ def accept_match(match_id):
         if match.user2_id != request.current_user.id:
             return jsonify({'error': 'Not authorized'}), 403
 
+        # Log the current state
+        logger.info(f"Accepting match {match_id}: restaurant_id={match.restaurant_id}, current_status={match.status}")
+
         # Update match status - force uppercase string
         match.status = 'ACCEPTED'
         db.session.flush()  # Force write to DB immediately
@@ -1506,7 +1509,8 @@ def accept_match(match_id):
             db.session.flush()
 
         # Log for debugging
-        logger.info(f"Match {match_id} status after setting: {match.status}")
+        logger.info(
+            f"Match {match_id} status after setting: {match.status}, restaurant_id still: {match.restaurant_id}")
 
         # Create restaurant booking if restaurant is specified
         if match.restaurant_id:
@@ -1516,22 +1520,39 @@ def accept_match(match_id):
             existing_booking = RestaurantBooking.query.filter_by(match_id=match.id).first()
 
             if not existing_booking:
-                # Parse restaurant ID
-                restaurant_id = match.restaurant_id
-                if str(restaurant_id).startswith('api_'):
-                    # For API restaurants, try to find or create in database
-                    external_id = restaurant_id[4:]
+                # Parse restaurant ID and cache restaurant info
+                restaurant_id_str = str(match.restaurant_id)
+
+                if restaurant_id_str.startswith('api_'):
+                    # For API restaurants, ensure data is cached
+                    cache_key = f"restaurant_{restaurant_id_str}"
+                    cached_data = cache.get(cache_key)
+
+                    if not cached_data:
+                        # Try to fetch restaurant info if not cached
+                        logger.warning(f"Restaurant {restaurant_id_str} not in cache, setting default values")
+                        cache.set(cache_key, {
+                            'name': 'Restaurant',
+                            'address': 'Address will be updated',
+                            'cuisine': 'International',
+                            'rating': 4.0,
+                            'price_range': 2,
+                            'source': 'api'
+                        })
+
+                    # Create placeholder restaurant entry in database
+                    external_id = restaurant_id_str[4:]
                     restaurant = Restaurant.query.filter_by(external_id=external_id).first()
                     if not restaurant:
-                        # Create placeholder restaurant entry
                         restaurant = Restaurant(
-                            name='API Restaurant',
+                            name=cached_data.get('name', 'Restaurant') if cached_data else 'Restaurant',
                             external_id=external_id,
-                            cuisine_type='International',
-                            address='Address',
+                            cuisine_type=cached_data.get('cuisine',
+                                                         'International') if cached_data else 'International',
+                            address=cached_data.get('address', 'Address') if cached_data else 'Address',
                             source='api',
                             is_active=True,
-                            price_range=2
+                            price_range=cached_data.get('price_range', 2) if cached_data else 2
                         )
                         db.session.add(restaurant)
                         db.session.flush()
@@ -1540,21 +1561,23 @@ def accept_match(match_id):
                         restaurant_id = restaurant.id
                 else:
                     try:
-                        restaurant_id = int(restaurant_id)
+                        restaurant_id = int(restaurant_id_str)
                     except (ValueError, TypeError):
-                        logger.warning(f"Invalid restaurant_id: {restaurant_id}")
+                        logger.warning(f"Invalid restaurant_id: {restaurant_id_str}")
+                        restaurant_id = None
 
-                booking = RestaurantBooking(
-                    restaurant_id=restaurant_id,
-                    match_id=match.id,
-                    user1_id=match.user1_id,
-                    user2_id=match.user2_id,
-                    booking_datetime=match.proposed_datetime or datetime.utcnow(),
-                    status='confirmed',  # Set as confirmed since match is accepted
-                    party_size=2
-                )
-                db.session.add(booking)
-                logger.info(f"Created booking for match {match_id}")
+                if restaurant_id:
+                    booking = RestaurantBooking(
+                        restaurant_id=restaurant_id,
+                        match_id=match.id,
+                        user1_id=match.user1_id,
+                        user2_id=match.user2_id,
+                        booking_datetime=match.proposed_datetime or datetime.utcnow(),
+                        status='confirmed',
+                        party_size=2
+                    )
+                    db.session.add(booking)
+                    logger.info(f"Created booking for match {match_id}")
 
         db.session.commit()
 
