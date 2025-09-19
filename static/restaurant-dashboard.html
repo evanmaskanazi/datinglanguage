@@ -679,56 +679,158 @@
         }
 
         function changeLanguage(lang) {
-            const translations = {
-                'he': {
-                    'Restaurant Dashboard': 'לוח בקרה מסעדה',
-                    'Logout': 'התנתק',
-                    'Total Match Requests': 'סך בקשות התאמה',
-                    'Confirmed Matches': 'התאמות מאושרות',
-                    'Recent Requests (30 days)': 'בקשות אחרונות (30 יום)',
-                    'Success Rate': 'אחוז הצלחה',
-                    'Match Requests': 'בקשות התאמה',
-                    'Analytics & Reports': 'אנליטיקה ודוחות',
-                    'Restaurant Profile': 'פרופיל מסעדה',
-                    'Recent Match Requests': 'בקשות התאמה אחרונות',
-                    'Filter by:': 'סנן לפי:',
-                    'All time': 'כל הזמן',
-                    'Today': 'היום',
-                    'This week': 'השבוע'
-                },
-                'ar': {
-                    'Restaurant Dashboard': 'لوحة تحكم المطعم',
-                    'Logout': 'تسجيل الخروج',
-                    'Total Match Requests': 'إجمالي طلبات المطابقة',
-                    'Confirmed Matches': 'المطابقات المؤكدة',
-                    'Recent Requests (30 days)': 'الطلبات الأخيرة (30 يوماً)',
-                    'Success Rate': 'معدل النجاح',
-                    'Match Requests': 'طلبات المطابقة',
-                    'Analytics & Reports': 'التحليلات والتقارير',
-                    'Restaurant Profile': 'ملف المطعم',
-                    'Recent Match Requests': 'طلبات المطابقة الأخيرة',
-                    'Filter by:': 'تصفية حسب:',
-                    'All time': 'كل الأوقات',
-                    'Today': 'اليوم',
-                    'This week': 'هذا الأسبوع'
-                },
-                'ru': {
-                    'Restaurant Dashboard': 'Панель ресторана',
-                    'Logout': 'Выйти',
-                    'Total Match Requests': 'Всего запросов на совпадения',
-                    'Confirmed Matches': 'Подтвержденные совпадения',
-                    'Recent Requests (30 days)': 'Недавние запросы (30 дней)',
-                    'Success Rate': 'Процент успеха',
-                    'Match Requests': 'Запросы на совпадения',
-                    'Analytics & Reports': 'Аналитика и отчеты',
-                    'Restaurant Profile': 'Профиль ресторана',
-                    'Recent Match Requests': 'Недавние запросы на совпадения',
-                    'Filter by:': 'Фильтр по:',
-                    'All time': 'Все время',
-                    'Today': 'Сегодня',
-                    'This week': 'На этой неделе'
-                }
-            };
+          const translations = {
+    'he': {
+        // Navigation and headers
+        'Restaurant Dashboard': 'לוח בקרה מסעדה',
+        'Logout': 'התנתק',
+        'Total Match Requests': 'סך בקשות התאמה',
+        'Confirmed Matches': 'התאמות מאושרות',
+        'Recent Requests (30 days)': 'בקשות אחרונות (30 יום)',
+        'Success Rate': 'אחוז הצלחה',
+        'Match Requests': 'בקשות התאמה',
+        'Analytics & Reports': 'אנליטיקה ודוחות',
+        'Restaurant Profile': 'פרופיל מסעדה',
+        'Recent Match Requests': 'בקשות התאמה אחרונות',
+
+        // Filters
+        'Filter by:': 'סנן לפי:',
+        'All time': 'כל הזמן',
+        'Today': 'היום',
+        'This week': 'השבוע',
+        'All statuses': 'כל הסטטוסים',
+        'Pending': 'ממתין',
+        'Confirmed': 'אושר',
+        'Completed': 'הושלם',
+        'Cancelled': 'בוטל',
+
+        // Empty states
+        'No match requests found': 'לא נמצאו בקשות התאמה',
+        'Match requests will appear here when users book tables at your restaurant.': 'בקשות התאמה יופיעו כאן כאשר משתמשים יזמינו שולחנות במסעדה שלך.',
+        'Create Sample Bookings (Testing)': 'צור הזמנות לדוגמה (בדיקה)',
+
+        // Analytics
+        'Period:': 'תקופה:',
+        'Last 7 days': '7 ימים אחרונים',
+        'Last 30 days': '30 ימים אחרונים',
+        'Last year': 'שנה אחרונה',
+        'Export Report': 'ייצא דוח',
+        'Total Bookings': 'סך הזמנות',
+        'Completed / Total': 'הושלם / סך הכל',
+        'Avg Daily Bookings': 'ממוצע הזמנות יומי',
+        'Est. Revenue': 'הכנסה משוערת',
+        'Based on price range': 'בהתבסס על טווח מחירים',
+        'Booking Trends': 'מגמות הזמנות',
+        'Booking Status Distribution': 'התפלגות סטטוס הזמנות',
+        'Peak Booking Hours': 'שעות שיא הזמנות',
+        'Insights & Recommendations': 'תובנות והמלצות',
+        'No booking data available for this period.': 'אין נתוני הזמנות זמינים לתקופה זו.',
+        'Customer Analytics': 'אנליטיקת לקוחות',
+        'Unique Customers': 'לקוחות ייחודיים',
+        'Repeat Customers': 'לקוחות חוזרים',
+        'Avg Party Size': 'גודל קבוצה ממוצע'
+    },
+    'ar': {
+        // Navigation and headers
+        'Restaurant Dashboard': 'لوحة تحكم المطعم',
+        'Logout': 'تسجيل الخروج',
+        'Total Match Requests': 'إجمالي طلبات المطابقة',
+        'Confirmed Matches': 'المطابقات المؤكدة',
+        'Recent Requests (30 days)': 'الطلبات الأخيرة (30 يوماً)',
+        'Success Rate': 'معدل النجاح',
+        'Match Requests': 'طلبات المطابقة',
+        'Analytics & Reports': 'التحليلات والتقارير',
+        'Restaurant Profile': 'ملف المطعم',
+        'Recent Match Requests': 'طلبات المطابقة الأخيرة',
+
+        // Filters
+        'Filter by:': 'تصفية حسب:',
+        'All time': 'كل الأوقات',
+        'Today': 'اليوم',
+        'This week': 'هذا الأسبوع',
+        'All statuses': 'جميع الحالات',
+        'Pending': 'قيد الانتظار',
+        'Confirmed': 'مؤكد',
+        'Completed': 'مكتمل',
+        'Cancelled': 'ملغى',
+
+        // Empty states
+        'No match requests found': 'لم يتم العثور على طلبات مطابقة',
+        'Match requests will appear here when users book tables at your restaurant.': 'ستظهر طلبات المطابقة هنا عندما يحجز المستخدمون طاولات في مطعمك.',
+        'Create Sample Bookings (Testing)': 'إنشاء حجوزات تجريبية (اختبار)',
+
+        // Analytics
+        'Period:': 'الفترة:',
+        'Last 7 days': 'آخر 7 أيام',
+        'Last 30 days': 'آخر 30 يوماً',
+        'Last year': 'السنة الماضية',
+        'Export Report': 'تصدير التقرير',
+        'Total Bookings': 'إجمالي الحجوزات',
+        'Completed / Total': 'مكتمل / الإجمالي',
+        'Avg Daily Bookings': 'متوسط الحجوزات اليومية',
+        'Est. Revenue': 'الإيرادات المقدرة',
+        'Based on price range': 'بناءً على نطاق السعر',
+        'Booking Trends': 'اتجاهات الحجوزات',
+        'Booking Status Distribution': 'توزيع حالة الحجوزات',
+        'Peak Booking Hours': 'ساعات ذروة الحجوزات',
+        'Insights & Recommendations': 'الرؤى والتوصيات',
+        'No booking data available for this period.': 'لا توجد بيانات حجوزات متاحة لهذه الفترة.',
+        'Customer Analytics': 'تحليلات العملاء',
+        'Unique Customers': 'عملاء فريدون',
+        'Repeat Customers': 'عملاء متكررون',
+        'Avg Party Size': 'متوسط حجم المجموعة'
+    },
+    'ru': {
+        // Navigation and headers
+        'Restaurant Dashboard': 'Панель ресторана',
+        'Logout': 'Выйти',
+        'Total Match Requests': 'Всего запросов на совпадения',
+        'Confirmed Matches': 'Подтвержденные совпадения',
+        'Recent Requests (30 days)': 'Недавние запросы (30 дней)',
+        'Success Rate': 'Процент успеха',
+        'Match Requests': 'Запросы на совпадения',
+        'Analytics & Reports': 'Аналитика и отчеты',
+        'Restaurant Profile': 'Профиль ресторана',
+        'Recent Match Requests': 'Недавние запросы на совпадения',
+
+        // Filters
+        'Filter by:': 'Фильтр по:',
+        'All time': 'Все время',
+        'Today': 'Сегодня',
+        'This week': 'На этой неделе',
+        'All statuses': 'Все статусы',
+        'Pending': 'В ожидании',
+        'Confirmed': 'Подтверждено',
+        'Completed': 'Завершено',
+        'Cancelled': 'Отменено',
+
+        // Empty states
+        'No match requests found': 'Запросы на совпадения не найдены',
+        'Match requests will appear here when users book tables at your restaurant.': 'Запросы на совпадения появятся здесь, когда пользователи забронируют столики в вашем ресторане.',
+        'Create Sample Bookings (Testing)': 'Создать примеры бронирований (тестирование)',
+
+        // Analytics
+        'Period:': 'Период:',
+        'Last 7 days': 'Последние 7 дней',
+        'Last 30 days': 'Последние 30 дней',
+        'Last year': 'Последний год',
+        'Export Report': 'Экспортировать отчет',
+        'Total Bookings': 'Всего бронирований',
+        'Completed / Total': 'Завершено / Всего',
+        'Avg Daily Bookings': 'Среднее количество бронирований в день',
+        'Est. Revenue': 'Расчетная выручка',
+        'Based on price range': 'На основе ценового диапазона',
+        'Booking Trends': 'Тенденции бронирования',
+        'Booking Status Distribution': 'Распределение статусов бронирования',
+        'Peak Booking Hours': 'Пиковые часы бронирования',
+        'Insights & Recommendations': 'Аналитика и рекомендации',
+        'No booking data available for this period.': 'Нет данных о бронировании за этот период.',
+        'Customer Analytics': 'Аналитика клиентов',
+        'Unique Customers': 'Уникальные клиенты',
+        'Repeat Customers': 'Постоянные клиенты',
+        'Avg Party Size': 'Средний размер группы'
+    }
+};
 
             if (lang === 'en') {
                 document.body.dir = 'ltr';
