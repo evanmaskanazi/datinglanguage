@@ -2697,7 +2697,7 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
         }
 
         // Load upcoming dates
-       async function loadUpcomingDates() {
+     async function loadUpcomingDates() {
     const container = document.getElementById('upcomingDatesList');
     const lang = localStorage.getItem('selectedLanguage') || 'en';
 
@@ -2723,7 +2723,29 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
             return;
         }
 
-        container.innerHTML = dates.map(date => createDateCard(date)).join('');
+        container.innerHTML = dates.map(date => {
+            const dateObj = new Date(date.datetime);
+            const dayNum = dateObj.getDate();
+            const monthName = dateObj.toLocaleString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' });
+            const timeStr = dateObj.toLocaleTimeString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: 'numeric', minute: '2-digit' });
+
+            return `
+                <div class="date-card">
+                    <div class="date-time">
+                        <div class="date-day">${dayNum}</div>
+                        <div class="date-month">${monthName}</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 style="margin-bottom: 0.5rem; font-weight: 600;">${escapeHtml(date.restaurant_name)}</h3>
+                        <p style="color: var(--text-light); margin-bottom: 0.5rem;">${escapeHtml(date.restaurant_address)}</p>
+                        <p style="font-weight: 500;">With ${escapeHtml(date.match_name)} at ${timeStr}</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="viewDateDetails(${date.id})">View Details</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
 
     } catch (error) {
         console.error('Error loading dates:', error);
@@ -3082,30 +3104,32 @@ async function confirmMatch() {
 }
 
         // Accept match
-        async function acceptMatch(matchId) {
-            try {
-                const response = await fetch(`/api/matches/${matchId}/accept`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'X-CSRF-Token': await getCSRFToken()
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to accept match');
-                }
-
-                showToast('Match accepted!', 'success');
-                loadMatches();
-                loadUpcomingDates();
-                loadStats();
-
-            } catch (error) {
-                console.error('Error accepting match:', error);
-                showToast('Failed to accept match', 'error');
+      async function acceptMatch(matchId) {
+    try {
+        const response = await fetch(`/api/matches/${matchId}/accept`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-CSRF-Token': await getCSRFToken()
             }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to accept match');
         }
+
+        showToast('Match accepted!', 'success');
+
+        // Reload all relevant sections
+        await loadMatches();
+        await loadUpcomingDates();  // This will now show the accepted match
+        await loadStats();
+
+    } catch (error) {
+        console.error('Error accepting match:', error);
+        showToast('Failed to accept match', 'error');
+    }
+}
 
         // View date details
         function viewDateDetails(dateId) {
@@ -4042,6 +4066,10 @@ function changeLanguage(lang) {
     }
     if (typeof loadRestaurantsForFollowing === 'function' && document.getElementById('restaurants').classList.contains('active')) {
         loadRestaurantsForFollowing();
+    }
+    // ADD THIS LINE to reload following tab with translations
+    if (typeof loadFollowing === 'function' && document.getElementById('following').classList.contains('active')) {
+        loadFollowing();
     }
 }
 
