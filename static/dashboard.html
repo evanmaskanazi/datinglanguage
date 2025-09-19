@@ -1835,10 +1835,14 @@ following: {
     view_details: 'View Details'
 },
                 dates: {
-    title: 'Upcoming Dates',
-    subtitle: 'Your scheduled dinner dates',
-    no_dates: 'No upcoming dates',
-    find_next: 'Browse available tables to find your next dinner date!'
+        title: 'Upcoming Dates',
+            subtitle: 'Your scheduled dinner dates',
+            no_dates: 'No upcoming dates',
+            find_next: 'Browse available tables to find your next dinner date!',
+            view_details: 'View Details',
+            with: 'With',
+            address_not_available: 'Address not available',
+            unknown_restaurant: 'Unknown Restaurant'
 },
                 history: {
     title: 'Date History',
@@ -1980,10 +1984,14 @@ international: 'International'
     view_details: 'צפה בפרטים'
 },
                dates: {
-    title: 'פגישות קרובות',
-    subtitle: 'פגישות הארוחה המתוכננות שלך',
-    no_dates: 'אין פגישות קרובות',
-    find_next: 'דפדף בשולחנות זמינים כדי למצוא את פגישת הארוחה הבאה שלך!'
+     title: 'פגישות קרובות',
+            subtitle: 'פגישות הארוחה המתוכננות שלך',
+            no_dates: 'אין פגישות קרובות',
+            find_next: 'דפדף בשולחנות זמינים כדי למצוא את ארוחת הערב הבאה שלך!',
+            view_details: 'צפה בפרטים',
+            with: 'עם',
+            address_not_available: 'כתובת לא זמינה',
+            unknown_restaurant: 'מסעדה לא ידועה'
 },
               history: {
     title: 'היסטוריית פגישות',
@@ -2126,9 +2134,13 @@ international: 'בינלאומי'
 },
                dates: {
     title: 'المواعيد القادمة',
-    subtitle: 'مواعيد العشاء المجدولة',
-    no_dates: 'لا توجد مواعيد قادمة',
-    find_next: 'تصفح الطاولات المتاحة للعثور على موعد العشاء التالي!'
+            subtitle: 'مواعيد العشاء المجدولة',
+            no_dates: 'لا توجد مواعيد قادمة',
+            find_next: 'تصفح الطاولات المتاحة للعثور على موعد العشاء التالي!',
+            view_details: 'عرض التفاصيل',
+            with: 'مع',
+            address_not_available: 'العنوان غير متوفر',
+            unknown_restaurant: 'مطعم غير معروف'
 },
                history: {
     title: 'سجل المواعيد',
@@ -2270,10 +2282,14 @@ international: 'عالمي'
     view_details: 'Подробнее'
 },
                dates: {
-    title: 'Предстоящие свидания',
-    subtitle: 'Ваши запланированные ужины',
-    no_dates: 'Нет предстоящих свиданий',
-    find_next: 'Просмотрите доступные столики, чтобы найти следующее свидание!'
+      title: 'Предстоящие свидания',
+            subtitle: 'Ваши запланированные ужины',
+            no_dates: 'Нет предстоящих свиданий',
+            find_next: 'Просмотрите доступные столики, чтобы найти следующее свидание!',
+            view_details: 'Посмотреть детали',
+            with: 'С',
+            address_not_available: 'Адрес недоступен',
+            unknown_restaurant: 'Неизвестный ресторан'
 },
                 history: {
     title: 'История свиданий',
@@ -2697,7 +2713,7 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
         }
 
         // Load upcoming dates
-     async function loadUpcomingDates() {
+    async function loadUpcomingDates() {
     const container = document.getElementById('upcomingDatesList');
     const lang = localStorage.getItem('selectedLanguage') || 'en';
 
@@ -2709,6 +2725,8 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
         }
 
         const dates = await response.json();
+
+        console.log('Upcoming dates received:', dates); // Debug log
 
         if (dates.length === 0) {
             container.innerHTML = `
@@ -2729,6 +2747,12 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
             const monthName = dateObj.toLocaleString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' });
             const timeStr = dateObj.toLocaleTimeString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: 'numeric', minute: '2-digit' });
 
+            // Use translations for text
+            const restaurantName = date.restaurant_name || (translations[lang]?.dates?.unknown_restaurant || 'Unknown Restaurant');
+            const restaurantAddress = date.restaurant_address || (translations[lang]?.dates?.address_not_available || 'Address not available');
+            const withText = translations[lang]?.dates?.with || 'With';
+            const viewDetailsText = translations[lang]?.dates?.view_details || 'View Details';
+
             return `
                 <div class="date-card">
                     <div class="date-time">
@@ -2736,12 +2760,12 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
                         <div class="date-month">${monthName}</div>
                     </div>
                     <div style="flex: 1;">
-                        <h3 style="margin-bottom: 0.5rem; font-weight: 600;">${escapeHtml(date.restaurant_name)}</h3>
-                        <p style="color: var(--text-light); margin-bottom: 0.5rem;">${escapeHtml(date.restaurant_address)}</p>
-                        <p style="font-weight: 500;">With ${escapeHtml(date.match_name)} at ${timeStr}</p>
+                        <h3 style="margin-bottom: 0.5rem; font-weight: 600;">${escapeHtml(restaurantName)}</h3>
+                        <p style="color: var(--text-light); margin-bottom: 0.5rem;">${escapeHtml(restaurantAddress)}</p>
+                        <p style="font-weight: 500;">${withText} ${escapeHtml(date.match_name)} at ${timeStr}</p>
                     </div>
                     <div>
-                        <button class="btn btn-primary" onclick="viewDateDetails(${date.id})">View Details</button>
+                        <button class="btn btn-primary" onclick="viewDateDetails(${date.id})">${viewDetailsText}</button>
                     </div>
                 </div>
             `;
@@ -3104,7 +3128,7 @@ async function confirmMatch() {
 }
 
         // Accept match
-      async function acceptMatch(matchId) {
+     async function acceptMatch(matchId) {
     try {
         const response = await fetch(`/api/matches/${matchId}/accept`, {
             method: 'POST',
@@ -3118,12 +3142,17 @@ async function confirmMatch() {
             throw new Error('Failed to accept match');
         }
 
-        showToast('Match accepted!', 'success');
+        showToast('Match accepted! Check your upcoming dates.', 'success');
 
-        // Reload all relevant sections
-        await loadMatches();
-        await loadUpcomingDates();  // This will now show the accepted match
-        await loadStats();
+        // Force reload all relevant sections with proper delay
+        setTimeout(async () => {
+            await loadMatches();
+            await loadUpcomingDates();
+            await loadStats();
+
+            // Switch to dates tab to show the new date
+            showTab('dates');
+        }, 1000); // Increased delay to 1 second
 
     } catch (error) {
         console.error('Error accepting match:', error);
