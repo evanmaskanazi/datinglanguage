@@ -1316,22 +1316,7 @@ def rate_date(date_id):
         logger.error(f"Rate date error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to rate date'}), 500
 
-# User stats
-@app.route('/api/user/stats', methods=['GET'])
-@require_auth()
-def get_user_stats():
-    """Get user statistics"""
-    try:
-        stats = {
-            'total_dates': 0,
-            'active_matches': 0,
-            'success_rate': 0,
-            'pending_matches': 0
-        }
-        return jsonify(stats)
-    except Exception as e:
-        logger.error(f"Get stats error: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to get statistics'}), 500
+
 
 # Settings
 @app.route('/api/settings', methods=['PUT'])
