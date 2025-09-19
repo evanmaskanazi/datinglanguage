@@ -1697,9 +1697,11 @@
     find_next: 'Browse available tables to find your next dinner date!'
 },
                 history: {
-                    title: 'Date History',
-                    subtitle: 'Your past dinner dates'
-                },
+    title: 'Date History',
+    subtitle: 'Your past dinner dates',
+    no_past_dates: 'No past dates',
+    history_appears_here: 'Your date history will appear here'
+},
                 profile: {
     title: 'My Profile',
     subtitle: 'Manage your personal information',
@@ -1758,7 +1760,9 @@ filters: {
     french: 'French',
     asian: 'Asian',
     mexican: 'Mexican',
-    american: 'American'
+    american: 'American',
+    mediterranean: 'Mediterranean',
+international: 'International'
 },
                 loading: 'Loading...',
                 recent_activity: 'Recent Activity',
@@ -1771,6 +1775,7 @@ filters: {
                 selected_date: 'Selected:',
                 your_preferences: 'Your Time Preferences',
                 no_preferences: 'No time preferences set',
+                location_not_set: 'Location not set',
                 add_preferences: 'Add your desired meeting times above'
             },
             he: {
@@ -1820,10 +1825,12 @@ filters: {
     no_dates: 'אין פגישות קרובות',
     find_next: 'דפדף בשולחנות זמינים כדי למצוא את פגישת הארוחה הבאה שלך!'
 },
-                history: {
-                    title: 'היסטוריית פגישות',
-                    subtitle: 'פגישות הארוחה הקודמות שלך'
-                },
+              history: {
+    title: 'היסטוריית פגישות',
+    subtitle: 'פגישות הארוחה הקודמות שלך',
+    no_past_dates: 'אין פגישות קודמות',
+    history_appears_here: 'היסטוריית הפגישות שלך תופיע כאן'
+},
                profile: {
     title: 'הפרופיל שלי',
     subtitle: 'נהל את המידע האישי שלך',
@@ -1882,7 +1889,9 @@ filters: {
     french: 'צרפתי',
     asian: 'אסיאתי',
     mexican: 'מקסיקני',
-    american: 'אמריקאי'
+    american: 'אמריקאי',
+    mediterranean: 'ים תיכוני',
+international: 'בינלאומי'
 },
                 loading: 'טוען...',
                 recent_activity: 'פעילות אחרונה',
@@ -1895,6 +1904,7 @@ filters: {
                 selected_date: 'נבחר:',
                 your_preferences: 'העדפות הזמן שלך',
                 no_preferences: 'לא הוגדרו העדפות זמן',
+                location_not_set: 'מיקום לא הוגדר',
                 add_preferences: 'הוסף את זמני הפגישה הרצויים שלך למעלה'
             },
             ar: {
@@ -1944,10 +1954,12 @@ filters: {
     no_dates: 'لا توجد مواعيد قادمة',
     find_next: 'تصفح الطاولات المتاحة للعثور على موعد العشاء التالي!'
 },
-                history: {
-                    title: 'سجل المواعيد',
-                    subtitle: 'مواعيد العشاء السابقة'
-                },
+               history: {
+    title: 'سجل المواعيد',
+    subtitle: 'مواعيد العشاء السابقة',
+    no_past_dates: 'لا توجد مواعيد سابقة',
+    history_appears_here: 'سيظهر سجل المواعيد هنا'
+},
                 profile: {
     title: 'ملفي الشخصي',
     subtitle: 'إدارة معلوماتك الشخصية',
@@ -2006,7 +2018,9 @@ filters: {
     french: 'فرنسي',
     asian: 'آسيوي',
     mexican: 'مكسيكي',
-    american: 'أمريكي'
+    american: 'أمريكي',
+    mediterranean: 'متوسطي',
+international: 'عالمي'
 },
                 loading: 'جار التحميل...',
                 recent_activity: 'النشاط الأخير',
@@ -2019,6 +2033,7 @@ filters: {
                 selected_date: 'المحدد:',
                 your_preferences: 'تفضيلات الوقت',
                 no_preferences: 'لم يتم تعيين تفضيلات زمنية',
+                location_not_set: 'لم يتم تعيين الموقع',
                 add_preferences: 'أضف أوقات الاجتماع المرغوبة أعلاه'
             },
             ru: {
@@ -2069,9 +2084,11 @@ filters: {
     find_next: 'Просмотрите доступные столики, чтобы найти следующее свидание!'
 },
                 history: {
-                    title: 'История свиданий',
-                    subtitle: 'Ваши прошлые ужины'
-                },
+    title: 'История свиданий',
+    subtitle: 'Ваши прошлые ужины',
+    no_past_dates: 'Нет прошлых свиданий',
+    history_appears_here: 'История ваших свиданий появится здесь'
+},
                 profile: {
     title: 'Мой профиль',
     subtitle: 'Управление личной информацией',
@@ -2130,7 +2147,9 @@ filters: {
     french: 'Французская',
     asian: 'Азиатская',
     mexican: 'Мексиканская',
-    american: 'Американская'
+    american: 'Американская',
+    mediterranean: 'Средиземноморская',
+international: 'Международная',
 },
                 loading: 'Загрузка...',
                 recent_activity: 'Недавняя активность',
@@ -2143,6 +2162,7 @@ filters: {
                 selected_date: 'Выбрано:',
                 your_preferences: 'Ваши предпочтения времени',
                 no_preferences: 'Предпочтения времени не установлены',
+                location_not_set: 'Местоположение не указано',
                 add_preferences: 'Добавьте желаемое время встречи выше'
             }
         };
@@ -2349,7 +2369,8 @@ async function initializeDashboard() {
 
                 // Update UI with user info
                 document.getElementById('userName').textContent = profile.name;
-                document.getElementById('userLocation').textContent = profile.location || 'Location not set';
+                const lang = localStorage.getItem('selectedLanguage') || 'en';
+document.getElementById('userLocation').textContent = profile.location || translations[lang]?.profile?.location_not_set || 'Location not set';
                 document.getElementById('userInitials').textContent = getInitials(profile.name);
 
                 // Update profile tab
@@ -2379,8 +2400,14 @@ async function initializeDashboard() {
                 const response = await authenticatedFetch('/api/stats');
 
                 if (!response.ok) {
-                    throw new Error('Failed to load stats');
-                }
+    console.warn('Stats endpoint not available, using defaults');
+    // Use default values if stats endpoint doesn't exist
+    document.getElementById('activeMatchesCount').textContent = 0;
+    document.getElementById('upcomingDatesCount').textContent = 0;
+    document.getElementById('avgCompatibility').textContent = '0%';
+    document.getElementById('totalDatesCount').textContent = 0;
+    return;
+}
 
                 const stats = await response.json();
 
@@ -2516,13 +2543,17 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
     const separator = translations[lang]?.restaurant?.cuisine_separator || '•';
 
     // Translate cuisine type if it matches our filter options
-    let cuisineText = restaurant.cuisine;
-    if (restaurant.cuisine && translations[lang]?.filters) {
-        const cuisineLower = restaurant.cuisine.toLowerCase();
-        if (translations[lang].filters[cuisineLower]) {
-            cuisineText = translations[lang].filters[cuisineLower];
-        }
+    // Translate cuisine type if it matches our filter options
+let cuisineText = restaurant.cuisine;
+if (restaurant.cuisine && translations[lang]?.filters) {
+    const cuisineLower = restaurant.cuisine.toLowerCase();
+    // Check both exact match and remove trailing 's' for plurals
+    if (translations[lang].filters[cuisineLower]) {
+        cuisineText = translations[lang].filters[cuisineLower];
+    } else if (cuisineLower.endsWith('s') && translations[lang].filters[cuisineLower.slice(0, -1)]) {
+        cuisineText = translations[lang].filters[cuisineLower.slice(0, -1)];
     }
+}
 
     return `
         <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
@@ -2918,9 +2949,14 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                 const dates = await response.json();
 
                 if (dates.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><h3>No past dates</h3><p>Your date history will appear here</p></div>';
-                    return;
-                }
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+    container.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">📜</div>
+        <h3>${translations[lang]?.history?.no_past_dates || 'No past dates'}</h3>
+        <p>${translations[lang]?.history?.history_appears_here || 'Your date history will appear here'}</p>
+    </div>`;
+    return;
+}
 
                 container.innerHTML = dates.map(date => createDateCard(date)).join('');
 
@@ -3222,26 +3258,27 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                     return;
                 }
 
-                container.innerHTML = restaurants.map(restaurant => `
-                    <div class="restaurant-follow-card ${restaurant.is_following ? 'following' : ''}">
-                        <div class="restaurant-header">
-                            <div class="restaurant-info">
-                                <h4>${escapeHtml(restaurant.name)}</h4>
-                                <div class="restaurant-cuisine">${escapeHtml(restaurant.cuisine_type)} • ${restaurant.price_range}</div>
-                                <div class="restaurant-rating">
-                                    ${'⭐'.repeat(Math.round(restaurant.rating))}
-                                    <span>${restaurant.rating}</span>
-                                </div>
-                            </div>
-                            <button class="follow-btn ${restaurant.is_following ? 'following' : ''}"
-                                    onclick="toggleRestaurantFollow(${restaurant.id}, this)">
-                                ${restaurant.is_following ? 'Following' : 'Follow'}
-                            </button>
-                        </div>
-                        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(restaurant.address)}</p>
-                        <div class="follower-count">${restaurant.follower_count} ${translations[lang]?.restaurant?.followers || 'followers'}</div>
-                    </div>
-                `).join('');
+                const lang = localStorage.getItem('selectedLanguage') || 'en';
+container.innerHTML = restaurants.map(restaurant => `
+    <div class="restaurant-follow-card ${restaurant.is_following ? 'following' : ''}">
+        <div class="restaurant-header">
+            <div class="restaurant-info">
+                <h4>${escapeHtml(restaurant.name)}</h4>
+                <div class="restaurant-cuisine">${escapeHtml(restaurant.cuisine_type)} • ${restaurant.price_range}</div>
+                <div class="restaurant-rating">
+                    ${'⭐'.repeat(Math.round(restaurant.rating))}
+                    <span>${restaurant.rating}</span>
+                </div>
+            </div>
+            <button class="follow-btn ${restaurant.is_following ? 'following' : ''}"
+                    onclick="toggleRestaurantFollow(${restaurant.id}, this)">
+                ${restaurant.is_following ? 'Following' : 'Follow'}
+            </button>
+        </div>
+        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(restaurant.address)}</p>
+        <div class="follower-count">${restaurant.follower_count} ${translations[lang]?.restaurant?.followers || 'followers'}</div>
+    </div>
+`).join('');
 
             } catch (error) {
                 console.error('Load restaurants error:', error);
