@@ -2956,109 +2956,116 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
         }
 
         // Select match
-        function selectMatch(matchId) {
-            selectedMatch = matchId;
-            selectedMatchUserId = matchId;
+       // Select match function
+function selectMatch(matchId) {
+    selectedMatch = matchId;
+    selectedMatchUserId = matchId;
 
-            // Update UI
+    // Update UI - find the clicked card directly
+    document.querySelectorAll('.match-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Find and select the card with this match ID
+    const clickedCard = document.querySelector(`.match-card[onclick*="${matchId}"]`);
+    if (clickedCard) {
+        clickedCard.classList.add('selected');
+    }
+}
+
+// Confirm match function
+async function confirmMatch() {
+    if (!selectedTime || !selectedMatch) {
+        showToast('Please select a time and a match', 'error');
+        return;
+    }
+
+    try {
+        // Get current user to prevent self-matches
+        const currentUserResponse = await fetch('/api/profile', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        if (!currentUserResponse.ok) {
+            throw new Error('Failed to get current user information');
+        }
+
+        const currentUser = await currentUserResponse.json();
+
+        // Prevent self-matches
+        if (currentUser && currentUser.id === selectedMatch) {
+            showToast('You cannot send a match request to yourself!', 'error');
+            return;
+        }
+
+        // Get the selected date from the date filter
+        const dateFilter = document.getElementById('dateFilter');
+        const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
+
+        // Create proper datetime string
+        const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+
+        // Build request data WITHOUT restaurant_name and table_id
+        const requestData = {
+            restaurant_id: selectedRestaurant,
+            match_user_id: selectedMatch,
+            datetime: dateTimeString,
+            compatibility: Math.floor(Math.random() * 20) + 80
+        };
+
+        console.log('Sending match request with data:', requestData);
+
+        const response = await fetch('/api/matches/request', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': await getCSRFToken()
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast(result.message || 'Match request sent successfully!', 'success');
+            closeModal();
+
+            // Reset all selections to prevent duplicates
+            selectedRestaurant = null;
+            selectedTime = null;
+            selectedMatch = null;
+            selectedRestaurantId = null;
+            selectedMatchUserId = null;
+
+            // Clear UI selections
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+            });
             document.querySelectorAll('.match-card').forEach(card => {
                 card.classList.remove('selected');
-                if (card.onclick.toString().includes(matchId)) {
-                    card.classList.add('selected');
-                }
             });
-        }
 
-        // Confirm match
-        async function confirmMatch() {
-            if (!selectedTime || !selectedMatch) {
-                showToast('Please select a time and a match', 'error');
-                return;
+            // Reload matches if on matches tab
+            if (document.getElementById('matches').classList.contains('active')) {
+                await loadMatches();
             }
 
-            try {
-                // Get current user to prevent self-matches
-                const currentUserResponse = await fetch('/api/profile', {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                });
+            // Always reload stats
+            await loadStats();
 
-                if (!currentUserResponse.ok) {
-                    throw new Error('Failed to get current user information');
-                }
-
-                const currentUser = await currentUserResponse.json();
-
-                // Prevent self-matches
-                if (currentUser && currentUser.id === selectedMatch) {
-                    showToast('You cannot send a match request to yourself!', 'error');
-                    return;
-                }
-
-                // Get the selected date from the date filter
-                const dateFilter = document.getElementById('dateFilter');
-                const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
-
-                // Create proper datetime string
-                const dateTimeString = `${selectedDate}T${selectedTime}:00`;
-
-                // Get restaurant info
-                let restaurantName = 'Unknown Restaurant';
-                try {
-                    const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-                    const restaurantResponse = await fetch(`/api/restaurants/${selectedRestaurant}?lang=${currentLang}`, {
-                        credentials: 'include'
-                    });
-                    if (restaurantResponse.ok) {
-                        const restaurantData = await restaurantResponse.json();
-                        restaurantName = restaurantData.name || restaurantData.restaurant?.name || 'Unknown Restaurant';
-                    }
-                } catch (error) {
-                    console.error('Error fetching restaurant name:', error);
-                }
-
-                const requestData = {
-                    restaurant_id: selectedRestaurant,
-                    match_user_id: selectedMatch,
-                    datetime: dateTimeString,
-                    restaurant_name: restaurantName,
-                    table_id: null,
-                    compatibility: Math.floor(Math.random() * 20) + 80
-                };
-
-                console.log('Sending match request with data:', requestData);
-
-                const response = await fetch('/api/matches/request', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': await getCSRFToken()
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    showToast(result.message || 'Match request sent successfully!', 'success');
-                    closeModal();
-
-                    // Reload matches and stats
-                    await loadMatches();
-                    await loadStats();
-
-                } else {
-                    const errorMessage = result.error || 'Failed to send match request';
-                    showToast(errorMessage, 'error');
-                    console.error('Match request failed:', result);
-                }
-
-            } catch (error) {
-                console.error('Error requesting match:', error);
-                showToast('Network error. Please try again.', 'error');
-            }
+        } else {
+            const errorMessage = result.error || 'Failed to send match request';
+            showToast(errorMessage, 'error');
+            console.error('Match request failed:', result);
         }
+
+    } catch (error) {
+        console.error('Error requesting match:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
 
         // Accept match
         async function acceptMatch(matchId) {
