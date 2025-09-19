@@ -1376,6 +1376,10 @@ def get_matches():
             # Get status as string using helper
             status_str = get_match_status_string(match)
 
+            # Log for debugging
+            logger.info(
+                f"Match {match.id}: raw_status={match.status}, status_str={status_str}, user1={match.user1_id}, user2={match.user2_id}, current_user={user_id}")
+
             # Determine the other user and display status
             if match.user1_id == user_id:
                 other_user_id = match.user2_id
@@ -1386,7 +1390,9 @@ def get_matches():
                 other_user_id = match.user1_id
                 # Current user is receiver - show PENDING, can accept
                 display_status = status_str
-                can_accept = status_str == 'PENDING'
+                # Fix: Ensure can_accept is True for PENDING status when user is receiver
+                can_accept = (
+                            status_str == 'PENDING' or status_str == 'pending' or str(status_str).upper() == 'PENDING')
 
             other_user = User.query.get(other_user_id)
 
@@ -1416,7 +1422,7 @@ def get_matches():
                 'id': match.id,
                 'name': other_user.email.split('@')[0] if other_user else 'Unknown',
                 'email': other_user.email if other_user else '',
-                'avatar_url': f'/static/images/default-avatar.jpg',  # Add avatar URL
+                'avatar_url': f'/static/images/default-avatar.jpg',
                 'restaurant_name': restaurant_name,
                 'date': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
                 'status': display_status,
