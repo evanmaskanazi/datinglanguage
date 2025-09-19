@@ -62,6 +62,30 @@ from authlib.integrations.flask_client import OAuth
 # === LOGGING CONFIGURATION ===
 from utils.logging_config import setup_logger, log_audit
 
+def get_match_status_string(match):
+    """Safely get match status as string, handling enum or string types"""
+    if hasattr(match.status, 'value'):
+        return match.status.value
+    elif hasattr(match.status, 'name'):
+        return match.status.name
+    else:
+        return str(match.status)
+
+def set_match_status(match, status_string):
+    """Safely set match status, handling enum or string types"""
+    try:
+        # Try to use enum if it exists
+        from models.match import MatchStatus
+        if status_string == 'SENT' or status_string == 'PENDING':
+            match.status = MatchStatus.PENDING
+        elif status_string == 'ACCEPTED' or status_string == 'CONFIRMED':
+            match.status = MatchStatus.ACCEPTED
+        else:
+            match.status = getattr(MatchStatus, status_string)
+    except:
+        # Fall back to string if enum doesn't work
+        match.status = status_string
+
 def require_auth(roles=None):
     def decorator(f):
         @wraps(f)
@@ -1248,9 +1272,18 @@ def request_match():
         user_id = request.current_user.id
         match_user_id = data.get('match_user_id')
 
+        # Validate input
+        if not match_user_id:
+            return jsonify({'error': 'match_user_id is required'}), 400
+
         # Prevent self-matches
         if user_id == match_user_id:
             return jsonify({'error': 'Cannot match with yourself'}), 400
+
+        # Check if target user exists
+        target_user = User.query.get(match_user_id)
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
 
         # Check if match already exists
         existing_match = Match.query.filter(
@@ -1263,24 +1296,44 @@ def request_match():
         if existing_match:
             return jsonify({'error': 'Match already exists'}), 400
 
-        # Create new match with SENT status for requester
+        # Parse datetime if provided
+        proposed_datetime = None
+        if data.get('datetime'):
+            try:
+                proposed_datetime = datetime.fromisoformat(data.get('datetime'))
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid datetime format: {data.get('datetime')}")
+                proposed_datetime = None
+
+        # Create new match
         match = Match(
             user1_id=user_id,
             user2_id=match_user_id,
-            status='SENT',  # Changed from PENDING
             restaurant_id=data.get('restaurant_id'),
-            proposed_datetime=datetime.fromisoformat(data.get('datetime')) if data.get('datetime') else None,
+            proposed_datetime=proposed_datetime,
             compatibility_score=data.get('compatibility', 80)
         )
+
+        # Set status to PENDING using helper (or directly if no enum)
+        set_match_status(match, 'PENDING')
 
         db.session.add(match)
         db.session.commit()
 
         # Send notification to other user
-        websocket_service.notify_new_match(
-            match_user_id,
-            {'type': 'match_request', 'from_user': user_id}
-        )
+        try:
+            websocket_service.notify_new_match(
+                match_user_id,
+                {
+                    'type': 'match_request',
+                    'from_user': user_id,
+                    'from_name': request.current_user.email.split('@')[0],
+                    'match_id': match.id
+                }
+            )
+        except Exception as ws_error:
+            logger.warning(f"WebSocket notification failed: {ws_error}")
+            # Don't fail the request if websocket fails
 
         return jsonify({
             'success': True,
@@ -1308,38 +1361,55 @@ def get_matches():
 
         result = []
         for match in matches:
-            # Determine the other user
+            # Get status as string using helper
+            status_str = get_match_status_string(match)
+
+            # Determine the other user and display status
             if match.user1_id == user_id:
                 other_user_id = match.user2_id
-                # If current user initiated, show SENT instead of PENDING
-                display_status = 'SENT' if str(match.status.value) == 'PENDING' else str(match.status.value)
+                # Current user is requester - show SENT for PENDING
+                display_status = 'SENT' if status_str == 'PENDING' else status_str
+                can_accept = False
             else:
                 other_user_id = match.user1_id
-                # If other user initiated, show PENDING for acceptance
-                display_status = str(match.status.value) if hasattr(match.status, 'value') else str(match.status)
+                # Current user is receiver - show PENDING, can accept
+                display_status = status_str
+                can_accept = status_str == 'PENDING'
 
             other_user = User.query.get(other_user_id)
 
             # Get restaurant info
             restaurant_name = 'Unknown Restaurant'
             if match.restaurant_id:
-                if str(match.restaurant_id).startswith('api_'):
-                    restaurant_name = 'Restaurant'
+                # Handle both API and database restaurants
+                restaurant_id_str = str(match.restaurant_id)
+                if restaurant_id_str.startswith('api_'):
+                    # Try to get cached API restaurant info
+                    cache_key = f"restaurant_{restaurant_id_str}"
+                    cached_data = cache.get(cache_key)
+                    if cached_data and isinstance(cached_data, dict):
+                        restaurant_name = cached_data.get('name', 'Restaurant')
+                    else:
+                        restaurant_name = 'Restaurant'
                 else:
-                    restaurant = Restaurant.query.get(match.restaurant_id)
-                    if restaurant:
-                        restaurant_name = restaurant.name
+                    # Database restaurant
+                    try:
+                        restaurant = Restaurant.query.get(int(match.restaurant_id))
+                        if restaurant:
+                            restaurant_name = restaurant.name
+                    except (ValueError, TypeError):
+                        logger.warning(f"Invalid restaurant_id format: {match.restaurant_id}")
 
             result.append({
                 'id': match.id,
                 'name': other_user.email.split('@')[0] if other_user else 'Unknown',
                 'email': other_user.email if other_user else '',
+                'avatar_url': f'/static/images/default-avatar.jpg',  # Add avatar URL
                 'restaurant_name': restaurant_name,
                 'date': match.proposed_datetime.isoformat() if match.proposed_datetime else None,
                 'status': display_status,
                 'compatibility': float(match.compatibility_score) if match.compatibility_score else 0,
-                'can_accept': match.user2_id == user_id and str(
-                    match.status.value if hasattr(match.status, 'value') else match.status) == 'PENDING'
+                'can_accept': can_accept
             })
 
         return jsonify(result)
@@ -1363,47 +1433,55 @@ def accept_match(match_id):
         if match.user2_id != request.current_user.id:
             return jsonify({'error': 'Not authorized'}), 403
 
-        # Update match status
-        match.status = 'ACCEPTED'
+        # Update match status - handle enum or string
+        try:
+            match.status = MatchStatus.ACCEPTED
+        except:
+            match.status = 'ACCEPTED'
 
         # Create restaurant booking if restaurant is specified
         if match.restaurant_id:
             from models.restaurant_management import RestaurantBooking
 
-            # Parse restaurant ID
-            restaurant_id = match.restaurant_id
-            if str(restaurant_id).startswith('api_'):
-                # For API restaurants, try to find or create in database
-                external_id = restaurant_id[4:]
-                restaurant = Restaurant.query.filter_by(external_id=external_id).first()
-                if not restaurant:
-                    # Create placeholder restaurant entry
-                    restaurant = Restaurant(
-                        name='API Restaurant',
-                        external_id=external_id,
-                        cuisine_type='International',
-                        address='Address',
-                        source='api',
-                        is_active=True
-                    )
-                    db.session.add(restaurant)
-                    db.session.flush()
-                    restaurant_id = restaurant.id
-                else:
-                    restaurant_id = restaurant.id
-            else:
-                restaurant_id = int(restaurant_id)
+            # Check if booking already exists
+            existing_booking = RestaurantBooking.query.filter_by(match_id=match.id).first()
 
-            booking = RestaurantBooking(
-                restaurant_id=restaurant_id,
-                match_id=match.id,
-                user1_id=match.user1_id,
-                user2_id=match.user2_id,
-                booking_datetime=match.proposed_datetime or datetime.utcnow(),
-                status='pending',
-                party_size=2
-            )
-            db.session.add(booking)
+            if not existing_booking:
+                # Parse restaurant ID
+                restaurant_id = match.restaurant_id
+                if str(restaurant_id).startswith('api_'):
+                    # For API restaurants, try to find or create in database
+                    external_id = restaurant_id[4:]
+                    restaurant = Restaurant.query.filter_by(external_id=external_id).first()
+                    if not restaurant:
+                        # Create placeholder restaurant entry
+                        restaurant = Restaurant(
+                            name='API Restaurant',
+                            external_id=external_id,
+                            cuisine_type='International',
+                            address='Address',
+                            source='api',
+                            is_active=True,
+                            price_range=2
+                        )
+                        db.session.add(restaurant)
+                        db.session.flush()
+                        restaurant_id = restaurant.id
+                    else:
+                        restaurant_id = restaurant.id
+                else:
+                    restaurant_id = int(restaurant_id)
+
+                booking = RestaurantBooking(
+                    restaurant_id=restaurant_id,
+                    match_id=match.id,
+                    user1_id=match.user1_id,
+                    user2_id=match.user2_id,
+                    booking_datetime=match.proposed_datetime or datetime.utcnow(),
+                    status='confirmed',  # Set as confirmed since match is accepted
+                    party_size=2
+                )
+                db.session.add(booking)
 
         db.session.commit()
 
@@ -2802,26 +2880,88 @@ def initialize_database():
         from models.profile import UserProfile, UserPreferences
         from models.feedback import DateFeedback
         from models.payment import Payment, PaymentStatus
+        from models.restaurant_management import RestaurantBooking
 
         # Create all tables
         db.create_all()
         logger.info("Database tables created")
 
-        # Only run initialization functions when running directly (not via gunicorn)
-        if __name__ == '__main__':
-            from utils.db_init import (
-                create_default_categories,
-                create_admin_user,
-                create_test_restaurants
-            )
+        # Auto-migrate existing matches to bookings
+        try:
+            # Query for accepted matches using safe status checking
+            accepted_matches = []
+            try:
+                # Try with enum first
+                accepted_matches = Match.query.filter(Match.status == MatchStatus.ACCEPTED).all()
+            except (AttributeError, ImportError, Exception) as e:
+                # Fall back to string comparison
+                logger.debug(f"Using string comparison for match status: {e}")
+                accepted_matches = Match.query.filter(Match.status == 'ACCEPTED').all()
 
-            create_default_categories(db)
-            create_admin_user(db, bcrypt)
+            created_count = 0
+            for match in accepted_matches:
+                # Check if booking already exists
+                existing_booking = RestaurantBooking.query.filter_by(match_id=match.id).first()
 
-            if not os.environ.get('PRODUCTION'):
+                if not existing_booking and match.restaurant_id:
+                    # Handle API restaurant IDs
+                    restaurant_id = match.restaurant_id
+                    if str(restaurant_id).startswith('api_'):
+                        external_id = str(restaurant_id)[4:]
+                        restaurant = Restaurant.query.filter_by(external_id=external_id).first()
+                        if restaurant:
+                            restaurant_id = restaurant.id
+                        else:
+                            # Create placeholder restaurant
+                            restaurant = Restaurant(
+                                name='API Restaurant',
+                                external_id=external_id,
+                                cuisine_type='International',
+                                address='Address',
+                                source='api',
+                                is_active=True,
+                                price_range=2
+                            )
+                            db.session.add(restaurant)
+                            db.session.flush()
+                            restaurant_id = restaurant.id
+
+                    booking = RestaurantBooking(
+                        restaurant_id=restaurant_id,
+                        match_id=match.id,
+                        user1_id=match.user1_id,
+                        user2_id=match.user2_id,
+                        booking_datetime=match.proposed_datetime or datetime.utcnow(),
+                        status='confirmed',
+                        party_size=2
+                    )
+                    db.session.add(booking)
+                    created_count += 1
+
+            if created_count > 0:
+                db.session.commit()
+                logger.info(f"Auto-migrated {created_count} accepted matches to restaurant bookings")
+        except Exception as e:
+            logger.warning(f"Could not auto-migrate existing matches to bookings: {e}")
+            db.session.rollback()
+
+        # Only run initialization functions in development mode
+        if not os.environ.get('PRODUCTION'):
+            try:
+                from utils.db_init import (
+                    create_default_categories,
+                    create_admin_user,
+                    create_test_restaurants
+                )
+
+                create_default_categories(db)
+                create_admin_user(db, bcrypt)
                 create_test_restaurants(db)
-
-            logger.info("Database initialized successfully")
+                logger.info("Database initialized successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import db_init functions: {e}")
+            except Exception as e:
+                logger.warning(f"Initialization functions failed: {e}")
 
 # === MAIN ENTRY POINT ===
 if __name__ == '__main__':
