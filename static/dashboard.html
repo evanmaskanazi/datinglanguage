@@ -1346,21 +1346,21 @@
                     <div class="filter-group">
                         <label class="filter-label" data-translate="filters.time">Time</label>
                         <select class="filter-input" id="timeFilter">
-                            <option value="">Any time</option>
-                            <option value="lunch">Lunch (12pm-3pm)</option>
-                            <option value="dinner">Dinner (6pm-10pm)</option>
-                        </select>
+    <option value="" data-translate="filters.any_time">Any time</option>
+    <option value="lunch" data-translate="filters.lunch">Lunch (12pm-3pm)</option>
+    <option value="dinner" data-translate="filters.dinner">Dinner (6pm-10pm)</option>
+</select>
                     </div>
                     <div class="filter-group">
                         <label class="filter-label" data-translate="filters.cuisine">Cuisine</label>
                         <select class="filter-input" id="cuisineFilter">
-                            <option value="">All cuisines</option>
-                            <option value="italian">Italian</option>
-                            <option value="french">French</option>
-                            <option value="asian">Asian</option>
-                            <option value="mexican">Mexican</option>
-                            <option value="american">American</option>
-                        </select>
+    <option value="" data-translate="filters.all_cuisines">All cuisines</option>
+    <option value="italian" data-translate="filters.italian">Italian</option>
+    <option value="french" data-translate="filters.french">French</option>
+    <option value="asian" data-translate="filters.asian">Asian</option>
+    <option value="mexican" data-translate="filters.mexican">Mexican</option>
+    <option value="american" data-translate="filters.american">American</option>
+</select>
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">&nbsp;</label>
@@ -1740,9 +1740,25 @@
                     title: 'Desired Meeting Times',
                     subtitle: "Set your preferred times and we'll find matches"
                 },
-                restaurant: {
+               restaurant: {
     cuisine_separator: '•',
-    slots: 'slots'
+    slots: 'slots',
+    followers: 'followers'
+},
+filters: {
+    date: 'Date',
+    time: 'Time',
+    cuisine: 'Cuisine',
+    apply: 'Apply Filters',
+    any_time: 'Any time',
+    lunch: 'Lunch (12pm-3pm)',
+    dinner: 'Dinner (6pm-10pm)',
+    all_cuisines: 'All cuisines',
+    italian: 'Italian',
+    french: 'French',
+    asian: 'Asian',
+    mexican: 'Mexican',
+    american: 'American'
 },
                 loading: 'Loading...',
                 recent_activity: 'Recent Activity',
@@ -1848,9 +1864,25 @@
                     title: 'זמני פגישה רצויים',
                     subtitle: 'הגדר את הזמנים המועדפים עליך ונמצא התאמות'
                 },
-                restaurant: {
+          restaurant: {
     cuisine_separator: '•',
-    slots: 'מקומות'
+    slots: 'מקומות',
+    followers: 'עוקבים'
+},
+filters: {
+    date: 'תאריך',
+    time: 'שעה',
+    cuisine: 'מטבח',
+    apply: 'החל מסננים',
+    any_time: 'כל זמן',
+    lunch: 'ארוחת צהריים (12:00-15:00)',
+    dinner: 'ארוחת ערב (18:00-22:00)',
+    all_cuisines: 'כל המטבחים',
+    italian: 'איטלקי',
+    french: 'צרפתי',
+    asian: 'אסיאתי',
+    mexican: 'מקסיקני',
+    american: 'אמריקאי'
 },
                 loading: 'טוען...',
                 recent_activity: 'פעילות אחרונה',
@@ -1958,7 +1990,23 @@
                 },
                 restaurant: {
     cuisine_separator: '•',
-    slots: 'أماكن'
+    slots: 'أماكن',
+    followers: 'متابعون'
+},
+filters: {
+    date: 'التاريخ',
+    time: 'الوقت',
+    cuisine: 'المطبخ',
+    apply: 'تطبيق الفلاتر',
+    any_time: 'أي وقت',
+    lunch: 'الغداء (12م-3م)',
+    dinner: 'العشاء (6م-10م)',
+    all_cuisines: 'جميع المأكولات',
+    italian: 'إيطالي',
+    french: 'فرنسي',
+    asian: 'آسيوي',
+    mexican: 'مكسيكي',
+    american: 'أمريكي'
 },
                 loading: 'جار التحميل...',
                 recent_activity: 'النشاط الأخير',
@@ -2066,7 +2114,23 @@
                 },
                 restaurant: {
     cuisine_separator: '•',
-    slots: 'мест'
+    slots: 'мест',
+    followers: 'подписчиков'
+},
+filters: {
+    date: 'Дата',
+    time: 'Время',
+    cuisine: 'Кухня',
+    apply: 'Применить фильтры',
+    any_time: 'Любое время',
+    lunch: 'Обед (12:00-15:00)',
+    dinner: 'Ужин (18:00-22:00)',
+    all_cuisines: 'Все кухни',
+    italian: 'Итальянская',
+    french: 'Французская',
+    asian: 'Азиатская',
+    mexican: 'Мексиканская',
+    american: 'Американская'
 },
                 loading: 'Загрузка...',
                 recent_activity: 'Недавняя активность',
@@ -2446,17 +2510,26 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
 }
 
         // Create restaurant card HTML
-      function createRestaurantCard(restaurant) {
+     function createRestaurantCard(restaurant) {
     const lang = localStorage.getItem('selectedLanguage') || 'en';
     const slotsText = translations[lang]?.restaurant?.slots || 'slots';
     const separator = translations[lang]?.restaurant?.cuisine_separator || '•';
+
+    // Translate cuisine type if it matches our filter options
+    let cuisineText = restaurant.cuisine;
+    if (restaurant.cuisine && translations[lang]?.filters) {
+        const cuisineLower = restaurant.cuisine.toLowerCase();
+        if (translations[lang].filters[cuisineLower]) {
+            cuisineText = translations[lang].filters[cuisineLower];
+        }
+    }
 
     return `
         <div class="restaurant-card" data-restaurant-id="${restaurant.id}" onclick="openMatchModal(${restaurant.id})">
             <img src="${escapeHtml(restaurant.image_url || '/static/images/restaurant-placeholder.jpg')}" alt="${escapeHtml(restaurant.name)}" class="restaurant-image" loading="lazy">
             <div class="restaurant-info">
                 <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
-                <p class="restaurant-details">${escapeHtml(restaurant.cuisine)} ${separator} ${escapeHtml(restaurant.price_range)}</p>
+                <p class="restaurant-details">${escapeHtml(cuisineText)} ${separator} ${escapeHtml(restaurant.price_range)}</p>
                 <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
                 <div class="restaurant-meta">
                     <div class="restaurant-rating">
@@ -3166,7 +3239,7 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                             </button>
                         </div>
                         <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(restaurant.address)}</p>
-                        <div class="follower-count">${restaurant.follower_count} followers</div>
+                        <div class="follower-count">${restaurant.follower_count} ${translations[lang]?.restaurant?.followers || 'followers'}</div>
                     </div>
                 `).join('');
 
@@ -3375,7 +3448,12 @@ function translateStaticElements(lang) {
         }
 
         if (typeof translation === 'string') {
-            element.textContent = translation;
+            // Special handling for option elements
+            if (element.tagName === 'OPTION') {
+                element.textContent = translation;
+            } else {
+                element.textContent = translation;
+            }
         }
     });
 }
