@@ -1574,7 +1574,7 @@ def get_user_stats():
         upcoming_dates = db.session.query(Match).filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id),
             Match.status == 'ACCEPTED',
-            Match.datetime > datetime.now()
+            Match.proposed_datetime > datetime.now()
         ).count()
 
         # Calculate average compatibility
