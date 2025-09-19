@@ -3827,7 +3827,9 @@ async function loadFollowing() {
 
 async function loadPeopleToFollow() {
     const container = document.getElementById('peopleToFollowList');
-    container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading...</p></div>';
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+
+    container.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>${translations[lang]?.loading || 'Loading...'}</p></div>`;
 
     try {
         // Get all users except current user
@@ -3838,22 +3840,27 @@ async function loadPeopleToFollow() {
         }
 
         const users = await response.json();
-        const lang = localStorage.getItem('selectedLanguage') || 'en';
 
         if (users.length === 0) {
-            container.innerHTML = '<p>No users available to follow</p>';
+            container.innerHTML = `<p>${translations[lang]?.following?.no_users_available || 'No users available to follow'}</p>`;
             return;
         }
 
+        // Get all translated texts
+        const followText = translations[lang]?.restaurant?.follow || 'Follow';
+        const followingText = translations[lang]?.restaurant?.following || 'Following';
+        const locationNotSetText = translations[lang]?.following?.location_not_set || 'Location not set';
+        const preferredTimesText = translations[lang]?.following?.preferred_times || 'Preferred Times';
+        const requestMatchText = translations[lang]?.following?.request_match || 'Request Match';
+        const loadingTimesText = translations[lang]?.loading || 'Loading times...';
+
         container.innerHTML = users.map(user => {
-            // Use translations for all text
-            const followText = translations[lang]?.restaurant?.follow || 'Follow';
-            const followingText = translations[lang]?.restaurant?.following || 'Following';
-            const locationText = user.location || (translations[lang]?.following?.location_not_set || translations[lang]?.location_not_set || 'Location not set');
             const followerCount = user.follower_count || 0;
             const followerText = followerCount === 1 ?
                 (translations[lang]?.following?.follower || 'follower') :
                 (translations[lang]?.following?.followers || 'followers');
+
+            const locationText = user.location || locationNotSetText;
 
             return `
                 <div class="user-follow-card">
@@ -3873,14 +3880,14 @@ async function loadPeopleToFollow() {
                     </div>
                     ${user.is_following ? `
                         <div class="user-preferred-times">
-                            <h5>Preferred Times</h5>
+                            <h5>${preferredTimesText}</h5>
                             <div id="user-times-${user.id}">
-                                <span class="preferred-time-item">Loading times...</span>
+                                <span class="preferred-time-item">${loadingTimesText}</span>
                             </div>
                         </div>
                         <button class="btn btn-primary" style="margin-top: 1rem;"
                                 onclick="requestMatchWithUser(${user.id})">
-                            Request Match
+                            ${requestMatchText}
                         </button>
                     ` : ''}
                 </div>
@@ -3894,12 +3901,13 @@ async function loadPeopleToFollow() {
 
     } catch (error) {
         console.error('Load people to follow error:', error);
-        container.innerHTML = '<p>Error loading users</p>';
+        container.innerHTML = `<p>${translations[lang]?.error?.loading_failed || 'Error loading users'}</p>`;
     }
 }
 
 async function loadFollowingList() {
     const container = document.getElementById('followingList');
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
 
     try {
         const response = await authenticatedFetch('/api/users/following');
@@ -3915,12 +3923,18 @@ async function loadFollowingList() {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">👥</div>
-                    <h3>Not following anyone yet</h3>
-                    <p>Start following people to see their preferred times</p>
+                    <h3>${translations[lang]?.following?.no_following || 'Not following anyone yet'}</h3>
+                    <p>${translations[lang]?.following?.start_following || 'Start following people to see their preferred times'}</p>
                 </div>
             `;
             return;
         }
+
+        // Translate button texts
+        const unfollowText = translations[lang]?.restaurant?.unfollow || 'Unfollow';
+        const preferredTimesText = translations[lang]?.following?.preferred_times || 'Preferred Meeting Times';
+        const requestMatchText = translations[lang]?.following?.request_match || 'Request Match';
+        const locationNotSetText = translations[lang]?.following?.location_not_set || 'Location not set';
 
         container.innerHTML = following.map(user => `
             <div class="user-follow-card">
@@ -3929,22 +3943,22 @@ async function loadFollowingList() {
                         <div class="user-follow-avatar">${getInitials(user.name || user.email)}</div>
                         <div class="user-follow-details">
                             <h4>${escapeHtml(user.name || user.email)}</h4>
-                            <p>${escapeHtml(user.location || 'Location not set')}</p>
+                            <p>${escapeHtml(user.location || locationNotSetText)}</p>
                         </div>
                     </div>
                     <button class="btn btn-outline" onclick="unfollowUser(${user.id})">
-                        Unfollow
+                        ${unfollowText}
                     </button>
                 </div>
                 <div class="user-preferred-times">
-                    <h5>Preferred Meeting Times</h5>
+                    <h5>${preferredTimesText}</h5>
                     <div id="following-times-${user.id}">
-                        <span class="preferred-time-item">Loading times...</span>
+                        <span class="preferred-time-item">${translations[lang]?.loading || 'Loading times...'}</span>
                     </div>
                 </div>
                 <button class="btn btn-primary" style="margin-top: 1rem;"
                         onclick="requestMatchWithUser(${user.id})">
-                    Request Match
+                    ${requestMatchText}
                 </button>
             </div>
         `).join('');
@@ -3961,6 +3975,8 @@ async function loadFollowingList() {
 }
 
 async function loadUserPreferredTimes(userId, prefix = 'user-times-') {
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+
     try {
         const response = await authenticatedFetch(`/api/users/${userId}/time-preferences`);
 
@@ -3974,21 +3990,38 @@ async function loadUserPreferredTimes(userId, prefix = 'user-times-') {
         if (!container) return;
 
         if (times.length === 0) {
-            container.innerHTML = '<span class="preferred-time-item">No preferred times set</span>';
+            // Use translation for "No preferred times set"
+            const noPreferredTimesText = translations[lang]?.following?.no_preferred_times || 'No preferred times set';
+            container.innerHTML = `<span class="preferred-time-item">${noPreferredTimesText}</span>`;
             return;
         }
 
-        container.innerHTML = times.map(time => `
-            <span class="preferred-time-item">
-                ${new Date(time.date).toLocaleDateString()} at ${time.time}
-            </span>
-        `).join('');
+        // Format dates according to locale
+        const localeMap = {
+            'en': 'en-US',
+            'he': 'he-IL',
+            'ar': 'ar-SA',
+            'ru': 'ru-RU'
+        };
+
+        container.innerHTML = times.map(time => {
+            const dateObj = new Date(time.date);
+            const formattedDate = dateObj.toLocaleDateString(localeMap[lang] || 'en-US');
+            const atText = lang === 'he' ? 'ב-' : lang === 'ar' ? 'في' : lang === 'ru' ? 'в' : 'at';
+
+            return `
+                <span class="preferred-time-item">
+                    ${formattedDate} ${atText} ${time.time}
+                </span>
+            `;
+        }).join('');
 
     } catch (error) {
         console.error('Load user times error:', error);
         const container = document.getElementById(prefix + userId);
         if (container) {
-            container.innerHTML = '<span class="preferred-time-item">Unable to load times</span>';
+            const unableToLoadText = translations[lang]?.error?.unable_to_load || 'Unable to load times';
+            container.innerHTML = `<span class="preferred-time-item">${unableToLoadText}</span>`;
         }
     }
 }
