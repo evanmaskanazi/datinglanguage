@@ -42,7 +42,7 @@ class User(UserMixin, db.Model):
     feedbacks = db.relationship('DateFeedback', foreign_keys='DateFeedback.user_id', backref='user', lazy='dynamic')
     payments = db.relationship('Payment', backref='user', lazy='dynamic')
     
-    # NEW: Following relationships
+    # Following relationships
     following = db.relationship('User',
         secondary=user_follows,
         primaryjoin=(user_follows.c.follower_id == id),
@@ -51,7 +51,7 @@ class User(UserMixin, db.Model):
         lazy='dynamic'
     )
     
-    # NEW: Restaurant following
+    # Restaurant following
     followed_restaurants = db.relationship('Restaurant',
         secondary=user_restaurant_follows,
         backref=db.backref('followers', lazy='dynamic'),
@@ -73,27 +73,33 @@ class User(UserMixin, db.Model):
             (Match.user1_id == self.id) | (Match.user2_id == self.id)
         ).all()
     
-    # NEW: Following methods
+    # Following methods
     def follow_user(self, user):
+        """Follow another user"""
         if not self.is_following_user(user):
             self.following.append(user)
     
     def unfollow_user(self, user):
+        """Unfollow a user"""
         if self.is_following_user(user):
             self.following.remove(user)
     
     def is_following_user(self, user):
+        """Check if following a user"""
         return self.following.filter(user_follows.c.following_id == user.id).count() > 0
     
     def follow_restaurant(self, restaurant):
+        """Follow a restaurant"""
         if not self.is_following_restaurant(restaurant):
             self.followed_restaurants.append(restaurant)
     
     def unfollow_restaurant(self, restaurant):
+        """Unfollow a restaurant"""
         if self.is_following_restaurant(restaurant):
             self.followed_restaurants.remove(restaurant)
     
     def is_following_restaurant(self, restaurant):
+        """Check if following a restaurant"""
         return self.followed_restaurants.filter_by(id=restaurant.id).count() > 0
     
     def get_compatibility_boost(self, other_user):
@@ -101,6 +107,14 @@ class User(UserMixin, db.Model):
         shared_restaurants = self.followed_restaurants.intersect(other_user.followed_restaurants).count()
         # Each shared restaurant adds 5% compatibility, max 25%
         return min(shared_restaurants * 0.05, 0.25)
+    
+    def get_followers_count(self):
+        """Get count of followers for this user"""
+        return self.followers.count()
+    
+    def get_following_count(self):
+        """Get count of users this user is following"""
+        return self.following.count()
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -115,5 +129,7 @@ class User(UserMixin, db.Model):
             'is_active': self.is_active,
             'is_verified': self.is_verified,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'followers_count': self.get_followers_count(),
+            'following_count': self.get_following_count()
         }
