@@ -1614,11 +1614,11 @@ def get_upcoming_dates():
 
         upcoming_dates = []
         for match in matches:
-            # Check if status is ACCEPTED - handle both enum and string
-            status_str = str(match.status).upper() if match.status else ''
+            # USE THE HELPER FUNCTION HERE - THIS IS THE KEY FIX
+            status_str = get_match_status_string(match)
 
             # Log for debugging
-            logger.info(f"Checking match {match.id}: status={match.status}, status_str={status_str}")
+            logger.info(f"Checking match {match.id}: raw_status={match.status}, processed_status={status_str}")
 
             # Check multiple possible values for accepted status
             if status_str not in ['ACCEPTED', 'CONFIRMED']:
@@ -1670,6 +1670,10 @@ def get_upcoming_dates():
     except Exception as e:
         logger.error(f"Get upcoming dates error: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to get upcoming dates'}), 500
+
+
+
+
 
 @app.route('/api/dates/history', methods=['GET'])
 @require_auth()
@@ -3142,25 +3146,27 @@ def initialize_database():
             with db.engine.connect() as conn:
                 # Fix all status variations to uppercase
                 conn.execute(text("""
-                            UPDATE matches 
-                            SET status = UPPER(status::text)
-                            WHERE status IS NOT NULL
-                        """))
+                    UPDATE matches 
+                    SET status = UPPER(status::text)
+                    WHERE status IS NOT NULL
+                """))
 
-                # Specifically ensure ACCEPTED is uppercase
+                # Specifically ensure ACCEPTED is uppercase - handle enum representations
                 conn.execute(text("""
-                            UPDATE matches 
-                            SET status = 'ACCEPTED' 
-                            WHERE LOWER(status::text) = 'accepted'
-                               OR LOWER(status::text) = 'confirmed'
-                        """))
+                    UPDATE matches 
+                    SET status = 'ACCEPTED'::text
+                    WHERE LOWER(status::text) = 'accepted'
+                       OR LOWER(status::text) = 'confirmed'
+                       OR status::text LIKE '%ACCEPTED%'
+                       OR status::text LIKE '%accepted%'
+                       OR status::text LIKE '%CONFIRMED%'
+                       OR status::text LIKE '%confirmed%'
+                """))
 
                 conn.commit()
                 logger.info("Match statuses normalized on startup")
         except Exception as e:
             logger.warning(f"Could not normalize match statuses: {e}")
-
-
 
         # Auto-migrate existing matches to bookings
         try:
@@ -3172,7 +3178,12 @@ def initialize_database():
             except (AttributeError, ImportError, Exception) as e:
                 # Fall back to string comparison
                 logger.debug(f"Using string comparison for match status: {e}")
-                accepted_matches = Match.query.filter(Match.status == 'ACCEPTED').all()
+                accepted_matches = Match.query.filter(
+                    or_(
+                        Match.status == 'ACCEPTED',
+                        Match.status.like('%ACCEPTED%')  # Handle enum string representations
+                    )
+                ).all()
 
             created_count = 0
             for match in accepted_matches:
