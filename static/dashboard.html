@@ -2372,7 +2372,7 @@ console.log('CHECKPOINT 2: Translations object created');
         let selectedMatch = null;
         let selectedRestaurantId = null;
         let selectedMatchUserId = null;
-
+        let isRequestingMatch = false;
 
 // Error reporting to server (ADD THIS ENTIRE BLOCK HERE)
 window.addEventListener('error', function(e) {
@@ -2973,12 +2973,22 @@ function selectMatch(matchId) {
     }
 }
 
-// Confirm match function
+
+
+// Then replace the entire confirmMatch function:
 async function confirmMatch() {
+    // Prevent duplicate submissions
+    if (isRequestingMatch) {
+        showToast('Please wait, processing your request...', 'info');
+        return;
+    }
+
     if (!selectedTime || !selectedMatch) {
         showToast('Please select a time and a match', 'error');
         return;
     }
+
+    isRequestingMatch = true;  // Set flag to prevent duplicates
 
     try {
         // Get current user to prevent self-matches
@@ -2996,6 +3006,7 @@ async function confirmMatch() {
         // Prevent self-matches
         if (currentUser && currentUser.id === selectedMatch) {
             showToast('You cannot send a match request to yourself!', 'error');
+            isRequestingMatch = false;
             return;
         }
 
@@ -3003,8 +3014,9 @@ async function confirmMatch() {
         const dateFilter = document.getElementById('dateFilter');
         const selectedDate = dateFilter.value || new Date().toISOString().split('T')[0];
 
-        // Create proper datetime string
-        const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+        // Create proper datetime string - add random seconds to avoid exact duplicates
+        const randomSeconds = Math.floor(Math.random() * 59);
+        const dateTimeString = `${selectedDate}T${selectedTime}:${randomSeconds.toString().padStart(2, '0')}`;
 
         // Build request data WITHOUT restaurant_name and table_id
         const requestData = {
@@ -3064,6 +3076,8 @@ async function confirmMatch() {
     } catch (error) {
         console.error('Error requesting match:', error);
         showToast('Network error. Please try again.', 'error');
+    } finally {
+        isRequestingMatch = false;  // Reset flag
     }
 }
 
@@ -3661,64 +3675,14 @@ function translateAddress(address, lang) {
         }
     };
 
-    // First try manual translations for known words
+    // Apply manual translations only
     let translatedAddress = address;
-    let hasManualTranslation = false;
 
     if (addressTranslations[lang]) {
         Object.keys(addressTranslations[lang]).forEach(key => {
             const regex = new RegExp('\\b' + key + '\\b', 'gi');
-            if (regex.test(translatedAddress)) {
-                translatedAddress = translatedAddress.replace(regex, addressTranslations[lang][key]);
-                hasManualTranslation = true;
-            }
+            translatedAddress = translatedAddress.replace(regex, addressTranslations[lang][key]);
         });
-    }
-
-    // If we have the transliteration library and didn't fully translate manually
-    if (typeof transliterate !== 'undefined' && window.transliterate) {
-        try {
-            // Split address into parts to preserve numbers
-            const parts = translatedAddress.split(/(\d+)/);
-            const transliteratedParts = parts.map(part => {
-                // Keep numbers as-is (except for Arabic)
-                if (/^\d+$/.test(part)) {
-                    if (lang === 'ar') {
-                        // Convert to Arabic-Indic numerals
-                        const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-                        return part.replace(/[0-9]/g, (match) => arabicNumerals[parseInt(match)]);
-                    }
-                    return part;
-                }
-
-                // Skip if already translated manually
-                if (hasManualTranslation && addressTranslations[lang]) {
-                    for (let value of Object.values(addressTranslations[lang])) {
-                        if (part.includes(value)) {
-                            return part; // Already translated
-                        }
-                    }
-                }
-
-                // Transliterate remaining Latin text
-                switch(lang) {
-                    case 'he':
-                        // Hebrew doesn't work well with generic transliteration
-                        // Keep manual translations only
-                        return part;
-                    case 'ar':
-                        return window.transliterate.transliterate(part, { target: 'ar' });
-                    case 'ru':
-                        return window.transliterate.transliterate(part, { target: 'ru' });
-                    default:
-                        return part;
-                }
-            });
-
-            translatedAddress = transliteratedParts.join('');
-        } catch (error) {
-            console.warn('Transliteration failed:', error);
-        }
     }
 
     return translatedAddress;
