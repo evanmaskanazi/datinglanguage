@@ -471,6 +471,32 @@ def debug_file_check():
     return jsonify(info)
 
 
+@app.route('/api/debug-enum')
+@login_required
+def debug_enum():
+    """Check what enum values are actually in the database"""
+    try:
+        with db.engine.connect() as conn:
+            # Check the enum values
+            result = conn.execute(text("""
+                SELECT enumlabel 
+                FROM pg_enum 
+                WHERE enumtypid = (
+                    SELECT oid FROM pg_type WHERE typname = 'matchstatus'
+                )
+            """))
+            enum_values = [row[0] for row in result]
+
+            # Also check what's actually in the matches table
+            result2 = conn.execute(text("SELECT DISTINCT status FROM matches"))
+            actual_values = [row[0] for row in result2]
+
+            return jsonify({
+                'enum_values_defined': enum_values,
+                'actual_values_in_table': actual_values
+            })
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 # CSRF token endpoint
 @app.route('/api/csrf-token', methods=['GET'])
