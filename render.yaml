@@ -4,8 +4,10 @@ services:
     name: datinglanguage
     env: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python verify_imports.py
-    startCommand: python init_db.py && gunicorn dating_backend:app --bind 0.0.0.0:$PORT --workers 2 --worker-class gevent
+    startCommand: python init_db.py && gunicorn dating_backend:app --bind 0.0.0.0:$PORT --workers 2 --worker-class gevent --timeout 120
     plan: starter
+    healthCheckPath: /api/health
+    numInstances: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.10"
