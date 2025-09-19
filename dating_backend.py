@@ -62,15 +62,22 @@ from authlib.integrations.flask_client import OAuth
 # === LOGGING CONFIGURATION ===
 from utils.logging_config import setup_logger, log_audit
 
+
 def get_match_status_string(match):
     """Safely get match status as string, handling enum or string types"""
+    if not match or not match.status:
+        return 'PENDING'
+
     if hasattr(match.status, 'value'):
-        return match.status.value.upper() if match.status.value else 'PENDING'
+        return str(match.status.value).upper() if match.status.value else 'PENDING'
     elif hasattr(match.status, 'name'):
-        return match.status.name.upper() if match.status.name else 'PENDING'
+        return str(match.status.name).upper() if match.status.name else 'PENDING'
     else:
-        status_str = str(match.status)
+        status_str = str(match.status).strip()
         return status_str.upper() if status_str else 'PENDING'
+
+
+
 
 def set_match_status(match, status_string):
     """Safely set match status, handling enum or string types"""
@@ -1487,11 +1494,19 @@ def accept_match(match_id):
         if match.user2_id != request.current_user.id:
             return jsonify({'error': 'Not authorized'}), 403
 
-        # Update match status - handle enum or string
-        try:
-            match.status = MatchStatus.ACCEPTED
-        except:
-            match.status = 'ACCEPTED'
+        # Update match status - force uppercase string
+        match.status = 'ACCEPTED'
+        db.session.flush()  # Force write to DB immediately
+
+        # Verify it was set correctly
+        db.session.refresh(match)
+        if str(match.status).upper() != 'ACCEPTED':
+            logger.error(f"Failed to set ACCEPTED status for match {match_id}")
+            match.status = 'ACCEPTED'  # Try again
+            db.session.flush()
+
+        # Log for debugging
+        logger.info(f"Match {match_id} status after setting: {match.status}")
 
         # Create restaurant booking if restaurant is specified
         if match.restaurant_id:
@@ -1524,7 +1539,10 @@ def accept_match(match_id):
                     else:
                         restaurant_id = restaurant.id
                 else:
-                    restaurant_id = int(restaurant_id)
+                    try:
+                        restaurant_id = int(restaurant_id)
+                    except (ValueError, TypeError):
+                        logger.warning(f"Invalid restaurant_id: {restaurant_id}")
 
                 booking = RestaurantBooking(
                     restaurant_id=restaurant_id,
@@ -1536,10 +1554,14 @@ def accept_match(match_id):
                     party_size=2
                 )
                 db.session.add(booking)
+                logger.info(f"Created booking for match {match_id}")
 
         db.session.commit()
 
-        # Send notification
+        # Final verification after commit
+        db.session.refresh(match)
+        logger.info(f"Match {match_id} final status after commit: {match.status}")
+
         # Send notification
         try:
             websocket_service.notify_new_match(
@@ -1584,17 +1606,22 @@ def get_upcoming_dates():
         user_id = request.current_user.id
         current_time = datetime.utcnow()
 
-        # Get all accepted matches where user is involved and date is in future
-        accepted_matches = Match.query.filter(
+        # Get all matches where user is involved and date is in future
+        matches = Match.query.filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id),
             Match.proposed_datetime > current_time
         ).all()
 
         upcoming_dates = []
-        for match in accepted_matches:
-            # Check if status is ACCEPTED
-            status_str = get_match_status_string(match)
-            if status_str != 'ACCEPTED':
+        for match in matches:
+            # Check if status is ACCEPTED - handle both enum and string
+            status_str = str(match.status).upper() if match.status else ''
+
+            # Log for debugging
+            logger.info(f"Checking match {match.id}: status={match.status}, status_str={status_str}")
+
+            # Check multiple possible values for accepted status
+            if status_str not in ['ACCEPTED', 'CONFIRMED']:
                 continue
 
             # Determine the other user
@@ -1626,7 +1653,7 @@ def get_upcoming_dates():
                             restaurant_name = restaurant.name
                             restaurant_address = restaurant.address
                     except (ValueError, TypeError):
-                        pass
+                        logger.warning(f"Invalid restaurant_id: {match.restaurant_id}")
 
             upcoming_dates.append({
                 'id': match.id,
@@ -1637,6 +1664,7 @@ def get_upcoming_dates():
                 'datetime': match.proposed_datetime.isoformat() if match.proposed_datetime else None
             })
 
+        logger.info(f"Returning {len(upcoming_dates)} upcoming dates for user {user_id}")
         return jsonify(upcoming_dates)
 
     except Exception as e:
@@ -3055,6 +3083,41 @@ def fix_match_status():
         return jsonify({'error': 'Failed to fix match statuses'}), 500
 
 
+@app.route('/api/admin/fix-accepted-matches', methods=['POST'])
+@require_auth()
+def fix_accepted_matches():
+    """Fix matches that should show as accepted"""
+    try:
+        from sqlalchemy import text
+
+        # Fix any lowercase or mixed case statuses
+        with db.engine.connect() as conn:
+            # Update all variations to uppercase ACCEPTED
+            conn.execute(text("""
+                UPDATE matches 
+                SET status = 'ACCEPTED' 
+                WHERE LOWER(status::text) IN ('accepted', 'confirmed')
+                   OR status::text IN ('Accepted', 'Confirmed', 'CONFIRMED')
+            """))
+
+            conn.commit()
+
+            count = conn.execute(text("""
+                SELECT COUNT(*) FROM matches WHERE status = 'ACCEPTED'
+            """)).scalar()
+
+            return jsonify({
+                'success': True,
+                'accepted_matches_count': count,
+                'message': f'Normalized statuses. Total accepted matches: {count}'
+            })
+
+    except Exception as e:
+        logger.error(f"Fix accepted matches error: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to fix matches'}), 500
+
+
+
 # === INITIALIZATION ===
 def initialize_database():
     """Initialize database with default data"""
@@ -3072,6 +3135,32 @@ def initialize_database():
         # Create all tables
         db.create_all()
         logger.info("Database tables created")
+
+        # AUTO-FIX: Normalize match statuses on startup
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                # Fix all status variations to uppercase
+                conn.execute(text("""
+                            UPDATE matches 
+                            SET status = UPPER(status::text)
+                            WHERE status IS NOT NULL
+                        """))
+
+                # Specifically ensure ACCEPTED is uppercase
+                conn.execute(text("""
+                            UPDATE matches 
+                            SET status = 'ACCEPTED' 
+                            WHERE LOWER(status::text) = 'accepted'
+                               OR LOWER(status::text) = 'confirmed'
+                        """))
+
+                conn.commit()
+                logger.info("Match statuses normalized on startup")
+        except Exception as e:
+            logger.warning(f"Could not normalize match statuses: {e}")
+
+
 
         # Auto-migrate existing matches to bookings
         try:

@@ -40,6 +40,8 @@ def init_database():
         print("Running time preferences table migration...")
         migrate_time_preferences_table()
         # Create test restaurant account for login testing
+        print("Running match status normalization...")
+        migrate_match_status_normalization()
         try:
             create_test_restaurant_account()
         except Exception as e:
@@ -516,6 +518,34 @@ def migrate_time_preferences_table():
         print(f"❌ Time preferences table migration failed: {e}")
         db.session.rollback()
         raise
+
+
+def migrate_match_status_normalization():
+    """Ensure all match statuses are uppercase"""
+    from sqlalchemy import text
+
+    try:
+        # Normalize all statuses to uppercase
+        normalize_sql = """
+        UPDATE matches 
+        SET status = CASE 
+            WHEN LOWER(status::text) IN ('accepted', 'confirmed') THEN 'ACCEPTED'
+            WHEN LOWER(status::text) = 'pending' THEN 'PENDING'
+            WHEN LOWER(status::text) = 'declined' THEN 'DECLINED'
+            WHEN LOWER(status::text) = 'cancelled' THEN 'CANCELLED'
+            WHEN LOWER(status::text) = 'completed' THEN 'COMPLETED'
+            ELSE UPPER(status::text)
+        END
+        WHERE status IS NOT NULL;
+        """
+
+        db.session.execute(text(normalize_sql))
+        db.session.commit()
+        print("✅ Match statuses normalized to uppercase!")
+
+    except Exception as e:
+        print(f"⚠️ Match status normalization failed: {e}")
+        db.session.rollback()
 
 
 
