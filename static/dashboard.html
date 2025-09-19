@@ -1641,7 +1641,8 @@
 
     <!-- Socket.io for real-time updates -->
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
-
+<!-- Add transliteration library here -->
+<script src="https://cdn.jsdelivr.net/npm/transliteration@2.3.5/dist/browser/bundle.umd.min.js"></script>
     <!-- Main JavaScript -->
     <script>
         console.log('CHECKPOINT 1: Main script started');
@@ -1743,9 +1744,11 @@
                     subtitle: "Set your preferred times and we'll find matches"
                 },
                restaurant: {
-    cuisine_separator: '•',
+      cuisine_separator: '•',
     slots: 'slots',
-    followers: 'followers'
+    followers: 'followers',
+    follow: 'Follow',
+    following: 'Following'
 },
 filters: {
     date: 'Date',
@@ -1872,9 +1875,11 @@ international: 'International'
                     subtitle: 'הגדר את הזמנים המועדפים עליך ונמצא התאמות'
                 },
           restaurant: {
-    cuisine_separator: '•',
+       cuisine_separator: '•',
     slots: 'מקומות',
-    followers: 'עוקבים'
+    followers: 'עוקבים',
+    follow: 'עקוב',
+    following: 'עוקב'
 },
 filters: {
     date: 'תאריך',
@@ -2003,7 +2008,9 @@ international: 'בינלאומי'
                 restaurant: {
     cuisine_separator: '•',
     slots: 'أماكن',
-    followers: 'متابعون'
+    followers: 'متابعون',
+    follow: 'متابع',
+    following: 'متابع بالفعل'
 },
 filters: {
     date: 'التاريخ',
@@ -2130,9 +2137,11 @@ international: 'عالمي'
                     subtitle: 'Установите предпочтительное время, и мы найдём совпадения'
                 },
                 restaurant: {
-    cuisine_separator: '•',
+     cuisine_separator: '•',
     slots: 'мест',
-    followers: 'подписчиков'
+    followers: 'подписчиков',
+    follow: 'Подписаться',
+    following: 'Подписан'
 },
 filters: {
     date: 'Дата',
@@ -2561,7 +2570,7 @@ if (restaurant.cuisine && translations[lang]?.filters) {
             <div class="restaurant-info">
                 <h3 class="restaurant-name">${escapeHtml(restaurant.name)}</h3>
                 <p class="restaurant-details">${escapeHtml(cuisineText)} ${separator} ${escapeHtml(restaurant.price_range)}</p>
-                <p class="restaurant-details">${escapeHtml(restaurant.address)}</p>
+                <p class="restaurant-details">${escapeHtml(translateAddress(restaurant.address, lang))}</p>
                 <div class="restaurant-meta">
                     <div class="restaurant-rating">
                         ${'⭐'.repeat(Math.round(restaurant.rating || 0))}
@@ -2641,7 +2650,7 @@ const response = await fetch(`/api/restaurants/${restaurantId}?lang=${currentLan
                     <div style="margin-bottom: 1.5rem;">
                         <h3>${escapeHtml(restaurant.name)}</h3>
                         <p>${escapeHtml(restaurant.cuisine)} • ${escapeHtml(restaurant.price_range)}</p>
-                        <p>${escapeHtml(restaurant.address)}</p>
+                        <p>${escapeHtml(translateAddress(restaurant.address, localStorage.getItem('selectedLanguage') || 'en'))}</p>
                     </div>
                 `;
 
@@ -3264,18 +3273,18 @@ container.innerHTML = restaurants.map(restaurant => `
         <div class="restaurant-header">
             <div class="restaurant-info">
                 <h4>${escapeHtml(restaurant.name)}</h4>
-                <div class="restaurant-cuisine">${escapeHtml(restaurant.cuisine_type)} • ${restaurant.price_range}</div>
+                <div class="restaurant-cuisine">${escapeHtml(translateCuisine(restaurant.cuisine_type, lang))} • ${restaurant.price_range}</div>
                 <div class="restaurant-rating">
                     ${'⭐'.repeat(Math.round(restaurant.rating))}
                     <span>${restaurant.rating}</span>
                 </div>
             </div>
             <button class="follow-btn ${restaurant.is_following ? 'following' : ''}"
-                    onclick="toggleRestaurantFollow(${restaurant.id}, this)">
-                ${restaurant.is_following ? 'Following' : 'Follow'}
-            </button>
+        onclick="toggleRestaurantFollow(${restaurant.id}, this)">
+    ${restaurant.is_following ? (translations[lang]?.restaurant?.following || 'Following') : (translations[lang]?.restaurant?.follow || 'Follow')}
+</button>
         </div>
-        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(restaurant.address)}</p>
+        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">${escapeHtml(translateAddress(restaurant.address, lang))}</p>
         <div class="follower-count">${restaurant.follower_count} ${translations[lang]?.restaurant?.followers || 'followers'}</div>
     </div>
 `).join('');
@@ -3303,15 +3312,16 @@ container.innerHTML = restaurants.map(restaurant => `
                 const result = await response.json();
 
                 if (response.ok) {
-                    if (isFollowing) {
-                        button.classList.remove('following');
-                        button.textContent = 'Follow';
-                        button.closest('.restaurant-follow-card').classList.remove('following');
-                    } else {
-                        button.classList.add('following');
-                        button.textContent = 'Following';
-                        button.closest('.restaurant-follow-card').classList.add('following');
-                    }
+                   const lang = localStorage.getItem('selectedLanguage') || 'en';
+if (isFollowing) {
+    button.classList.remove('following');
+    button.textContent = translations[lang]?.restaurant?.follow || 'Follow';
+    button.closest('.restaurant-follow-card').classList.remove('following');
+} else {
+    button.classList.add('following');
+    button.textContent = translations[lang]?.restaurant?.following || 'Following';
+    button.closest('.restaurant-follow-card').classList.add('following');
+}
                     showToast(result.message, 'success');
                 } else {
                     showToast(result.error || 'Failed to update follow status', 'error');
@@ -3350,16 +3360,183 @@ container.innerHTML = restaurants.map(restaurant => `
             return div.innerHTML;
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('default', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-            });
+
+function translateCuisine(cuisine, lang) {
+    if (!cuisine || !translations[lang]?.filters) return cuisine;
+
+    const cuisineLower = cuisine.toLowerCase();
+    // Check exact match first
+    if (translations[lang].filters[cuisineLower]) {
+        return translations[lang].filters[cuisineLower];
+    }
+    // Check without trailing 's' for plurals
+    if (cuisineLower.endsWith('s') && translations[lang].filters[cuisineLower.slice(0, -1)]) {
+        return translations[lang].filters[cuisineLower.slice(0, -1)];
+    }
+    // Check if it's a known cuisine type in another format
+    if (cuisineLower.includes('italian')) return translations[lang].filters.italian || cuisine;
+    if (cuisineLower.includes('french')) return translations[lang].filters.french || cuisine;
+    if (cuisineLower.includes('asian')) return translations[lang].filters.asian || cuisine;
+    if (cuisineLower.includes('mexican')) return translations[lang].filters.mexican || cuisine;
+    if (cuisineLower.includes('american')) return translations[lang].filters.american || cuisine;
+    if (cuisineLower.includes('mediterranean')) return translations[lang].filters.mediterranean || cuisine;
+    if (cuisineLower.includes('international')) return translations[lang].filters.international || cuisine;
+
+    return cuisine; // Return original if no translation found
+}
+
+function translateAddress(address, lang) {
+    if (!address || lang === 'en') return address;
+
+    // Manual translations for known locations
+    const addressTranslations = {
+        he: {
+            'Tel Aviv': 'תל אביב',
+            'Jerusalem': 'ירושלים',
+            'Haifa': 'חיפה',
+            'Beer Sheva': 'באר שבע',
+            'Netanya': 'נתניה',
+            'Eilat': 'אילת',
+            'Street': 'רחוב',
+            'Avenue': 'שדרות',
+            'Boulevard': 'שדרות',
+            'Road': 'דרך',
+            'Lane': 'סמטה',
+            'Beach': 'חוף',
+            'Park': 'פארק',
+            'Central': 'מרכז',
+            'North': 'צפון',
+            'South': 'דרום',
+            'East': 'מזרח',
+            'West': 'מערב'
+        },
+        ar: {
+            'Tel Aviv': 'تل أبيب',
+            'Jerusalem': 'القدس',
+            'Haifa': 'حيفا',
+            'Beer Sheva': 'بئر السبع',
+            'Netanya': 'نتانيا',
+            'Eilat': 'إيلات',
+            'Street': 'شارع',
+            'Avenue': 'جادة',
+            'Boulevard': 'جادة',
+            'Road': 'طريق',
+            'Lane': 'زقاق',
+            'Beach': 'شاطئ',
+            'Park': 'حديقة',
+            'Central': 'مركزي',
+            'North': 'شمال',
+            'South': 'جنوب',
+            'East': 'شرق',
+            'West': 'غرب'
+        },
+        ru: {
+            'Tel Aviv': 'Тель-Авив',
+            'Jerusalem': 'Иерусалим',
+            'Haifa': 'Хайфа',
+            'Beer Sheva': 'Беэр-Шева',
+            'Netanya': 'Нетания',
+            'Eilat': 'Эйлат',
+            'Street': 'улица',
+            'Avenue': 'проспект',
+            'Boulevard': 'бульвар',
+            'Road': 'дорога',
+            'Lane': 'переулок',
+            'Beach': 'пляж',
+            'Park': 'парк',
+            'Central': 'центральный',
+            'North': 'север',
+            'South': 'юг',
+            'East': 'восток',
+            'West': 'запад'
         }
+    };
+
+    // First try manual translations for known words
+    let translatedAddress = address;
+    let hasManualTranslation = false;
+
+    if (addressTranslations[lang]) {
+        Object.keys(addressTranslations[lang]).forEach(key => {
+            const regex = new RegExp('\\b' + key + '\\b', 'gi');
+            if (regex.test(translatedAddress)) {
+                translatedAddress = translatedAddress.replace(regex, addressTranslations[lang][key]);
+                hasManualTranslation = true;
+            }
+        });
+    }
+
+    // If we have the transliteration library and didn't fully translate manually
+    if (typeof transliterate !== 'undefined' && window.transliterate) {
+        try {
+            // Split address into parts to preserve numbers
+            const parts = translatedAddress.split(/(\d+)/);
+            const transliteratedParts = parts.map(part => {
+                // Keep numbers as-is (except for Arabic)
+                if (/^\d+$/.test(part)) {
+                    if (lang === 'ar') {
+                        // Convert to Arabic-Indic numerals
+                        const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+                        return part.replace(/[0-9]/g, (match) => arabicNumerals[parseInt(match)]);
+                    }
+                    return part;
+                }
+
+                // Skip if already translated manually
+                if (hasManualTranslation && addressTranslations[lang]) {
+                    for (let value of Object.values(addressTranslations[lang])) {
+                        if (part.includes(value)) {
+                            return part; // Already translated
+                        }
+                    }
+                }
+
+                // Transliterate remaining Latin text
+                switch(lang) {
+                    case 'he':
+                        // Hebrew doesn't work well with generic transliteration
+                        // Keep manual translations only
+                        return part;
+                    case 'ar':
+                        return window.transliterate.transliterate(part, { target: 'ar' });
+                    case 'ru':
+                        return window.transliterate.transliterate(part, { target: 'ru' });
+                    default:
+                        return part;
+                }
+            });
+
+            translatedAddress = transliteratedParts.join('');
+        } catch (error) {
+            console.warn('Transliteration failed:', error);
+        }
+    }
+
+    return translatedAddress;
+}
+
+
+
+    function formatDate(dateString) {
+    const date = new Date(dateString);
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+
+    // Map language codes to locale codes
+    const localeMap = {
+        'en': 'en-US',
+        'he': 'he-IL',
+        'ar': 'ar-SA',
+        'ru': 'ru-RU'
+    };
+
+    return date.toLocaleDateString(localeMap[lang] || 'en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
 
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
