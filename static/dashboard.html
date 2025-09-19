@@ -2747,9 +2747,19 @@ const response = await authenticatedFetch(`/api/restaurants?${queryParams}&lang=
             const monthName = dateObj.toLocaleString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' });
             const timeStr = dateObj.toLocaleTimeString(lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: 'numeric', minute: '2-digit' });
 
-            // Use translations for text
+            // Use translations for text AND translate the address
             const restaurantName = date.restaurant_name || (translations[lang]?.dates?.unknown_restaurant || 'Unknown Restaurant');
-            const restaurantAddress = date.restaurant_address || (translations[lang]?.dates?.address_not_available || 'Address not available');
+
+            // THIS IS THE KEY FIX - properly handle address translation
+            let restaurantAddress;
+            if (!date.restaurant_address || date.restaurant_address === 'Address not available') {
+                // Use the translated "Address not available" text
+                restaurantAddress = translations[lang]?.dates?.address_not_available || 'Address not available';
+            } else {
+                // Translate the actual address
+                restaurantAddress = translateAddress(date.restaurant_address, lang);
+            }
+
             const withText = translations[lang]?.dates?.with || 'With';
             const viewDetailsText = translations[lang]?.dates?.view_details || 'View Details';
 
@@ -3664,7 +3674,6 @@ function translateCuisine(cuisine, lang) {
 function translateAddress(address, lang) {
     if (!address || lang === 'en') return address;
 
-    // Manual translations for known locations
     const addressTranslations = {
         he: {
             'Tel Aviv': 'תל אביב',
@@ -3674,9 +3683,13 @@ function translateAddress(address, lang) {
             'Netanya': 'נתניה',
             'Eilat': 'אילת',
             'Street': 'רחוב',
+            'St': 'רח׳',
             'Avenue': 'שדרות',
+            'Ave': 'שד׳',
             'Boulevard': 'שדרות',
+            'Blvd': 'שד׳',
             'Road': 'דרך',
+            'Rd': 'דרך',
             'Lane': 'סמטה',
             'Beach': 'חוף',
             'Park': 'פארק',
@@ -3694,9 +3707,13 @@ function translateAddress(address, lang) {
             'Netanya': 'نتانيا',
             'Eilat': 'إيلات',
             'Street': 'شارع',
+            'St': 'ش',
             'Avenue': 'جادة',
+            'Ave': 'جادة',
             'Boulevard': 'جادة',
+            'Blvd': 'جادة',
             'Road': 'طريق',
+            'Rd': 'ط',
             'Lane': 'زقاق',
             'Beach': 'شاطئ',
             'Park': 'حديقة',
@@ -3714,9 +3731,13 @@ function translateAddress(address, lang) {
             'Netanya': 'Нетания',
             'Eilat': 'Эйлат',
             'Street': 'улица',
+            'St': 'ул.',
             'Avenue': 'проспект',
+            'Ave': 'пр.',
             'Boulevard': 'бульвар',
+            'Blvd': 'бул.',
             'Road': 'дорога',
+            'Rd': 'дор.',
             'Lane': 'переулок',
             'Beach': 'пляж',
             'Park': 'парк',
@@ -3728,7 +3749,6 @@ function translateAddress(address, lang) {
         }
     };
 
-    // Apply manual translations only
     let translatedAddress = address;
 
     if (addressTranslations[lang]) {
