@@ -1584,7 +1584,7 @@ def get_user_stats():
 
         avg_compatibility = 0
         if all_matches:
-            total_compatibility = sum(m.compatibility for m in all_matches if m.compatibility)
+            total_compatibility = sum(m.compatibility_score for m in all_matches if m.compatibility_score)
             avg_compatibility = round(total_compatibility / len(all_matches)) if all_matches else 0
 
         # Count total dates (all confirmed matches)
