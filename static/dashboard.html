@@ -3151,38 +3151,38 @@ async function confirmMatch() {
         }
 
         // Load date history
-        async function loadDateHistory() {
-            const container = document.getElementById('dateHistoryList');
-            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading history...</p></div>';
+     async function loadDateHistory() {
+    const container = document.getElementById('dateHistoryList');
+    container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading history...</p></div>';
 
-            try {
-                const response = await fetch('/api/dates/history', {
-                    credentials: 'include'
-                });
+    try {
+        const response = await fetch('/api/dates/history', {
+            credentials: 'include'
+        });
 
-                if (!response.ok) {
-                    throw new Error('Failed to load history');
-                }
-
-                const dates = await response.json();
-
-                if (dates.length === 0) {
-    const lang = localStorage.getItem('selectedLanguage') || 'en';
-    container.innerHTML = `<div class="empty-state">
-        <div class="empty-state-icon">📜</div>
-        <h3>${translations[lang]?.history?.no_past_dates || 'No past dates'}</h3>
-        <p>${translations[lang]?.history?.history_appears_here || 'Your date history will appear here'}</p>
-    </div>`;
-    return;
-}
-
-                container.innerHTML = dates.map(date => createDateCard(date)).join('');
-
-            } catch (error) {
-                console.error('Error loading history:', error);
-                container.innerHTML = '<p>Error loading history. Please try again later.</p>';
-            }
+        if (!response.ok) {
+            throw new Error('Failed to load history');
         }
+
+        const dates = await response.json();
+
+        if (dates.length === 0) {
+            const lang = localStorage.getItem('selectedLanguage') || 'en';
+            container.innerHTML = `<div class="empty-state">
+                <div class="empty-state-icon">📜</div>
+                <h3>${translations[lang]?.history?.no_past_dates || 'No past dates'}</h3>
+                <p>${translations[lang]?.history?.history_appears_here || 'Your date history will appear here'}</p>
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = dates.map(date => createDateCard(date)).join('');
+
+    } catch (error) {
+        console.error('Error loading history:', error);
+        container.innerHTML = '<p>Error loading history. Please try again later.</p>';
+    }
+}
 
         // Edit profile
         function editProfile() {
@@ -3792,36 +3792,47 @@ async function loadPeopleToFollow() {
             return;
         }
 
-        container.innerHTML = users.map(user => `
-            <div class="user-follow-card">
-                <div class="user-follow-header">
-                    <div class="user-follow-info">
-                        <div class="user-follow-avatar">${getInitials(user.name || user.email)}</div>
-                        <div class="user-follow-details">
-                            <h4>${escapeHtml(user.name || user.email)}</h4>
-                            <p>${escapeHtml(user.location || 'Location not set')}</p>
-                            <p style="margin-top: 0.25rem;">${user.follower_count || 0} followers</p>
+        container.innerHTML = users.map(user => {
+            // Use translations for all text
+            const followText = translations[lang]?.restaurant?.follow || 'Follow';
+            const followingText = translations[lang]?.restaurant?.following || 'Following';
+            const locationText = user.location || (translations[lang]?.following?.location_not_set || translations[lang]?.location_not_set || 'Location not set');
+            const followerCount = user.follower_count || 0;
+            const followerText = followerCount === 1 ?
+                (translations[lang]?.following?.follower || 'follower') :
+                (translations[lang]?.following?.followers || 'followers');
+
+            return `
+                <div class="user-follow-card">
+                    <div class="user-follow-header">
+                        <div class="user-follow-info">
+                            <div class="user-follow-avatar">${getInitials(user.name || user.email)}</div>
+                            <div class="user-follow-details">
+                                <h4>${escapeHtml(user.name || user.email)}</h4>
+                                <p>${escapeHtml(locationText)}</p>
+                                <p style="margin-top: 0.25rem;">${followerCount} ${followerText}</p>
+                            </div>
                         </div>
+                        <button class="follow-btn ${user.is_following ? 'following' : ''}"
+                                onclick="toggleUserFollow(${user.id}, this)">
+                            ${user.is_following ? followingText : followText}
+                        </button>
                     </div>
-                    <button class="follow-btn ${user.is_following ? 'following' : ''}"
-                            onclick="toggleUserFollow(${user.id}, this)">
-                        ${user.is_following ? 'Following' : 'Follow'}
-                    </button>
+                    ${user.is_following ? `
+                        <div class="user-preferred-times">
+                            <h5>Preferred Times</h5>
+                            <div id="user-times-${user.id}">
+                                <span class="preferred-time-item">Loading times...</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 1rem;"
+                                onclick="requestMatchWithUser(${user.id})">
+                            Request Match
+                        </button>
+                    ` : ''}
                 </div>
-                ${user.is_following ? `
-                    <div class="user-preferred-times">
-                        <h5>Preferred Times</h5>
-                        <div id="user-times-${user.id}">
-                            <span class="preferred-time-item">Loading times...</span>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" style="margin-top: 1rem;"
-                            onclick="requestMatchWithUser(${user.id})">
-                        Request Match
-                    </button>
-                ` : ''}
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Load preferred times for followed users
         users.filter(u => u.is_following).forEach(user => {
@@ -3944,8 +3955,20 @@ async function toggleUserFollow(userId, button) {
         });
 
         if (response.ok) {
+            const lang = localStorage.getItem('selectedLanguage') || 'en';
             showToast(isFollowing ? 'Unfollowed successfully' : 'Following user!', 'success');
-            loadFollowing(); // Reload the entire following section
+
+            // Update button text immediately with translation
+            if (isFollowing) {
+                button.classList.remove('following');
+                button.textContent = translations[lang]?.restaurant?.follow || 'Follow';
+            } else {
+                button.classList.add('following');
+                button.textContent = translations[lang]?.restaurant?.following || 'Following';
+            }
+
+            // Reload to refresh the entire section
+            loadFollowing();
         } else {
             showToast('Failed to update follow status', 'error');
         }
