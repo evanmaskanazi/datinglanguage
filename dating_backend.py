@@ -1957,6 +1957,69 @@ def unfollow_restaurant():
         return jsonify({'error': 'Failed to unfollow restaurant'}), 500
 
 
+@app.route('/api/translate-address', methods=['POST'])
+@login_required
+def translate_address():
+    """Translate address to target language"""
+    try:
+        address = request.json.get('address')
+        target_lang = request.json.get('lang', 'en')
+
+        if not address or target_lang == 'en':
+            return jsonify({'translated': address})
+
+        # Manual translations for common terms
+        manual_translations = {
+            'he': {
+                'Tel Aviv': 'תל אביב',
+                'Jerusalem': 'ירושלים',
+                'Street': 'רחוב',
+                'Road': 'דרך',
+                'Avenue': 'שדרות'
+            },
+            'ar': {
+                'Tel Aviv': 'تل أبيب',
+                'Jerusalem': 'القدس',
+                'Street': 'شارع',
+                'Road': 'طريق',
+                'Avenue': 'جادة'
+            },
+            'ru': {
+                'Tel Aviv': 'Тель-Авив',
+                'Jerusalem': 'Иерусалим',
+                'Street': 'улица',
+                'Road': 'дорога',
+                'Avenue': 'проспект'
+            }
+        }
+
+        translated = address
+        if target_lang in manual_translations:
+            for eng, trans in manual_translations[target_lang].items():
+                translated = translated.replace(eng, trans)
+
+        return jsonify({'translated': translated})
+
+    except Exception as e:
+        logger.error(f"Translation error: {str(e)}")
+        return jsonify({'translated': address})
+
+
+# ========================
+# WebSocket Event Handlers
+# ========================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle WebSocket connection"""
+    logger.info(f'WebSocket connected: {request.sid}')
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle WebSocket disconnection"""
+    logger.info(f'WebSocket disconnected: {request.sid}')
+
 @app.route('/api/users/following', methods=['GET'])
 @require_auth()
 def get_user_following():
