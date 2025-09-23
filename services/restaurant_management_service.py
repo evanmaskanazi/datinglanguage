@@ -74,11 +74,15 @@ class RestaurantManagementService:
             return jsonify({'error': 'Failed to get statistics'}), 500
 
     def get_match_requests(self, restaurant_id, date_filter=None):
-        """Get match requests for restaurant with proper date filtering"""
+        """Get match requests for restaurant - includes orphaned matches"""
         try:
             from datetime import datetime, timedelta
             from models.restaurant_management import RestaurantBooking
+            from models.match import Match
             from models.user import User
+            
+            # First, check for any accepted matches without bookings and create them
+            self._create_missing_bookings(restaurant_id)
             
             query = RestaurantBooking.query.filter_by(restaurant_id=restaurant_id)
             
@@ -127,6 +131,49 @@ class RestaurantManagementService:
         except Exception as e:
             self.logger.error(f"Get match requests error: {str(e)}")
             return jsonify({'error': 'Failed to get match requests'}), 500
+
+    def _create_missing_bookings(self, restaurant_id):
+        """Create bookings for any accepted matches that don't have them"""
+        try:
+            # Find accepted matches for this restaurant without bookings
+            from sqlalchemy import text
+            
+            # Use raw SQL to handle various status formats
+            result = self.db.session.execute(text("""
+                SELECT m.id, m.user1_id, m.user2_id, m.proposed_datetime, m.restaurant_id
+                FROM matches m
+                WHERE (UPPER(m.status::text) = 'ACCEPTED' OR UPPER(m.status::text) = 'CONFIRMED')
+                AND (m.restaurant_id = :restaurant_id OR m.restaurant_id = :api_restaurant_id)
+                AND NOT EXISTS (
+                    SELECT 1 FROM restaurant_bookings rb WHERE rb.match_id = m.id
+                )
+            """), {
+                'restaurant_id': str(restaurant_id),
+                'api_restaurant_id': f'api_{restaurant_id}'
+            })
+            
+            for row in result:
+                match_id, user1_id, user2_id, proposed_datetime, match_restaurant_id = row
+                
+                # Create the missing booking
+                booking = RestaurantBooking(
+                    restaurant_id=restaurant_id,
+                    match_id=match_id,
+                    user1_id=user1_id,
+                    user2_id=user2_id,
+                    booking_datetime=proposed_datetime or datetime.utcnow(),
+                    status='confirmed',
+                    party_size=2,
+                    special_requests='Auto-created from accepted match'
+                )
+                self.db.session.add(booking)
+                self.logger.info(f"Created missing booking for match {match_id}")
+            
+            self.db.session.commit()
+            
+        except Exception as e:
+            self.logger.warning(f"Could not create missing bookings: {e}")
+            self.db.session.rollback()
 
     def update_booking_status(self, restaurant_id, booking_id, new_status):
         """Update booking status"""
