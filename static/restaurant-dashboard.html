@@ -430,25 +430,25 @@
             }
         }
 
-    .pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    border-top: 1px solid #eee;
-    margin-top: 1rem;
-}
+  .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid #eee;
+            margin-top: 1rem;
+        }
 
-.pagination-controls button {
-    padding: 0.5rem 1rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
+        .pagination-controls button {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
 
 .pagination-controls button:hover {
     background: var(--primary-hover);
@@ -688,10 +688,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTranslation();
-            initRestaurantDashboard();
-        });
+       document.addEventListener('DOMContentLoaded', function() {
+    initializeTranslation();
+    // Set default language if not already set
+    if (!localStorage.getItem('selectedLanguage')) {
+        localStorage.setItem('selectedLanguage', 'en');
+    }
+    // Set the language selector to the stored value
+    setTimeout(() => {
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.value = localStorage.getItem('selectedLanguage') || 'en';
+        }
+        initRestaurantDashboard();
+    }, 100);
+});
 
         function initializeTranslation() {
             const switcher = document.createElement('div');
@@ -709,7 +720,10 @@
         }
 
         function changeLanguage(lang) {
-          const translations = {
+    // Store the selected language
+    localStorage.setItem('selectedLanguage', lang);
+
+    const translations = {
     'he': {
         // Navigation and headers
         'Restaurant Dashboard': 'לוח בקרה מסעדה',
@@ -947,7 +961,7 @@
     const container = document.getElementById('bookingsList');
     const dateFilter = document.getElementById('dateFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
-    const lang = document.getElementById('languageSelect')?.value || 'en';
+    const lang = document.getElementById('languageSelect')?.value || localStorage.getItem('selectedLanguage') || 'en';
     const itemsPerPage = 20; // Show 20 items per page
 
     // Translation mappings
