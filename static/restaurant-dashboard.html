@@ -688,17 +688,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
     <script>
-       document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function() {
     initializeTranslation();
     // Set default language if not already set
-    if (!localStorage.getItem('selectedLanguage')) {
-        localStorage.setItem('selectedLanguage', 'en');
-    }
-    // Set the language selector to the stored value
+    const storedLang = localStorage.getItem('selectedLanguage') || 'en';
+    localStorage.setItem('selectedLanguage', storedLang);
+
+    // Set the language selector to the stored value and apply translations
     setTimeout(() => {
         const langSelect = document.getElementById('languageSelect');
         if (langSelect) {
-            langSelect.value = localStorage.getItem('selectedLanguage') || 'en';
+            langSelect.value = storedLang;
+            if (storedLang !== 'en') {
+                changeLanguage(storedLang); // Apply the language immediately
+            }
         }
         initRestaurantDashboard();
     }, 100);
@@ -886,10 +889,11 @@
 };
 
             if (lang === 'en') {
-                document.body.dir = 'ltr';
-                location.reload();
-                return;
-            }
+    document.body.dir = 'ltr';
+    // Don't reload, just re-render the bookings with English
+    loadBookings();
+    return;
+}
 
             const langData = translations[lang];
             if (langData) {
@@ -962,7 +966,7 @@
     const dateFilter = document.getElementById('dateFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const lang = document.getElementById('languageSelect')?.value || localStorage.getItem('selectedLanguage') || 'en';
-    const itemsPerPage = 20; // Show 20 items per page
+    const itemsPerPage = 10; // Show 10 items per page
 
     // Translation mappings
     const bookingTranslations = {
