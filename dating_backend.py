@@ -2910,10 +2910,9 @@ def get_restaurant_bookings():
 
 @app.route('/api/restaurant-management/bookings/<int:booking_id>/status', methods=['PUT'])
 @limiter.limit("50 per hour")
-def update_booking_status():
+def update_booking_status(booking_id):
     """Update booking status"""
     try:
-        booking_id = request.view_args['booking_id']
         restaurant_id = request.json.get('restaurant_id')
         new_status = request.json.get('status')
 
