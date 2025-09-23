@@ -913,84 +913,155 @@
             }
         }
 
-        async function loadBookings() {
-            const container = document.getElementById('bookingsList');
-            const dateFilter = document.getElementById('dateFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
+       async function loadBookings() {
+    const container = document.getElementById('bookingsList');
+    const dateFilter = document.getElementById('dateFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const lang = document.getElementById('languageSelect')?.value || 'en';
 
-            try {
-                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading bookings...</p></div>';
-
-                let url = `/api/restaurant-management/bookings?restaurant_id=${currentRestaurantId}`;
-                if (dateFilter) url += `&date_filter=${dateFilter}`;
-                if (statusFilter) url += `&status=${statusFilter}`;
-
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load bookings');
-                }
-
-                const bookings = await response.json();
-
-                if (bookings.length === 0) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 3rem; color: #666;">
-                            <h3>No match requests found</h3>
-                            <p>Match requests will appear here when users book tables at your restaurant.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = bookings.map(booking => `
-                    <div class="booking-item">
-                        <div class="booking-info">
-                            <h4>Booking #${booking.id}</h4>
-                            <div class="booking-details">
-                                Diners: ${booking.user1_email} & ${booking.user2_email}<br>
-                                Date: ${booking.requested_datetime ? new Date(booking.requested_datetime).toLocaleString() : 'Not specified'}<br>
-                                Party size: ${booking.party_size || 2}
-                                ${booking.special_requests ? `<br>Special requests: ${booking.special_requests}` : ''}
-                            </div>
-                        </div>
-                        <div class="booking-status ${(booking.status || 'pending').toLowerCase()}">
-                            ${booking.status || 'Pending'}
-                        </div>
-                        <div class="booking-actions">
-                            ${booking.status === 'pending' ? `
-                                <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'confirmed')">
-                                    Confirm
-                                </button>
-                                <button class="btn btn-cancel" onclick="updateBookingStatus(${booking.id}, 'cancelled')">
-                                    Cancel
-                                </button>
-                            ` : ''}
-                            ${booking.status === 'confirmed' ? `
-                                <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'completed')">
-                                    Mark Complete
-                                </button>
-                            ` : ''}
-                        </div>
-                        <div style="text-align: right; font-size: 0.875rem; color: #666;">
-                            ${new Date(booking.created_at).toLocaleDateString()}
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error('Load bookings error:', error);
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: #666;">
-                        <h3>Unable to load bookings</h3>
-                        <p>There was an error loading your booking requests. Please try again.</p>
-                        <button class="btn" onclick="loadBookings()" style="background: var(--primary-color); color: white; margin-top: 1rem;">
-                            Retry
-                        </button>
-                    </div>
-                `;
-            }
+    // Translation mappings
+    const bookingTranslations = {
+        'en': {
+            'Booking #': 'Booking #',
+            'Diners:': 'Diners:',
+            'Date:': 'Date:',
+            'Party size:': 'Party size:',
+            'Mark Complete': 'Mark Complete',
+            'Confirm': 'Confirm',
+            'Cancel': 'Cancel',
+            'pending': 'Pending',
+            'confirmed': 'Confirmed',
+            'completed': 'Completed',
+            'cancelled': 'Cancelled',
+            'No match requests found': 'No match requests found',
+            'Match requests will appear here': 'Match requests will appear here when users book tables at your restaurant.'
+        },
+        'he': {
+            'Booking #': 'הזמנה #',
+            'Diners:': 'סועדים:',
+            'Date:': 'תאריך:',
+            'Party size:': 'גודל קבוצה:',
+            'Mark Complete': 'סמן כהושלם',
+            'Confirm': 'אשר',
+            'Cancel': 'בטל',
+            'pending': 'ממתין',
+            'confirmed': 'מאושר',
+            'completed': 'הושלם',
+            'cancelled': 'בוטל',
+            'No match requests found': 'לא נמצאו בקשות התאמה',
+            'Match requests will appear here': 'בקשות התאמה יופיעו כאן כאשר משתמשים יזמינו שולחנות במסעדה שלך.'
+        },
+        'ar': {
+            'Booking #': 'الحجز #',
+            'Diners:': 'رواد المطعم:',
+            'Date:': 'التاريخ:',
+            'Party size:': 'حجم المجموعة:',
+            'Mark Complete': 'وضع علامة مكتمل',
+            'Confirm': 'تأكيد',
+            'Cancel': 'إلغاء',
+            'pending': 'قيد الانتظار',
+            'confirmed': 'مؤكد',
+            'completed': 'مكتمل',
+            'cancelled': 'ملغى',
+            'No match requests found': 'لم يتم العثور على طلبات مطابقة',
+            'Match requests will appear here': 'ستظهر طلبات المطابقة هنا عندما يحجز المستخدمون طاولات في مطعمك.'
+        },
+        'ru': {
+            'Booking #': 'Бронь #',
+            'Diners:': 'Гости:',
+            'Date:': 'Дата:',
+            'Party size:': 'Размер группы:',
+            'Mark Complete': 'Отметить завершенным',
+            'Confirm': 'Подтвердить',
+            'Cancel': 'Отменить',
+            'pending': 'В ожидании',
+            'confirmed': 'Подтверждено',
+            'completed': 'Завершено',
+            'cancelled': 'Отменено',
+            'No match requests found': 'Запросы на совпадения не найдены',
+            'Match requests will appear here': 'Запросы на совпадения появятся здесь, когда пользователи забронируют столики в вашем ресторане.'
         }
+    };
+
+    const t = bookingTranslations[lang] || bookingTranslations['en'];
+
+    try {
+        container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading bookings...</p></div>';
+
+        let url = `/api/restaurant-management/bookings?restaurant_id=${currentRestaurantId}`;
+        if (dateFilter) url += `&date_filter=${dateFilter}`;
+        if (statusFilter) url += `&status=${statusFilter}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error('Failed to load bookings');
+        }
+
+        const bookings = await response.json();
+
+        if (bookings.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <h3>${t['No match requests found']}</h3>
+                    <p>${t['Match requests will appear here']}</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = bookings.map(booking => {
+            const statusText = t[booking.status] || t['pending'];
+
+            return `
+                <div class="booking-item">
+                    <div class="booking-info">
+                        <h4>${t['Booking #']}${booking.id}</h4>
+                        <div class="booking-details">
+                            ${t['Diners:']} ${booking.user1_email} & ${booking.user2_email}<br>
+                            ${t['Date:']} ${booking.requested_datetime ? new Date(booking.requested_datetime).toLocaleString() : 'Not specified'}<br>
+                            ${t['Party size:']} ${booking.party_size || 2}
+                            ${booking.special_requests ? `<br>Special requests: ${booking.special_requests}` : ''}
+                        </div>
+                    </div>
+                    <div class="booking-status ${(booking.status || 'pending').toLowerCase()}">
+                        ${statusText}
+                    </div>
+                    <div class="booking-actions">
+                        ${booking.status === 'pending' ? `
+                            <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'confirmed')">
+                                ${t['Confirm']}
+                            </button>
+                            <button class="btn btn-cancel" onclick="updateBookingStatus(${booking.id}, 'cancelled')">
+                                ${t['Cancel']}
+                            </button>
+                        ` : ''}
+                        ${booking.status === 'confirmed' ? `
+                            <button class="btn btn-confirm" onclick="updateBookingStatus(${booking.id}, 'completed')">
+                                ${t['Mark Complete']}
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div style="text-align: right; font-size: 0.875rem; color: #666;">
+                        ${new Date(booking.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Load bookings error:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: #666;">
+                <h3>Unable to load bookings</h3>
+                <p>There was an error loading your booking requests. Please try again.</p>
+                <button class="btn" onclick="loadBookings()" style="background: var(--primary-color); color: white; margin-top: 1rem;">
+                    Retry
+                </button>
+            </div>
+        `;
+    }
+}
 
         async function loadComprehensiveAnalytics() {
             const period = document.getElementById('analyticsPeriod').value;

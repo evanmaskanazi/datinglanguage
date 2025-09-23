@@ -2841,7 +2841,7 @@ if (restaurant.cuisine && translations[lang]?.filters) {
 }
 
         // Create match card HTML
-   function createMatchCard(match) {
+  function createMatchCard(match) {
     const lang = localStorage.getItem('selectedLanguage') || 'en';
     const statusClass = match.status.toLowerCase();
 
@@ -2860,6 +2860,19 @@ if (restaurant.cuisine && translations[lang]?.filters) {
     const acceptText = translations[lang]?.matches?.accept || 'Accept';
     const viewDetailsText = translations[lang]?.matches?.view_details || 'View Details';
 
+    // Check if match date is in the future
+    const matchDate = new Date(match.date);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    const canCancel = matchDate >= currentDate && ['SENT', 'PENDING', 'CONFIRMED', 'ACCEPTED'].includes(match.status);
+
+    const cancelText = {
+        'en': 'Cancel',
+        'he': 'ביטול',
+        'ar': 'إلغاء',
+        'ru': 'Отменить'
+    }[lang] || 'Cancel';
+
     return `
         <div class="match-list-item">
             <img src="${escapeHtml(match.avatar_url || '/static/images/default-avatar.jpg')}" alt="${escapeHtml(match.name)}" class="match-list-avatar">
@@ -2871,6 +2884,7 @@ if (restaurant.cuisine && translations[lang]?.filters) {
             <div>
                 ${match.can_accept ? `<button class="btn btn-primary" onclick="acceptMatch(${match.id})">${acceptText}</button>` : ''}
                 ${match.status === 'CONFIRMED' || match.status === 'ACCEPTED' ? `<button class="btn btn-success" onclick="viewDateDetails(${match.id})">${viewDetailsText}</button>` : ''}
+                ${canCancel ? `<button class="btn btn-cancel" onclick="cancelMatch(${match.id})">${cancelText}</button>` : ''}
             </div>
         </div>
     `;
@@ -3185,6 +3199,43 @@ async function confirmMatch() {
         showToast('Failed to accept match', 'error');
     }
 }
+
+
+ async function cancelMatch(matchId) {
+    const lang = localStorage.getItem('selectedLanguage') || 'en';
+    const confirmTexts = {
+        'en': 'Are you sure you want to cancel this match?',
+        'he': 'האם אתה בטוח שברצונך לבטל את ההתאמה?',
+        'ar': 'هل أنت متأكد من رغبتك في إلغاء هذه المطابقة؟',
+        'ru': 'Вы уверены, что хотите отменить это совпадение?'
+    };
+
+    if (!confirm(confirmTexts[lang] || confirmTexts['en'])) return;
+
+    try {
+        const response = await fetch(`/api/matches/${matchId}/decline`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-CSRF-Token': await getCSRFToken()
+            }
+        });
+
+        if (response.ok) {
+            showToast('Match cancelled successfully', 'success');
+            await loadMatches();
+            await loadUpcomingDates();
+            await loadStats();
+        } else {
+            showToast('Failed to cancel match', 'error');
+        }
+    } catch (error) {
+        console.error('Error cancelling match:', error);
+        showToast('Failed to cancel match', 'error');
+    }
+}
+
+
 
         // View date details
         function viewDateDetails(dateId) {
