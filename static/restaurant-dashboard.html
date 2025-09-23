@@ -429,6 +429,36 @@
                 grid-template-columns: 1fr;
             }
         }
+
+    .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+    margin-top: 1rem;
+}
+
+.pagination-controls button {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.pagination-controls button:hover {
+    background: var(--primary-hover);
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
     </style>
 </head>
 <body>
@@ -913,11 +943,12 @@
             }
         }
 
-       async function loadBookings() {
+      async function loadBookings(page = 1) {
     const container = document.getElementById('bookingsList');
     const dateFilter = document.getElementById('dateFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const lang = document.getElementById('languageSelect')?.value || 'en';
+    const itemsPerPage = 20; // Show 20 items per page
 
     // Translation mappings
     const bookingTranslations = {
@@ -926,6 +957,7 @@
             'Diners:': 'Diners:',
             'Date:': 'Date:',
             'Party size:': 'Party size:',
+            'Special requests:': 'Special requests:',
             'Mark Complete': 'Mark Complete',
             'Confirm': 'Confirm',
             'Cancel': 'Cancel',
@@ -934,28 +966,48 @@
             'completed': 'Completed',
             'cancelled': 'Cancelled',
             'No match requests found': 'No match requests found',
-            'Match requests will appear here': 'Match requests will appear here when users book tables at your restaurant.'
+            'Match requests will appear here': 'Match requests will appear here when users book tables at your restaurant.',
+            'Loading bookings...': 'Loading bookings...',
+            'Unable to load bookings': 'Unable to load bookings',
+            'There was an error loading your booking requests. Please try again.': 'There was an error loading your booking requests. Please try again.',
+            'Retry': 'Retry',
+            'Page': 'Page',
+            'of': 'of',
+            'Previous': 'Previous',
+            'Next': 'Next',
+            'Not specified': 'Not specified'
         },
         'he': {
             'Booking #': 'הזמנה #',
             'Diners:': 'סועדים:',
             'Date:': 'תאריך:',
             'Party size:': 'גודל קבוצה:',
+            'Special requests:': 'בקשות מיוחדות:',
             'Mark Complete': 'סמן כהושלם',
             'Confirm': 'אשר',
             'Cancel': 'בטל',
             'pending': 'ממתין',
-            'confirmed': 'מאושר',
+            'confirmed': 'אושר',
             'completed': 'הושלם',
             'cancelled': 'בוטל',
             'No match requests found': 'לא נמצאו בקשות התאמה',
-            'Match requests will appear here': 'בקשות התאמה יופיעו כאן כאשר משתמשים יזמינו שולחנות במסעדה שלך.'
+            'Match requests will appear here': 'בקשות התאמה יופיעו כאן כאשר משתמשים יזמינו שולחנות במסעדה שלך.',
+            'Loading bookings...': 'טוען הזמנות...',
+            'Unable to load bookings': 'לא ניתן לטעון הזמנות',
+            'There was an error loading your booking requests. Please try again.': 'אירעה שגיאה בטעינת בקשות ההזמנה שלך. אנא נסה שוב.',
+            'Retry': 'נסה שוב',
+            'Page': 'עמוד',
+            'of': 'מתוך',
+            'Previous': 'הקודם',
+            'Next': 'הבא',
+            'Not specified': 'לא צוין'
         },
         'ar': {
             'Booking #': 'الحجز #',
             'Diners:': 'رواد المطعم:',
             'Date:': 'التاريخ:',
             'Party size:': 'حجم المجموعة:',
+            'Special requests:': 'طلبات خاصة:',
             'Mark Complete': 'وضع علامة مكتمل',
             'Confirm': 'تأكيد',
             'Cancel': 'إلغاء',
@@ -964,13 +1016,23 @@
             'completed': 'مكتمل',
             'cancelled': 'ملغى',
             'No match requests found': 'لم يتم العثور على طلبات مطابقة',
-            'Match requests will appear here': 'ستظهر طلبات المطابقة هنا عندما يحجز المستخدمون طاولات في مطعمك.'
+            'Match requests will appear here': 'ستظهر طلبات المطابقة هنا عندما يحجز المستخدمون طاولات في مطعمك.',
+            'Loading bookings...': 'جاري تحميل الحجوزات...',
+            'Unable to load bookings': 'غير قادر على تحميل الحجوزات',
+            'There was an error loading your booking requests. Please try again.': 'حدث خطأ في تحميل طلبات الحجز الخاصة بك. حاول مرة أخرى.',
+            'Retry': 'إعادة المحاولة',
+            'Page': 'صفحة',
+            'of': 'من',
+            'Previous': 'السابق',
+            'Next': 'التالي',
+            'Not specified': 'غير محدد'
         },
         'ru': {
             'Booking #': 'Бронь #',
             'Diners:': 'Гости:',
             'Date:': 'Дата:',
             'Party size:': 'Размер группы:',
+            'Special requests:': 'Особые пожелания:',
             'Mark Complete': 'Отметить завершенным',
             'Confirm': 'Подтвердить',
             'Cancel': 'Отменить',
@@ -979,14 +1041,23 @@
             'completed': 'Завершено',
             'cancelled': 'Отменено',
             'No match requests found': 'Запросы на совпадения не найдены',
-            'Match requests will appear here': 'Запросы на совпадения появятся здесь, когда пользователи забронируют столики в вашем ресторане.'
+            'Match requests will appear here': 'Запросы на совпадения появятся здесь, когда пользователи забронируют столики в вашем ресторане.',
+            'Loading bookings...': 'Загрузка бронирований...',
+            'Unable to load bookings': 'Не удалось загрузить бронирования',
+            'There was an error loading your booking requests. Please try again.': 'Произошла ошибка при загрузке ваших запросов на бронирование. Пожалуйста, попробуйте еще раз.',
+            'Retry': 'Повторить',
+            'Page': 'Страница',
+            'of': 'из',
+            'Previous': 'Предыдущая',
+            'Next': 'Следующая',
+            'Not specified': 'Не указано'
         }
     };
 
     const t = bookingTranslations[lang] || bookingTranslations['en'];
 
     try {
-        container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading bookings...</p></div>';
+        container.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>${t['Loading bookings...']}</p></div>`;
 
         let url = `/api/restaurant-management/bookings?restaurant_id=${currentRestaurantId}`;
         if (dateFilter) url += `&date_filter=${dateFilter}`;
@@ -998,9 +1069,15 @@
             throw new Error('Failed to load bookings');
         }
 
-        const bookings = await response.json();
+        const allBookings = await response.json();
 
-        if (bookings.length === 0) {
+        // Calculate pagination
+        const totalPages = Math.ceil(allBookings.length / itemsPerPage);
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const bookings = allBookings.slice(startIndex, endIndex);
+
+        if (allBookings.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 3rem; color: #666;">
                     <h3>${t['No match requests found']}</h3>
@@ -1010,7 +1087,46 @@
             return;
         }
 
-        container.innerHTML = bookings.map(booking => {
+        // Format date based on language
+        function formatDateByLang(dateStr, language) {
+            if (!dateStr) return t['Not specified'];
+
+            const date = new Date(dateStr);
+            let options = {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: language === 'en'
+            };
+
+            if (language === 'he') {
+                return date.toLocaleString('he-IL', options);
+            } else if (language === 'ar') {
+                return date.toLocaleString('ar-SA', options);
+            } else if (language === 'ru') {
+                return date.toLocaleString('ru-RU', options);
+            }
+            return date.toLocaleString('en-US', options);
+        }
+
+        // Format created date
+        function formatCreatedDate(dateStr, language) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+
+            if (language === 'he') {
+                return date.toLocaleDateString('he-IL');
+            } else if (language === 'ar') {
+                return date.toLocaleDateString('ar-SA');
+            } else if (language === 'ru') {
+                return date.toLocaleDateString('ru-RU');
+            }
+            return date.toLocaleDateString('en-US');
+        }
+
+        let bookingsHTML = bookings.map(booking => {
             const statusText = t[booking.status] || t['pending'];
 
             return `
@@ -1019,9 +1135,9 @@
                         <h4>${t['Booking #']}${booking.id}</h4>
                         <div class="booking-details">
                             ${t['Diners:']} ${booking.user1_email} & ${booking.user2_email}<br>
-                            ${t['Date:']} ${booking.requested_datetime ? new Date(booking.requested_datetime).toLocaleString() : 'Not specified'}<br>
+                            ${t['Date:']} ${formatDateByLang(booking.requested_datetime, lang)}<br>
                             ${t['Party size:']} ${booking.party_size || 2}
-                            ${booking.special_requests ? `<br>Special requests: ${booking.special_requests}` : ''}
+                            ${booking.special_requests ? `<br>${t['Special requests:']} ${booking.special_requests}` : ''}
                         </div>
                     </div>
                     <div class="booking-status ${(booking.status || 'pending').toLowerCase()}">
@@ -1042,21 +1158,35 @@
                             </button>
                         ` : ''}
                     </div>
-                    <div style="text-align: right; font-size: 0.875rem; color: #666;">
-                        ${new Date(booking.created_at).toLocaleDateString()}
+                    <div style="text-align: ${lang === 'ar' || lang === 'he' ? 'left' : 'right'}; font-size: 0.875rem; color: #666;">
+                        ${formatCreatedDate(booking.created_at, lang)}
                     </div>
                 </div>
             `;
         }).join('');
 
+        // Add pagination controls if needed
+        let paginationHTML = '';
+        if (totalPages > 1) {
+            paginationHTML = `
+                <div class="pagination-controls" style="text-align: center; margin-top: 2rem; padding: 1rem;">
+                    ${page > 1 ? `<button class="btn" style="margin: 0 0.5rem;" onclick="loadBookings(${page - 1})">${t['Previous']}</button>` : ''}
+                    <span style="margin: 0 1rem;">${t['Page']} ${page} ${t['of']} ${totalPages}</span>
+                    ${page < totalPages ? `<button class="btn" style="margin: 0 0.5rem;" onclick="loadBookings(${page + 1})">${t['Next']}</button>` : ''}
+                </div>
+            `;
+        }
+
+        container.innerHTML = bookingsHTML + paginationHTML;
+
     } catch (error) {
         console.error('Load bookings error:', error);
         container.innerHTML = `
             <div style="text-align: center; padding: 3rem; color: #666;">
-                <h3>Unable to load bookings</h3>
-                <p>There was an error loading your booking requests. Please try again.</p>
+                <h3>${t['Unable to load bookings']}</h3>
+                <p>${t['There was an error loading your booking requests. Please try again.']}</p>
                 <button class="btn" onclick="loadBookings()" style="background: var(--primary-color); color: white; margin-top: 1rem;">
-                    Retry
+                    ${t['Retry']}
                 </button>
             </div>
         `;
