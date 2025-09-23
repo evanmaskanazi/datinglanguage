@@ -73,60 +73,60 @@ class RestaurantManagementService:
             self.logger.error(f"Get restaurant stats error: {str(e)}", exc_info=True)
             return jsonify({'error': 'Failed to get statistics'}), 500
 
-  def get_match_requests(self, restaurant_id, date_filter=None):
-    """Get match requests for restaurant with proper date filtering"""
-    try:
-        from datetime import datetime, timedelta
-        from models.restaurant_management import RestaurantBooking
-        from models.user import User
-        
-        query = RestaurantBooking.query.filter_by(restaurant_id=restaurant_id)
-        
-        now = datetime.utcnow()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        if date_filter == 'today':
-            # Show all bookings for today (past and future)
-            tomorrow = today + timedelta(days=1)
-            query = query.filter(
-                RestaurantBooking.booking_datetime >= today,
-                RestaurantBooking.booking_datetime < tomorrow
-            )
-        elif date_filter == 'week':
-            # Calculate the full week (Monday to Sunday)
-            days_since_monday = today.weekday()
-            week_start = today - timedelta(days=days_since_monday)
-            week_end = week_start + timedelta(days=7)
+    def get_match_requests(self, restaurant_id, date_filter=None):
+        """Get match requests for restaurant with proper date filtering"""
+        try:
+            from datetime import datetime, timedelta
+            from models.restaurant_management import RestaurantBooking
+            from models.user import User
             
-            query = query.filter(
-                RestaurantBooking.booking_datetime >= week_start,
-                RestaurantBooking.booking_datetime < week_end
-            )
-        # For 'all time' or no filter, don't add date constraints - show all past and future
-        
-        bookings = query.order_by(RestaurantBooking.booking_datetime.desc()).all()
-        
-        result = []
-        for booking in bookings:
-            user1 = User.query.get(booking.user1_id)
-            user2 = User.query.get(booking.user2_id)
+            query = RestaurantBooking.query.filter_by(restaurant_id=restaurant_id)
             
-            result.append({
-                'id': booking.id,
-                'user1_email': user1.email if user1 else 'Unknown',
-                'user2_email': user2.email if user2 else 'Unknown',
-                'requested_datetime': booking.booking_datetime.isoformat() if booking.booking_datetime else None,
-                'status': booking.status,
-                'party_size': booking.party_size,
-                'special_requests': booking.special_requests,
-                'created_at': booking.created_at.isoformat() if booking.created_at else None
-            })
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        self.logger.error(f"Get match requests error: {str(e)}")
-        return jsonify({'error': 'Failed to get match requests'}), 500
+            now = datetime.utcnow()
+            today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            if date_filter == 'today':
+                # Show all bookings for today (past and future)
+                tomorrow = today + timedelta(days=1)
+                query = query.filter(
+                    RestaurantBooking.booking_datetime >= today,
+                    RestaurantBooking.booking_datetime < tomorrow
+                )
+            elif date_filter == 'week':
+                # Calculate the full week (Monday to Sunday)
+                days_since_monday = today.weekday()
+                week_start = today - timedelta(days=days_since_monday)
+                week_end = week_start + timedelta(days=7)
+                
+                query = query.filter(
+                    RestaurantBooking.booking_datetime >= week_start,
+                    RestaurantBooking.booking_datetime < week_end
+                )
+            # For 'all time' or no filter, don't add date constraints - show all past and future
+            
+            bookings = query.order_by(RestaurantBooking.booking_datetime.desc()).all()
+            
+            result = []
+            for booking in bookings:
+                user1 = User.query.get(booking.user1_id)
+                user2 = User.query.get(booking.user2_id)
+                
+                result.append({
+                    'id': booking.id,
+                    'user1_email': user1.email if user1 else 'Unknown',
+                    'user2_email': user2.email if user2 else 'Unknown',
+                    'requested_datetime': booking.booking_datetime.isoformat() if booking.booking_datetime else None,
+                    'status': booking.status,
+                    'party_size': booking.party_size,
+                    'special_requests': booking.special_requests,
+                    'created_at': booking.created_at.isoformat() if booking.created_at else None
+                })
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            self.logger.error(f"Get match requests error: {str(e)}")
+            return jsonify({'error': 'Failed to get match requests'}), 500
 
     def update_booking_status(self, restaurant_id, booking_id, new_status):
         """Update booking status"""
