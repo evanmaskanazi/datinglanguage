@@ -1348,6 +1348,41 @@ def request_match():
             match.status = 'PENDING'
 
         db.session.add(match)
+        db.session.flush()  # Get the match ID before creating booking
+
+        # CRITICAL: Create booking immediately for the restaurant
+        from models.restaurant_management import RestaurantBooking
+
+        # Determine restaurant ID for booking
+        booking_restaurant_id = 1  # Default to restaurant 1
+        if data.get('restaurant_id'):
+            restaurant_id_str = str(data.get('restaurant_id'))
+            if restaurant_id_str.startswith('api_'):
+                # For API restaurants, use restaurant 1
+                booking_restaurant_id = 1
+            else:
+                try:
+                    booking_restaurant_id = int(restaurant_id_str)
+                    # Verify this restaurant exists
+                    if not Restaurant.query.get(booking_restaurant_id):
+                        booking_restaurant_id = 1
+                except:
+                    booking_restaurant_id = 1
+
+        # Create the booking
+        booking = RestaurantBooking(
+            restaurant_id=booking_restaurant_id,
+            match_id=match.id,
+            user1_id=user_id,
+            user2_id=match_user_id,
+            booking_datetime=proposed_datetime,
+            status='pending',  # Pending until accepted
+            party_size=2,
+            special_requests='Match request pending acceptance'
+        )
+        db.session.add(booking)
+
+        # Commit everything
         db.session.commit()
 
         # Send notification
@@ -1363,6 +1398,8 @@ def request_match():
             )
         except Exception as ws_error:
             logger.warning(f"WebSocket notification failed: {ws_error}")
+
+        logger.info(f"Created match {match.id} with booking for restaurant {booking_restaurant_id}")
 
         return jsonify({
             'success': True,
