@@ -133,82 +133,82 @@ class RestaurantManagementService:
             return jsonify({'error': 'Failed to get match requests'}), 500
 
     def _create_missing_bookings(self, restaurant_id):
-    """Create bookings for any accepted matches that don't have them"""
-    try:
-        from sqlalchemy import text
-        
-        # First, find ALL accepted matches (not just for this restaurant)
-        # then create bookings for this restaurant
-        result = self.db.session.execute(text("""
-            SELECT m.id, m.user1_id, m.user2_id, m.proposed_datetime, m.restaurant_id
-            FROM matches m
-            WHERE (UPPER(m.status::text) = 'ACCEPTED' 
-                   OR UPPER(m.status::text) = 'CONFIRMED'
-                   OR m.status::text ILIKE '%accepted%'
-                   OR m.status::text ILIKE '%confirmed%')
-            AND NOT EXISTS (
-                SELECT 1 FROM restaurant_bookings rb WHERE rb.match_id = m.id
-            )
-        """))
-        
-        created_count = 0
-        for row in result:
-            match_id, user1_id, user2_id, proposed_datetime, match_restaurant_id = row
+        """Create bookings for any accepted matches that don't have them"""
+        try:
+            from sqlalchemy import text
             
-            # Determine which restaurant to use
-            target_restaurant_id = restaurant_id  # Default to the requesting restaurant
-            
-            if match_restaurant_id:
-                match_restaurant_str = str(match_restaurant_id)
-                
-                # Check if this match is for the current restaurant
-                if match_restaurant_str == str(restaurant_id) or match_restaurant_str == f'api_{restaurant_id}':
-                    target_restaurant_id = restaurant_id
-                elif match_restaurant_str.startswith('api_'):
-                    # Handle API restaurants - try to find or create
-                    external_id = match_restaurant_str[4:]
-                    api_restaurant = Restaurant.query.filter_by(external_id=external_id).first()
-                    if api_restaurant:
-                        target_restaurant_id = api_restaurant.id
-                    else:
-                        # Skip if it's for a different API restaurant
-                        continue
-                else:
-                    # Try to use the match's restaurant if it exists
-                    try:
-                        potential_id = int(match_restaurant_str)
-                        if Restaurant.query.get(potential_id):
-                            target_restaurant_id = potential_id
-                        else:
-                            # Skip if restaurant doesn't exist
-                            continue
-                    except:
-                        # If we can't parse it, use the default restaurant
-                        pass
-            
-            # Only create booking if it's relevant to the current restaurant
-            if target_restaurant_id == restaurant_id:
-                booking = RestaurantBooking(
-                    restaurant_id=target_restaurant_id,
-                    match_id=match_id,
-                    user1_id=user1_id,
-                    user2_id=user2_id,
-                    booking_datetime=proposed_datetime or datetime.utcnow(),
-                    status='confirmed',
-                    party_size=2,
-                    special_requests='Auto-created from accepted match'
+            # First, find ALL accepted matches (not just for this restaurant)
+            # then create bookings for this restaurant
+            result = self.db.session.execute(text("""
+                SELECT m.id, m.user1_id, m.user2_id, m.proposed_datetime, m.restaurant_id
+                FROM matches m
+                WHERE (UPPER(m.status::text) = 'ACCEPTED' 
+                       OR UPPER(m.status::text) = 'CONFIRMED'
+                       OR m.status::text ILIKE '%accepted%'
+                       OR m.status::text ILIKE '%confirmed%')
+                AND NOT EXISTS (
+                    SELECT 1 FROM restaurant_bookings rb WHERE rb.match_id = m.id
                 )
-                self.db.session.add(booking)
-                created_count += 1
-                self.logger.info(f"Created missing booking for match {match_id}")
-        
-        if created_count > 0:
-            self.db.session.commit()
-            self.logger.info(f"Created {created_count} missing bookings")
-        
-    except Exception as e:
-        self.logger.warning(f"Could not create missing bookings: {e}")
-        self.db.session.rollback()
+            """))
+            
+            created_count = 0
+            for row in result:
+                match_id, user1_id, user2_id, proposed_datetime, match_restaurant_id = row
+                
+                # Determine which restaurant to use
+                target_restaurant_id = restaurant_id  # Default to the requesting restaurant
+                
+                if match_restaurant_id:
+                    match_restaurant_str = str(match_restaurant_id)
+                    
+                    # Check if this match is for the current restaurant
+                    if match_restaurant_str == str(restaurant_id) or match_restaurant_str == f'api_{restaurant_id}':
+                        target_restaurant_id = restaurant_id
+                    elif match_restaurant_str.startswith('api_'):
+                        # Handle API restaurants - try to find or create
+                        external_id = match_restaurant_str[4:]
+                        api_restaurant = Restaurant.query.filter_by(external_id=external_id).first()
+                        if api_restaurant:
+                            target_restaurant_id = api_restaurant.id
+                        else:
+                            # Skip if it's for a different API restaurant
+                            continue
+                    else:
+                        # Try to use the match's restaurant if it exists
+                        try:
+                            potential_id = int(match_restaurant_str)
+                            if Restaurant.query.get(potential_id):
+                                target_restaurant_id = potential_id
+                            else:
+                                # Skip if restaurant doesn't exist
+                                continue
+                        except:
+                            # If we can't parse it, use the default restaurant
+                            pass
+                
+                # Only create booking if it's relevant to the current restaurant
+                if target_restaurant_id == restaurant_id:
+                    booking = RestaurantBooking(
+                        restaurant_id=target_restaurant_id,
+                        match_id=match_id,
+                        user1_id=user1_id,
+                        user2_id=user2_id,
+                        booking_datetime=proposed_datetime or datetime.utcnow(),
+                        status='confirmed',
+                        party_size=2,
+                        special_requests='Auto-created from accepted match'
+                    )
+                    self.db.session.add(booking)
+                    created_count += 1
+                    self.logger.info(f"Created missing booking for match {match_id}")
+            
+            if created_count > 0:
+                self.db.session.commit()
+                self.logger.info(f"Created {created_count} missing bookings")
+            
+        except Exception as e:
+            self.logger.warning(f"Could not create missing bookings: {e}")
+            self.db.session.rollback()
 
     def update_booking_status(self, restaurant_id, booking_id, new_status):
         """Update booking status"""
