@@ -42,6 +42,8 @@ def init_database():
         # Create test restaurant account for login testing
         print("Running match status normalization...")
         migrate_match_status_normalization()
+        print("Ensuring all accepted matches have bookings...")
+        ensure_all_accepted_matches_have_bookings()
         try:
             create_test_restaurant_account()
         except Exception as e:
@@ -559,6 +561,103 @@ def migrate_match_status_normalization():
 
     except Exception as e:
         print(f"⚠️ Match status normalization failed: {e}")
+        db.session.rollback()
+
+
+def ensure_all_accepted_matches_have_bookings():
+    """Ensure every accepted match has a corresponding booking - runs on every deployment"""
+    from sqlalchemy import text
+    from models.restaurant_management import RestaurantBooking
+    from models.restaurant import Restaurant
+
+    try:
+        # Get or create default restaurant
+        default_restaurant = Restaurant.query.filter_by(is_active=True).first()
+        if not default_restaurant:
+            default_restaurant = Restaurant(
+                name='Default Restaurant',
+                cuisine_type='International',
+                address='To be determined',
+                source='internal',
+                is_active=True,
+                price_range=2,
+                is_partner=True
+            )
+            db.session.add(default_restaurant)
+            db.session.flush()
+
+        # Find ALL accepted matches without bookings
+        result = db.session.execute(text("""
+            SELECT m.id, m.user1_id, m.user2_id, m.proposed_datetime, m.restaurant_id
+            FROM matches m
+            WHERE (UPPER(m.status::text) = 'ACCEPTED' 
+                   OR UPPER(m.status::text) = 'CONFIRMED'
+                   OR m.status::text LIKE '%ACCEPTED%'
+                   OR m.status::text LIKE '%accepted%')
+            AND NOT EXISTS (
+                SELECT 1 FROM restaurant_bookings rb WHERE rb.match_id = m.id
+            )
+        """))
+
+        created_count = 0
+        for row in result:
+            match_id, user1_id, user2_id, proposed_datetime, match_restaurant_id = row
+
+            # Determine restaurant ID
+            restaurant_id = default_restaurant.id
+
+            if match_restaurant_id:
+                match_restaurant_str = str(match_restaurant_id)
+
+                if match_restaurant_str.startswith('api_'):
+                    external_id = match_restaurant_str[4:]
+                    api_restaurant = Restaurant.query.filter_by(external_id=external_id).first()
+                    if api_restaurant:
+                        restaurant_id = api_restaurant.id
+                    else:
+                        # Create placeholder for API restaurant
+                        api_restaurant = Restaurant(
+                            name=f'Restaurant (API: {external_id})',
+                            external_id=external_id,
+                            cuisine_type='International',
+                            address='Address pending',
+                            source='api',
+                            is_active=True,
+                            price_range=2
+                        )
+                        db.session.add(api_restaurant)
+                        db.session.flush()
+                        restaurant_id = api_restaurant.id
+                else:
+                    try:
+                        potential_id = int(match_restaurant_str)
+                        if Restaurant.query.get(potential_id):
+                            restaurant_id = potential_id
+                    except:
+                        pass
+
+            # Create the missing booking
+            booking = RestaurantBooking(
+                restaurant_id=restaurant_id,
+                match_id=match_id,
+                user1_id=user1_id,
+                user2_id=user2_id,
+                booking_datetime=proposed_datetime or datetime.utcnow(),
+                status='confirmed',
+                party_size=2,
+                special_requests='Auto-created from accepted match'
+            )
+            db.session.add(booking)
+            created_count += 1
+
+        if created_count > 0:
+            db.session.commit()
+            print(f"✅ Created {created_count} missing bookings for accepted matches")
+        else:
+            print("✅ All accepted matches have bookings")
+
+    except Exception as e:
+        print(f"⚠️ Could not ensure bookings: {e}")
         db.session.rollback()
 
 

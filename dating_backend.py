@@ -1534,9 +1534,14 @@ def accept_match(match_id):
                         db.session.add(restaurant)
                         db.session.flush()
                         restaurant_id = restaurant.id
+                        logger.info(f"Created placeholder restaurant for API ID {external_id}")
                 else:
                     try:
                         restaurant_id = int(restaurant_id_str)
+                        # Verify this restaurant exists
+                        if not Restaurant.query.get(restaurant_id):
+                            logger.warning(f"Restaurant ID {restaurant_id} does not exist")
+                            restaurant_id = None
                     except (ValueError, TypeError):
                         logger.warning(f"Invalid restaurant_id format: {restaurant_id_str}")
 
@@ -1545,6 +1550,7 @@ def accept_match(match_id):
                 default_restaurant = Restaurant.query.filter_by(is_active=True).first()
                 if default_restaurant:
                     restaurant_id = default_restaurant.id
+                    logger.info(f"Using default restaurant ID {restaurant_id}")
                 else:
                     # Create a default restaurant if none exists
                     default_restaurant = Restaurant(
@@ -1559,6 +1565,7 @@ def accept_match(match_id):
                     db.session.add(default_restaurant)
                     db.session.flush()
                     restaurant_id = default_restaurant.id
+                    logger.info(f"Created default restaurant with ID {restaurant_id}")
 
             # Create the booking
             booking = RestaurantBooking(
@@ -1569,7 +1576,7 @@ def accept_match(match_id):
                 booking_datetime=match.proposed_datetime or datetime.utcnow(),
                 status='confirmed',
                 party_size=2,
-                special_requests='Match accepted - restaurant details to be confirmed'
+                special_requests='Match accepted - restaurant details to be confirmed' if not match.restaurant_id else ''
             )
             db.session.add(booking)
             logger.info(f"Created booking for match {match_id} at restaurant {restaurant_id}")
@@ -1577,6 +1584,10 @@ def accept_match(match_id):
             logger.info(f"Booking already exists for match {match_id}")
 
         db.session.commit()
+
+        # Final verification after commit
+        db.session.refresh(match)
+        logger.info(f"Match {match_id} final status after commit: {match.status}")
 
         # Send notification
         try:
