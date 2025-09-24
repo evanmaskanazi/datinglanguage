@@ -6,6 +6,7 @@ from models.restaurant_management import RestaurantAnalytics, RestaurantBooking,
 from models.restaurant import Restaurant, RestaurantTable
 from models.match import Match
 from models.user import User
+from models.restaurant_management import RestaurantBooking
 
 class RestaurantManagementService:
     def __init__(self, db, email_manager, logger):
@@ -81,7 +82,7 @@ class RestaurantManagementService:
             from models.match import Match
             from models.user import User
             
-            # First, check for any matches without bookings and create them
+            # First, check for any accepted matches without bookings and create them
             self._create_missing_bookings(restaurant_id)
             
             query = RestaurantBooking.query.filter_by(restaurant_id=restaurant_id)
@@ -136,9 +137,8 @@ class RestaurantManagementService:
         """Create bookings for any matches that don't have them"""
         try:
             from sqlalchemy import text
-            from models.restaurant_management import RestaurantBooking
             
-            # Find ALL matches without bookings
+            # Find ALL matches without bookings (not filtered by status)
             result = self.db.session.execute(text("""
                 SELECT m.id, m.user1_id, m.user2_id, m.proposed_datetime, m.restaurant_id
                 FROM matches m
@@ -152,7 +152,7 @@ class RestaurantManagementService:
                 match_id, user1_id, user2_id, proposed_datetime, match_restaurant_id = row
                 
                 # Determine which restaurant to use for the booking
-                booking_restaurant_id = restaurant_id  # Default to requesting restaurant
+                booking_restaurant_id = restaurant_id  # Default to the requesting restaurant
                 
                 if match_restaurant_id:
                     match_restaurant_str = str(match_restaurant_id)
@@ -173,7 +173,7 @@ class RestaurantManagementService:
                         except:
                             booking_restaurant_id = 1
                 
-                # ALWAYS create the booking for restaurant_id=1 if that's what we're checking
+                # Create booking for restaurant_id=1 OR if it matches the requesting restaurant
                 if restaurant_id == 1 or booking_restaurant_id == restaurant_id:
                     # Check if booking already exists to avoid duplicates
                     existing = RestaurantBooking.query.filter_by(match_id=match_id).first()
@@ -184,7 +184,7 @@ class RestaurantManagementService:
                             user1_id=user1_id,
                             user2_id=user2_id,
                             booking_datetime=proposed_datetime or datetime.utcnow(),
-                            status='pending',  # Start as pending, not confirmed
+                            status='pending',  # Start as pending
                             party_size=2,
                             special_requests='Match request pending'
                         )
@@ -404,8 +404,6 @@ class RestaurantManagementService:
     def create_sample_booking(self, restaurant_id, user1_id, user2_id, datetime_str):
         """Create a sample booking for testing"""
         try:
-            from models.restaurant_management import RestaurantBooking
-            
             booking = RestaurantBooking(
                 restaurant_id=restaurant_id,
                 user1_id=user1_id,
