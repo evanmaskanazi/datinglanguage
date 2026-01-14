@@ -1260,10 +1260,100 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Mobile Hamburger Menu */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            width: 48px;
+            height: 48px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 22px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: var(--transition);
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .main-content {
+                padding-top: 5rem;
+            }
+
+            .content-header {
+                margin-top: 0;
+            }
+        }
     </style>
 </head>
 <body>
 
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
     <!-- Dashboard Container -->
     <div class="dashboard-container">
@@ -4148,6 +4238,38 @@ async function requestMatchWithUser(userId) {
                 window.location.href = '/login.html';
             }
         }
+
+        // Mobile Sidebar Toggle Functions
+        function toggleMobileSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            menuBtn.classList.toggle('active');
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            menuBtn.classList.remove('active');
+        }
+
+        // Close sidebar when clicking a nav item on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 1024) {
+                        closeMobileSidebar();
+                    }
+                });
+            });
+        });
 
         // Handle page visibility for WebSocket
         document.addEventListener('visibilitychange', () => {
